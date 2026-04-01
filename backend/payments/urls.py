@@ -1,0 +1,26 @@
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
+
+from . import views
+
+app_name = "payments"
+
+router = DefaultRouter()
+router.register(r"subscriptions", views.SubscriptionViewSet, basename="subscription")
+
+urlpatterns = [
+    path("initiate/", views.InitiatePaymentView.as_view(), name="initiate"),
+    path("verify/", views.VerifyPaymentView.as_view(), name="verify"),
+    path("history/", views.PaymentHistoryView.as_view(), name="history"),
+    path(
+        "feature/<int:property_id>/",
+        views.FeatureListingView.as_view(),
+        name="feature-listing",
+    ),
+    # Provider webhooks (csrf-exempt, no auth)
+    path("webhooks/chapa/", views.ChapaWebhookView.as_view(), name="webhook-chapa"),
+    path("webhooks/telebirr/", views.TelebirrWebhookView.as_view(), name="webhook-telebirr"),
+    path("webhooks/stripe/", views.StripeWebhookView.as_view(), name="webhook-stripe"),
+    # Router URLs
+    path("", include(router.urls)),
+]

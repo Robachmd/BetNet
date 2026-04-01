@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Search Properties — BetRent{% endblock %}
+
+{% block content %}
+<section class="bg-gradient-to-br from-primary-800 via-primary-700 to-primary-600 py-12 sm:py-16">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-white mb-2">Browse verified listings</h1>
+    <p class="text-primary-200 text-lg max-w-2xl mx-auto">
+      {% if properties.paginator.count %}
+        <span class="font-semibold text-secondary-400">{{ properties.paginator.count }}</span> listings found — transparent pricing, wherever life takes you.
+      {% else %}
+        Verified rental listings with transparent pricing — wherever life takes you.
+      {% endif %}
+    </p>
+  </div>
+</section>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="{ filtersOpen: false }">
+
+  <!-- Filters -->
+  <form method="GET" action="{% url 'search' %}" class="mb-8">
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+
+      <!-- Mobile toggle -->
+      <button type="button" @click="filtersOpen = !filtersOpen"
+        class="w-full lg:hidden flex items-center justify-between px-5 py-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+        <span class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+          Filters & Search
+        </span>
+        <svg class="w-5 h-5 transition-transform duration-200" :class="{ 'rotate-180': filtersOpen }" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+
+      <div class="lg:block" :class="{ 'hidden': !filtersOpen }" x-cloak>
+        <div class="p-5 space-y-4">
+
+          <!-- Row 1: Search + Type + Bedrooms -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="lg:col-span-2">
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Search</label>
+              <div class="relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" name="q" value="{{ query }}" placeholder="Search by title, location, or keyword..."
+                  class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Property Type</label>
+              <select name="property_type" class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
+                <option value="">All Types</option>
+                <option value="APARTMENT" {% if selected_type == 'APARTMENT' %}selected{% endif %}>Apartment</option>
+                <option value="VILLA" {% if selected_type == 'VILLA' %}selected{% endif %}>Villa</option>
+                <option value="CONDOMINIUM" {% if selected_type == 'CONDOMINIUM' %}selected{% endif %}>Condominium</option>
+                <option value="SERVICE_HOUSE" {% if selected_type == 'SERVICE_HOUSE' %}selected{% endif %}>Service House</option>
+                <option value="REAL_ESTATE" {% if selected_type == 'REAL_ESTATE' %}selected{% endif %}>Real Estate</option>
+                <option value="BUSINESS_SHOP" {% if selected_type == 'BUSINESS_SHOP' %}selected{% endif %}>Business Shop</option>
+                <option value="HALL_RENTAL" {% if selected_type == 'HALL_RENTAL' %}selected{% endif %}>Hall Rental</option>
+              </select>
+            </div>
+            {% if selected_type != 'BUSINESS_SHOP' %}
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Bedrooms</label>
+              <select name="bedrooms" class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
+                <option value="">Any</option>
+                <option value="STUDIO" {% if selected_bedrooms == 'STUDIO' or selected_bedrooms == '0' %}selected{% endif %}>Studio</option>
+                <option value="ONE" {% if selected_bedrooms == 'ONE' or selected_bedrooms == '1' %}selected{% endif %}>1 Bed</option>
+                <option value="TWO" {% if selected_bedrooms == 'TWO' or selected_bedrooms == '2' %}selected{% endif %}>2 Bed</option>
+                <option value="THREE_PLUS" {% if selected_bedrooms == 'THREE_PLUS' or selected_bedrooms == '3' %}selected{% endif %}>3+ Bed</option>
+              </select>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Row 2: Price Range + City + Sort -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Min Price (ETB)</label>
+              <input type="number" name="min_price" value="{{ min_price }}" placeholder="0" min="0"
+                class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Max Price (ETB)</label>
+              <input type="number" name="max_price" value="{{ max_price }}" placeholder="Any" min="0"
+                class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">City</label>
+              <select name="city" class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
+                <option value="">All Cities</option>
+                <option value="Addis Ababa" {% if selected_city == 'Addis Ababa' %}selected{% endif %}>Addis Ababa</option>
+                <option value="Hawassa" {% if selected_city == 'Hawassa' %}selected{% endif %}>Hawassa</option>
+                <option value="Bahir Dar" {% if selected_city == 'Bahir Dar' %}selected{% endif %}>Bahir Dar</option>
+                <option value="Dire Dawa" {% if selected_city == 'Dire Dawa' %}selected{% endif %}>Dire Dawa</option>
+                <option value="Adama" {% if selected_city == 'Adama' %}selected{% endif %}>Adama</option>
+                <option value="Mekelle" {% if selected_city == 'Mekelle' %}selected{% endif %}>Mekelle</option>
+                <option value="Jimma" {% if selected_city == 'Jimma' %}selected{% endif %}>Jimma</option>
+                <option value="Gondar" {% if selected_city == 'Gondar' %}selected{% endif %}>Gondar</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Sort By</label>
+              <select name="sort" class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
+                <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest</option>
+                <option value="price_low" {% if selected_sort == 'price_low' %}selected{% endif %}>Price: Low → High</option>
+                <option value="price_high" {% if selected_sort == 'price_high' %}selected{% endif %}>Price: High → Low</option>
+                <option value="most_viewed" {% if selected_sort == 'most_viewed' %}selected{% endif %}>Most Viewed</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <label class="flex items-center gap-2 py-3 cursor-pointer select-none">
+                <input type="checkbox" name="is_verified" value="true" {% if is_verified_only %}checked{% endif %}
+                  class="w-5 h-5 rounded-md border-gray-300 text-primary-600 focus:ring-primary-500/30" />
+                <span class="text-sm font-medium text-gray-700">Verified Only</span>
+                <svg class="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              </label>
+            </div>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+            <button type="submit"
+              class="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              Search
+            </button>
+            <a href="{% url 'search' %}"
+              class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-medium border-2 border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              Clear Filters
+            </a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <!-- Results Grid -->
+  {% if properties %}
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    {% for property in properties %}
+    <article class="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-primary-200 transition-all duration-300 hover:-translate-y-1">
+
+      <!-- Image -->
+      <div class="relative h-52 overflow-hidden">
+        {% if property.images.first %}
+          <img src="{{ property.images.first.image.url }}" alt="{{ property.title }}"
+            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        {% else %}
+          <div class="w-full h-full
+            {% if property.property_type == 'APARTMENT' %}bg-gradient-to-br from-emerald-300 to-teal-500
+            {% elif property.property_type == 'VILLA' %}bg-gradient-to-br from-amber-300 to-orange-500
+            {% elif property.property_type == 'CONDOMINIUM' %}bg-gradient-to-br from-blue-300 to-indigo-500
+            {% elif property.property_type == 'SERVICE_HOUSE' %}bg-gradient-to-br from-lime-300 to-green-500
+            {% elif property.property_type == 'HALL_RENTAL' %}bg-gradient-to-br from-purple-300 to-violet-500
+            {% elif property.property_type == 'REAL_ESTATE' %}bg-gradient-to-br from-rose-300 to-pink-500
+            {% elif property.property_type == 'BUSINESS_SHOP' %}bg-gradient-to-br from-slate-300 to-slate-600
+            {% else %}bg-gradient-to-br from-cyan-300 to-sky-500
+            {% endif %}
+            flex items-center justify-center">
+            <svg class="w-16 h-16 text-white/50" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z"/></svg>
+          </div>
+        {% endif %}
+
+        <!-- Badges -->
+        <div class="absolute top-3 left-3 flex flex-col gap-1.5">
+          <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-white/90 backdrop-blur-sm text-gray-700 shadow-sm">
+            {{ property.get_property_type_display }}
+          </span>
+          {% if property.is_verified %}
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-primary-500 text-white shadow-sm">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            Verified
+          </span>
+          {% endif %}
+          {% if property.is_featured %}
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-secondary-500 text-gray-900 shadow-sm">
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            Featured
+          </span>
+          {% endif %}
+        </div>
+
+        <!-- Favorite button -->
+        {% if user.is_authenticated %}
+        <form method="POST" action="{% url 'toggle_favorite' property.id %}" class="absolute top-3 right-3">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+          <button type="submit" class="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center hover:bg-red-50 hover:scale-110 transition-all duration-200" title="Toggle favorites">
+            <svg class="w-5 h-5 text-gray-400 hover:text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+
+      <!-- Content -->
+      <div class="p-5">
+        <a href="{% url 'property_detail' property.slug %}" class="block mb-2 group/title">
+          <h3 class="text-lg font-bold text-gray-900 group-hover/title:text-primary-700 transition-colors line-clamp-1">
+            {{ property.title }}
+          </h3>
+        </a>
+
+        <p class="text-2xl font-extrabold text-primary-700 mb-2">
+          ETB {{ property.price_monthly|floatformat:0|intcomma }}<span class="text-sm font-medium text-gray-500">/mo</span>
+        </p>
+
+        <div class="flex items-center gap-1.5 text-sm text-gray-500 mb-3">
+          <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span class="truncate">{{ property.location.sub_city }}, {{ property.location.city }}</span>
+        </div>
+
+        <div class="flex items-center gap-4 text-sm text-gray-500 mb-4">
+          {% if property.property_type == 'BUSINESS_SHOP' %}
+            {% if property.shop_class_count %}
+            <span class="flex items-center gap-1">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M3.75 21h16.5M4.5 3h15M5 3v18m10-18v18M9 9h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15"/></svg>
+              <strong>{{ property.shop_class_count }}</strong>
+              {% if property.shop_class_count == 1 %}class{% else %}classes{% endif %}
+            </span>
+            {% endif %}
+          {% elif property.bedrooms %}
+          <span class="flex items-center gap-1">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4"/></svg>
+            {{ property.get_bedrooms_display }}
+          </span>
+          <span class="flex items-center gap-1">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            {{ property.bathrooms }} bath{{ property.bathrooms|pluralize }}
+          </span>
+          {% endif %}
+        </div>
+
+        <a href="{% url 'property_detail' property.slug %}"
+          class="block w-full text-center py-2.5 rounded-xl text-sm font-semibold border-2 border-primary-700 text-primary-700 hover:bg-primary-700 hover:text-white transition-all duration-200">
+          View Details
+        </a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if properties.paginator.num_pages > 1 %}
+  <nav class="mt-10 flex items-center justify-center gap-2" aria-label="Pagination">
+    {% if properties.has_previous %}
+    <a href="?page={{ properties.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_type %}&property_type={{ selected_type }}{% endif %}{% if selected_bedrooms %}&bedrooms={{ selected_bedrooms }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if is_verified_only %}&is_verified=true{% endif %}"
+      class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
+      Previous
+    </a>
+    {% endif %}
+
+    <div class="hidden sm:flex items-center gap-1">
+      {% for page_num in properties.paginator.page_range %}
+        {% if page_num == properties.number %}
+          <span class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold bg-primary-700 text-white shadow-sm">{{ page_num }}</span>
+        {% elif page_num > properties.number|add:"-3" and page_num < properties.number|add:"3" %}
+          <a href="?page={{ page_num }}{% if query %}&q={{ query }}{% endif %}{% if selected_type %}&property_type={{ selected_type }}{% endif %}{% if selected_bedrooms %}&bedrooms={{ selected_bedrooms }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if is_verified_only %}&is_verified=true{% endif %}"
+            class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all">{{ page_num }}</a>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <span class="sm:hidden text-sm font-medium text-gray-500">
+      Page {{ properties.number }} of {{ properties.paginator.num_pages }}
+    </span>
+
+    {% if properties.has_next %}
+    <a href="?page={{ properties.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_type %}&property_type={{ selected_type }}{% endif %}{% if selected_bedrooms %}&bedrooms={{ selected_bedrooms }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if is_verified_only %}&is_verified=true{% endif %}"
+      class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all">
+      Next
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>
+    </a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <!-- Empty State -->
+  <div class="text-center py-20">
+    <div class="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-6">
+      <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+    </div>
+    <h3 class="text-xl font-bold text-gray-900 mb-2">No properties found</h3>
+    <p class="text-gray-500 mb-6 max-w-md mx-auto">Try adjusting your filters or search terms to find more results.</p>
+    <a href="{% url 'search' %}"
+      class="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 hover:shadow-lg transition-all duration-200">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      Clear All Filters
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

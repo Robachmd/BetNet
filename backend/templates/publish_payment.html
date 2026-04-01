@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Publish Listing – BetRent{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-10" x-data="{ method: 'CHAPA', processing: false }">
+
+  <!-- Header -->
+  <div class="text-center mb-8">
+    <div class="mx-auto w-16 h-16 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center mb-4">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </div>
+    <h1 class="text-2xl font-bold text-gray-900">Publish Your Listing</h1>
+    <p class="text-gray-500 mt-2">Pay a one-time listing fee to make your property visible to renters</p>
+  </div>
+
+  <!-- Property Summary Card -->
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Listing Summary</h2>
+    <div class="flex gap-4">
+      {% if property.primary_image %}
+      <img src="{{ property.primary_image.image.url }}" alt="{{ property.title }}"
+           class="w-24 h-24 rounded-xl object-cover flex-shrink-0">
+      {% else %}
+      <div class="w-24 h-24 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+        <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+        </svg>
+      </div>
+      {% endif %}
+      <div class="flex-1 min-w-0">
+        <h3 class="font-semibold text-gray-900 truncate">{{ property.title }}</h3>
+        <p class="text-sm text-gray-500">{{ property.location }}</p>
+        <p class="text-primary-700 font-bold mt-1">ETB {{ property.price_monthly|floatformat:0|intcomma }} / month</p>
+        <span class="inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
+          Unpublished
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing Card -->
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-gray-600">Listing Fee</span>
+      <span class="text-xl font-bold text-gray-900">ETB {{ listing_fee|floatformat:0|intcomma }}</span>
+    </div>
+    <p class="text-xs text-gray-400">One-time fee. Your listing stays live until you remove it.</p>
+  </div>
+
+  <!-- Payment Method -->
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Payment Method</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+      <label @click="method = 'CHAPA'"
+             :class="method === 'CHAPA' ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500/20' : 'border-gray-200 hover:border-gray-300'"
+             class="relative flex flex-col items-center gap-2 p-4 rounded-xl border cursor-pointer transition-all">
+        <input type="radio" name="payment_method" value="CHAPA" class="sr-only" :checked="method === 'CHAPA'">
+        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+          <span class="text-green-700 font-bold text-sm">C</span>
+        </div>
+        <span class="text-sm font-medium text-gray-700">Chapa</span>
+        <span class="text-xs text-gray-400">Mobile / Card</span>
+      </label>
+
+      <label @click="method = 'TELEBIRR'"
+             :class="method === 'TELEBIRR' ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500/20' : 'border-gray-200 hover:border-gray-300'"
+             class="relative flex flex-col items-center gap-2 p-4 rounded-xl border cursor-pointer transition-all">
+        <input type="radio" name="payment_method" value="TELEBIRR" class="sr-only" :checked="method === 'TELEBIRR'">
+        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+          <span class="text-blue-700 font-bold text-sm">T</span>
+        </div>
+        <span class="text-sm font-medium text-gray-700">Telebirr</span>
+        <span class="text-xs text-gray-400">Mobile Money</span>
+      </label>
+
+      <label @click="method = 'BANK_TRANSFER'"
+             :class="method === 'BANK_TRANSFER' ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500/20' : 'border-gray-200 hover:border-gray-300'"
+             class="relative flex flex-col items-center gap-2 p-4 rounded-xl border cursor-pointer transition-all">
+        <input type="radio" name="payment_method" value="BANK_TRANSFER" class="sr-only" :checked="method === 'BANK_TRANSFER'">
+        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+          <span class="text-purple-700 font-bold text-sm">B</span>
+        </div>
+        <span class="text-sm font-medium text-gray-700">Bank Transfer</span>
+        <span class="text-xs text-gray-400">CBE / Awash</span>
+      </label>
+
+    </div>
+  </div>
+
+  <!-- Pay Button -->
+  <form method="post" action="{% url 'process_publish_payment' slug=property.slug %}" @submit="processing = true">
+    {% csrf_token %}
+    <input type="hidden" name="payment_method" :value="method">
+
+    <button type="submit"
+            :disabled="processing"
+            class="w-full py-4 rounded-xl text-white font-bold text-lg transition-all
+                   bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800
+                   disabled:opacity-50 disabled:cursor-wait shadow-lg shadow-primary-500/25">
+      <span x-show="!processing">Pay ETB {{ listing_fee|floatformat:0|intcomma }} & Publish</span>
+      <span x-show="processing" class="flex items-center justify-center gap-2">
+        <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+        </svg>
+        Processing…
+      </span>
+    </button>
+  </form>
+
+  <p class="text-center text-xs text-gray-400 mt-4">
+    After payment, your listing goes live immediately. Track status under <strong>Listing payments</strong> on your landlord dashboard, or in <strong>Admin → Payments</strong> (status <strong>Completed</strong> = paid).
+  </p>
+
+  <!-- Back link -->
+  <div class="text-center mt-6">
+    <a href="{% url 'dashboard' %}" class="text-sm text-primary-600 hover:underline">
+      &larr; Back to Dashboard
+    </a>
+  </div>
+
+</div>
+{% endblock %}

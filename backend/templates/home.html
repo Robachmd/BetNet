@@ -1,0 +1,364 @@
+{% extends 'base.html' %}
+
+{% block title %}BetRent — Ethiopia's Trusted Rental Marketplace{% endblock %}
+
+{% block extra_css %}
+<style>
+  .hero-section { padding: 80px 0 60px; background: linear-gradient(135deg, #0a2e12 0%, #14532d 40%, #166534 100%); position: relative; overflow: hidden; }
+  .hero-section::before { content: ''; position: absolute; top: -50%; right: -20%; width: 800px; height: 800px; border-radius: 50%; background: radial-gradient(circle, rgba(234,179,8,.12) 0%, transparent 70%); }
+  .hero-section::after { content: ''; position: absolute; bottom: -40%; left: -10%; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(34,197,94,.15) 0%, transparent 70%); }
+  .fade-up { opacity: 0; transform: translateY(30px); transition: opacity .6s ease, transform .6s ease; }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+  .type-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0,0,0,.1); border-color: #22c55e; }
+  .area-card:hover { transform: scale(1.03); }
+  .area-card:hover .area-bg { transform: scale(1.1); }
+  .feature-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.08); border-color: #4ade80; }
+  .hero-card:hover { transform: scale(1.03); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="hero-section">
+  <div class="max-w-7xl mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-12 items-center">
+    <div class="text-center lg:text-left">
+      <h1 class="text-4xl md:text-5xl font-black text-white leading-tight mb-5">
+        Find the right space<br/><span class="text-secondary-400">in Ethiopia</span>
+      </h1>
+      <p class="text-lg text-white/75 mb-8 max-w-xl mx-auto lg:mx-0">
+        Verified rental listings with transparent pricing — wherever life takes you.
+      </p>
+      <form action="{% url 'search' %}" method="GET" class="bg-white rounded-2xl p-2 shadow-2xl flex flex-col sm:flex-row gap-2 max-w-xl mx-auto lg:mx-0">
+        <input type="text" name="q" placeholder="Search by city, neighborhood, or landmark..." class="flex-1 px-5 py-4 rounded-xl outline-none text-gray-900 placeholder-gray-400" />
+        <button type="submit" class="bg-primary-700 hover:bg-primary-800 text-white font-semibold px-7 py-4 rounded-xl transition flex items-center justify-center gap-2 whitespace-nowrap">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Search
+        </button>
+      </form>
+      <div class="flex gap-8 sm:gap-12 mt-10 justify-center lg:justify-start">
+        <div class="text-center"><div class="text-2xl font-black text-secondary-400">2,500+</div><div class="text-xs text-white/60">Verified Listings</div></div>
+        <div class="text-center"><div class="text-2xl font-black text-secondary-400">15,000+</div><div class="text-xs text-white/60">Happy Renters</div></div>
+        <div class="text-center"><div class="text-2xl font-black text-secondary-400">50+</div><div class="text-xs text-white/60">Neighborhoods</div></div>
+      </div>
+    </div>
+    <div class="hidden lg:grid grid-cols-2 gap-4 -rotate-2">
+      {% for p in featured_properties|slice:":4" %}
+      <a href="{% url 'property_detail' p.slug %}" class="hero-card bg-white rounded-2xl overflow-hidden shadow-lg transition">
+        <div class="h-28 {% cycle 'bg-gradient-to-br from-green-200 to-green-300' 'bg-gradient-to-br from-yellow-200 to-yellow-300' 'bg-gradient-to-br from-blue-200 to-blue-300' 'bg-gradient-to-br from-red-200 to-red-300' %} relative">
+          {% if p.is_verified %}<span class="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">&#10003; Verified</span>{% endif %}
+          {% if p.is_featured %}<span class="absolute top-2 right-2 bg-yellow-500 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-md">&#9733; Featured</span>{% endif %}
+        </div>
+        <div class="p-3">
+          <div class="font-extrabold text-primary-700 text-sm">ETB {{ p.price_monthly|floatformat:0 }}/mo</div>
+          <div class="text-[11px] text-gray-500 mt-0.5">{{ p.location.sub_city }}, {{ p.location.city }}</div>
+        </div>
+      </a>
+      {% empty %}
+      <div class="bg-white rounded-2xl overflow-hidden shadow-lg"><div class="h-28 bg-gradient-to-br from-green-200 to-green-300 relative"><span class="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">&#10003; Verified</span></div><div class="p-3"><div class="font-extrabold text-primary-700 text-sm">ETB 18,000/mo</div><div class="text-[11px] text-gray-500 mt-0.5">Bole, Addis Ababa</div></div></div>
+      <div class="bg-white rounded-2xl overflow-hidden shadow-lg"><div class="h-28 bg-gradient-to-br from-yellow-200 to-yellow-300 relative"><span class="absolute top-2 right-2 bg-yellow-500 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-md">&#9733; Featured</span></div><div class="p-3"><div class="font-extrabold text-primary-700 text-sm">ETB 25,000/mo</div><div class="text-[11px] text-gray-500 mt-0.5">Kazanchis, Addis Ababa</div></div></div>
+      <div class="bg-white rounded-2xl overflow-hidden shadow-lg"><div class="h-28 bg-gradient-to-br from-blue-200 to-blue-300 relative"><span class="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">&#10003; Verified</span></div><div class="p-3"><div class="font-extrabold text-primary-700 text-sm">ETB 12,500/mo</div><div class="text-[11px] text-gray-500 mt-0.5">CMC, Addis Ababa</div></div></div>
+      <div class="bg-white rounded-2xl overflow-hidden shadow-lg"><div class="h-28 bg-gradient-to-br from-red-200 to-red-300 relative"><span class="absolute top-2 right-2 bg-yellow-500 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-md">&#9733; Featured</span></div><div class="p-3"><div class="font-extrabold text-primary-700 text-sm">ETB 35,000/mo</div><div class="text-[11px] text-gray-500 mt-0.5">Old Airport, Addis Ababa</div></div></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- TRUST BAR -->
+<div class="bg-gray-50 border-b border-gray-200 py-5 px-6">
+  <div class="max-w-7xl mx-auto flex items-center justify-center gap-8 md:gap-14 flex-wrap text-sm text-gray-600 font-medium">
+    <span class="flex items-center gap-2"><span class="w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center">&#128274;</span>Verified Listings</span>
+    <span class="flex items-center gap-2"><span class="w-9 h-9 bg-yellow-100 rounded-lg flex items-center justify-center">&#128176;</span>Transparent Pricing</span>
+    <span class="flex items-center gap-2"><span class="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">&#128172;</span>Direct Chat</span>
+    <span class="flex items-center gap-2"><span class="w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center">&#128737;</span>Anti-Scam</span>
+  </div>
+</div>
+
+<!-- PROPERTY TYPES -->
+<section class="py-20 px-6">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-14 fade-up">
+      <span class="inline-block bg-green-100 text-primary-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-3">Browse by Type</span>
+      <h2 class="text-3xl font-extrabold text-gray-900 mb-3">What Are You Looking For?</h2>
+      <p class="text-gray-500 text-lg">From cozy apartments to retail spaces and event halls.</p>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 fade-up">
+      <a href="{% url 'search' %}?property_type=APARTMENT" class="type-card bg-white border-2 border-gray-200 rounded-2xl p-6 text-center transition cursor-pointer block">
+        <div class="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-4 text-3xl">&#127963;</div>
+        <h3 class="font-bold text-gray-900">Apartment</h3>
+        <p class="text-xs text-gray-500 mt-1">Modern city living</p>
+      </a>
+      <a href="{% url 'search' %}?property_type=VILLA" class="type-card bg-white border-2 border-gray-200 rounded-2xl p-6 text-center transition cursor-pointer block">
+        <div class="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-4 text-3xl">&#127968;</div>
+        <h3 class="font-bold text-gray-900">Villa</h3>
+        <p class="text-xs text-gray-500 mt-1">Spacious homes</p>
+      </a>
+      <a href="{% url 'search' %}?property_type=CONDOMINIUM" class="type-card bg-white border-2 border-gray-200 rounded-2xl p-6 text-center transition cursor-pointer block">
+        <div class="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-4 text-3xl">&#127959;</div>
+        <h3 class="font-bold text-gray-900">Condominium</h3>
+        <p class="text-xs text-gray-500 mt-1">Affordable condos</p>
+      </a>
+      <a href="{% url 'search' %}?property_type=SERVICE_HOUSE" class="type-card bg-white border-2 border-gray-200 rounded-2xl p-6 text-center transition cursor-pointer block">
+        <div class="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-4 text-3xl">&#127969;</div>
+        <h3 class="font-bold text-gray-900">Service House</h3>
+        <p class="text-xs text-gray-500 mt-1">Shared compound</p>
+      </a>
+      <a href="{% url 'search' %}?property_type=REAL_ESTATE" class="type-card bg-white border-2 border-gray-200 rounded-2xl p-6 text-center transition cursor-pointer block">
+        <div class="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-4 text-3xl">&#127970;</div>
+        <h3 class="font-bold text-gray-900">Real Estate</h3>
+        <p class="text-xs text-gray-500 mt-1">Premium properties</p>
+      </a>
+      <a href="{% url 'search' %}?property_type=BUSINESS_SHOP" class="type-card bg-white border-2 border-gray-200 rounded-2xl p-6 text-center transition cursor-pointer block">
+        <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4 text-3xl">&#127978;</div>
+        <h3 class="font-bold text-gray-900">Business Shop</h3>
+        <p class="text-xs text-gray-500 mt-1">Retail &amp; commercial</p>
+      </a>
+      <a href="{% url 'halls' %}" class="type-card bg-white border-2 border-gray-200 rounded-2xl p-6 text-center transition cursor-pointer block">
+        <div class="w-16 h-16 rounded-2xl bg-yellow-50 flex items-center justify-center mx-auto mb-4 text-3xl">&#127867;</div>
+        <h3 class="font-bold text-gray-900">Event Halls</h3>
+        <p class="text-xs text-gray-500 mt-1">Weddings & meetings</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="py-20 px-6 bg-gray-50">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-14 fade-up">
+      <span class="inline-block bg-yellow-100 text-yellow-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-3">Simple Process</span>
+      <h2 class="text-3xl font-extrabold text-gray-900 mb-3">How BetRent Works</h2>
+      <p class="text-gray-500 text-lg">Three simple steps to find your perfect rental home.</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-10 fade-up">
+      <div class="text-center">
+        <div class="w-14 h-14 rounded-full bg-primary-700 text-white text-xl font-black flex items-center justify-center mx-auto mb-5">1</div>
+        <h3 class="text-lg font-bold mb-2">Search & Filter</h3>
+        <p class="text-gray-500">Browse verified listings. Filter by price, location, amenities, and type.</p>
+      </div>
+      <div class="text-center">
+        <div class="w-14 h-14 rounded-full bg-primary-700 text-white text-xl font-black flex items-center justify-center mx-auto mb-5">2</div>
+        <h3 class="text-lg font-bold mb-2">Book a Visit</h3>
+        <p class="text-gray-500">Schedule a house visit directly with the landlord — clear terms, no hidden fees from the platform.</p>
+      </div>
+      <div class="text-center">
+        <div class="w-14 h-14 rounded-full bg-primary-700 text-white text-xl font-black flex items-center justify-center mx-auto mb-5">3</div>
+        <h3 class="text-lg font-bold mb-2">Move In</h3>
+        <p class="text-gray-500">Pay via Chapa, Telebirr, or bank transfer and move into your new home.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="py-20 px-6" id="features">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-14 fade-up">
+      <span class="inline-block bg-green-100 text-primary-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-3">Why BetRent</span>
+      <h2 class="text-3xl font-extrabold text-gray-900 mb-3">Built for Ethiopia's Rental Market</h2>
+      <p class="text-gray-500 text-lg">We solve real problems renters and landlords face every day.</p>
+    </div>
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 fade-up">
+      <div class="feature-card bg-white border border-gray-200 rounded-2xl p-8 transition">
+        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-xl mb-4">&#9989;</div>
+        <h3 class="font-bold text-lg mb-2">Verified Listings</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Every property reviewed by our team. A verified badge means the listing is real and trustworthy.</p>
+      </div>
+      <div class="feature-card bg-white border border-gray-200 rounded-2xl p-8 transition">
+        <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center text-xl mb-4">&#128200;</div>
+        <h3 class="font-bold text-lg mb-2">Price Insight System</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">See average rent prices in any neighborhood. Instantly know if a listing is fairly priced.</p>
+      </div>
+      <div class="feature-card bg-white border border-gray-200 rounded-2xl p-8 transition">
+        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-xl mb-4">&#128172;</div>
+        <h3 class="font-bold text-lg mb-2">Built-in Chat</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Message landlords directly on the platform — simple, transparent communication.</p>
+      </div>
+      <div class="feature-card bg-white border border-gray-200 rounded-2xl p-8 transition">
+        <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center text-xl mb-4">&#128683;</div>
+        <h3 class="font-bold text-lg mb-2">Anti-Scam Protection</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Report suspicious listings, automatic duplicate detection, and active moderation.</p>
+      </div>
+      <div class="feature-card bg-white border border-gray-200 rounded-2xl p-8 transition">
+        <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-xl mb-4">&#128197;</div>
+        <h3 class="font-bold text-lg mb-2">Visit Booking</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Schedule house visits with a click. Landlords confirm the time — no wasted trips.</p>
+      </div>
+      <div class="feature-card bg-white border border-gray-200 rounded-2xl p-8 transition">
+        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-xl mb-4">&#11088;</div>
+        <h3 class="font-bold text-lg mb-2">Reviews & Ratings</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Tenants review landlords. Landlords review tenants. Transparent reputation scores.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- POPULAR AREAS -->
+<section class="py-20 px-6 bg-gray-50" id="areas">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-14 fade-up">
+      <span class="inline-block bg-green-100 text-primary-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-3">Popular in Addis Ababa</span>
+      <h2 class="text-3xl font-extrabold text-gray-900 mb-3">Explore Top Neighborhoods</h2>
+      <p class="text-gray-500 text-lg">Discover the most sought-after rental areas in Ethiopia's capital.</p>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 fade-up">
+      {% with areas="Bole:from-emerald-800 to-emerald-600,Piassa:from-amber-700 to-amber-500,Kazanchis:from-blue-800 to-blue-500,CMC:from-orange-800 to-orange-500,Sarbet:from-purple-800 to-purple-500,Megenagna:from-cyan-700 to-cyan-500" %}
+      {% endwith %}
+      <a href="{% url 'search' %}?city=Addis+Ababa&sub_city=Bole" class="area-card relative rounded-2xl overflow-hidden h-48 cursor-pointer transition block">
+        <div class="area-bg absolute inset-0 bg-gradient-to-br from-emerald-800 to-emerald-600 transition-transform duration-500"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        <div class="absolute bottom-4 left-4 text-white"><h3 class="font-bold text-lg">Bole</h3><p class="text-xs opacity-80">450+ listings</p></div>
+      </a>
+      <a href="{% url 'search' %}?city=Addis+Ababa&sub_city=Piassa" class="area-card relative rounded-2xl overflow-hidden h-48 cursor-pointer transition block">
+        <div class="area-bg absolute inset-0 bg-gradient-to-br from-amber-700 to-amber-500 transition-transform duration-500"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        <div class="absolute bottom-4 left-4 text-white"><h3 class="font-bold text-lg">Piassa</h3><p class="text-xs opacity-80">280+ listings</p></div>
+      </a>
+      <a href="{% url 'search' %}?city=Addis+Ababa&sub_city=Kazanchis" class="area-card relative rounded-2xl overflow-hidden h-48 cursor-pointer transition block">
+        <div class="area-bg absolute inset-0 bg-gradient-to-br from-blue-800 to-blue-500 transition-transform duration-500"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        <div class="absolute bottom-4 left-4 text-white"><h3 class="font-bold text-lg">Kazanchis</h3><p class="text-xs opacity-80">320+ listings</p></div>
+      </a>
+      <a href="{% url 'search' %}?city=Addis+Ababa&sub_city=CMC" class="area-card relative rounded-2xl overflow-hidden h-48 cursor-pointer transition block">
+        <div class="area-bg absolute inset-0 bg-gradient-to-br from-orange-800 to-orange-500 transition-transform duration-500"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        <div class="absolute bottom-4 left-4 text-white"><h3 class="font-bold text-lg">CMC</h3><p class="text-xs opacity-80">190+ listings</p></div>
+      </a>
+      <a href="{% url 'search' %}?city=Addis+Ababa&sub_city=Sarbet" class="area-card relative rounded-2xl overflow-hidden h-48 cursor-pointer transition block">
+        <div class="area-bg absolute inset-0 bg-gradient-to-br from-purple-800 to-purple-500 transition-transform duration-500"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        <div class="absolute bottom-4 left-4 text-white"><h3 class="font-bold text-lg">Sarbet</h3><p class="text-xs opacity-80">150+ listings</p></div>
+      </a>
+      <a href="{% url 'search' %}?city=Addis+Ababa&sub_city=Megenagna" class="area-card relative rounded-2xl overflow-hidden h-48 cursor-pointer transition block">
+        <div class="area-bg absolute inset-0 bg-gradient-to-br from-cyan-700 to-cyan-500 transition-transform duration-500"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        <div class="absolute bottom-4 left-4 text-white"><h3 class="font-bold text-lg">Megenagna</h3><p class="text-xs opacity-80">210+ listings</p></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- PRICE INSIGHT -->
+<section class="py-20 px-6 bg-gradient-to-br from-primary-800 to-primary-700 text-white">
+  <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center fade-up">
+    <div>
+      <h2 class="text-3xl lg:text-4xl font-extrabold mb-5">Know the Real Price<br/>Before You Rent</h2>
+      <p class="text-white/80 text-lg leading-relaxed mb-8">Our Price Insight System analyzes listings to show you average rent for any neighborhood. Stop guessing — never overpay again.</p>
+      <a href="{% url 'search' %}" class="inline-flex items-center gap-2 bg-secondary-500 hover:bg-secondary-400 text-gray-900 font-bold px-8 py-3.5 rounded-xl transition">
+        Explore Price Insights
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+      </a>
+    </div>
+    <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-7 border border-white/15">
+      <h4 class="text-xs uppercase tracking-widest text-white/60 mb-5">&#128205; Bole Sub-City &middot; 2 Bedroom Apartment</h4>
+      <div class="mb-5"><div class="flex justify-between text-sm mb-1.5"><span>Lowest</span><span class="font-bold text-green-400">ETB 12,000</span></div><div class="h-2.5 rounded-full bg-white/15 overflow-hidden"><div class="h-full rounded-full bg-green-400" style="width:35%"></div></div></div>
+      <div class="mb-5"><div class="flex justify-between text-sm mb-1.5"><span>Average</span><span class="font-bold text-yellow-400">ETB 18,500</span></div><div class="h-2.5 rounded-full bg-white/15 overflow-hidden"><div class="h-full rounded-full bg-yellow-400" style="width:60%"></div></div></div>
+      <div class="mb-5"><div class="flex justify-between text-sm mb-1.5"><span>Highest</span><span class="font-bold text-red-400">ETB 32,000</span></div><div class="h-2.5 rounded-full bg-white/15 overflow-hidden"><div class="h-full rounded-full bg-red-400" style="width:90%"></div></div></div>
+      <div class="inline-flex items-center gap-2 bg-green-400/20 text-green-400 font-semibold px-4 py-2 rounded-lg text-sm mt-2">&#10003; This listing is a Great Deal!</div>
+    </div>
+  </div>
+</section>
+
+<!-- EVENT HALLS -->
+<section class="py-20 px-6 bg-gray-50" id="halls">
+  <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center fade-up">
+    <div>
+      <span class="inline-block bg-yellow-100 text-yellow-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-3">Event Spaces</span>
+      <h2 class="text-3xl font-extrabold text-gray-900 mb-4">Book Event Halls &<br/>Venues Instantly</h2>
+      <p class="text-gray-500 text-lg leading-relaxed mb-6">Wedding halls, conference rooms, party venues — browse availability, compare pricing, and book in seconds.</p>
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <div class="flex items-center gap-2 p-3 bg-white rounded-xl border border-gray-200 text-sm font-medium">&#128197; Availability Calendar</div>
+        <div class="flex items-center gap-2 p-3 bg-white rounded-xl border border-gray-200 text-sm font-medium">&#128101; Capacity Filters</div>
+        <div class="flex items-center gap-2 p-3 bg-white rounded-xl border border-gray-200 text-sm font-medium">&#127908; Sound System Info</div>
+        <div class="flex items-center gap-2 p-3 bg-white rounded-xl border border-gray-200 text-sm font-medium">&#9889; Generator Status</div>
+      </div>
+      <a href="{% url 'halls' %}" class="inline-flex items-center gap-2 bg-primary-700 hover:bg-primary-800 text-white font-bold px-8 py-3.5 rounded-xl transition">
+        Browse Event Halls
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+      </a>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <a href="{% url 'halls' %}?hall_type=WEDDING" class="col-span-2 rounded-2xl p-6 text-white bg-gradient-to-br from-violet-600 to-violet-400 hover:shadow-lg transition">
+        <h4 class="font-bold text-lg">Wedding Halls</h4><p class="text-sm opacity-80">Grand venues for 100-500 guests</p>
+      </a>
+      <a href="{% url 'halls' %}?hall_type=MEETING" class="rounded-2xl p-5 text-white bg-gradient-to-br from-cyan-600 to-cyan-400 hover:shadow-lg transition">
+        <h4 class="font-bold">Meeting Rooms</h4><p class="text-sm opacity-80">10-50 people</p>
+      </a>
+      <a href="{% url 'halls' %}?hall_type=PARTY" class="rounded-2xl p-5 text-white bg-gradient-to-br from-orange-600 to-orange-400 hover:shadow-lg transition">
+        <h4 class="font-bold">Party Venues</h4><p class="text-sm opacity-80">Celebrations</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- RECENT LISTINGS -->
+{% if recent_properties %}
+<section class="py-20 px-6">
+  <div class="max-w-7xl mx-auto">
+    <div class="flex items-center justify-between mb-10">
+      <div>
+        <h2 class="text-3xl font-extrabold text-gray-900">Recently Added</h2>
+        <p class="text-gray-500 mt-1">Fresh listings just posted</p>
+      </div>
+      <a href="{% url 'search' %}" class="hidden md:inline-flex items-center gap-2 text-primary-700 font-semibold hover:text-primary-800 transition">
+        View All <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {% for p in recent_properties %}
+      <a href="{% url 'property_detail' p.slug %}" class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition group block">
+        <div class="h-40 {% cycle 'bg-gradient-to-br from-green-100 to-green-200' 'bg-gradient-to-br from-blue-100 to-blue-200' 'bg-gradient-to-br from-yellow-100 to-yellow-200' 'bg-gradient-to-br from-pink-100 to-pink-200' %} relative">
+          {% if p.is_verified %}<span class="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">&#10003; Verified</span>{% endif %}
+          <span class="absolute top-2 right-2 bg-white/90 text-gray-700 text-[10px] font-semibold px-2 py-0.5 rounded-md">{{ p.get_property_type_display }}</span>
+        </div>
+        <div class="p-4">
+          <h3 class="font-bold text-gray-900 group-hover:text-primary-700 transition truncate">{{ p.title }}</h3>
+          <div class="text-primary-700 font-extrabold text-lg mt-1">ETB {{ p.price_monthly|floatformat:0 }}<span class="text-xs font-normal text-gray-400">/mo</span></div>
+          <div class="flex items-center gap-1 text-gray-500 text-xs mt-2">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 0115 0z"/></svg>
+            {{ p.location.sub_city }}, {{ p.location.city }}
+          </div>
+          {% if p.property_type == 'BUSINESS_SHOP' and p.shop_class_count %}
+          <div class="text-xs text-gray-400 mt-1">{{ p.shop_class_count }} {% if p.shop_class_count == 1 %}class{% else %}classes{% endif %}</div>
+          {% elif p.bedrooms %}
+          <div class="text-xs text-gray-400 mt-1">{{ p.get_bedrooms_display }} &middot; {{ p.bathrooms }} bath</div>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    <div class="text-center mt-8 md:hidden">
+      <a href="{% url 'search' %}" class="inline-flex items-center gap-2 text-primary-700 font-semibold">View All Listings <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg></a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- CTA -->
+<section class="py-20 px-6 bg-gradient-to-br from-primary-900 to-primary-700 text-center text-white relative overflow-hidden">
+  <div class="absolute top-[-100px] right-[-100px] w-96 h-96 rounded-full bg-yellow-500/10"></div>
+  <div class="relative z-10 max-w-2xl mx-auto">
+    <h2 class="text-3xl md:text-4xl font-black mb-5">Ready to Find Your Next Home?</h2>
+    <p class="text-white/75 text-lg mb-10">Join thousands of Ethiopians who found their perfect rental — without the hassle, without the scams.</p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      {% if user.is_authenticated %}
+      <a href="{% url 'dashboard' %}" class="bg-secondary-500 hover:bg-secondary-400 text-gray-900 font-bold px-10 py-4 rounded-xl transition text-lg">Go to Dashboard</a>
+      <a href="{% url 'search' %}" class="bg-white hover:bg-gray-100 text-primary-800 font-bold px-10 py-4 rounded-xl transition text-lg">Browse Listings</a>
+      {% else %}
+      <a href="{% url 'register' %}" class="bg-secondary-500 hover:bg-secondary-400 text-gray-900 font-bold px-10 py-4 rounded-xl transition text-lg">Get Started Free</a>
+      <a href="{% url 'search' %}" class="bg-white hover:bg-gray-100 text-primary-800 font-bold px-10 py-4 rounded-xl transition text-lg">Browse Listings</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
+{% endblock %}

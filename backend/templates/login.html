@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% block title %}Login — BetRent{% endblock %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-68px)] flex">
+
+  <!-- Left Branding Panel -->
+  <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary-800 via-primary-700 to-primary-900">
+    <div class="absolute inset-0 opacity-10">
+      <svg class="w-full h-full" viewBox="0 0 800 800" fill="none">
+        <circle cx="400" cy="400" r="300" stroke="white" stroke-width="0.5" opacity="0.3"/>
+        <circle cx="400" cy="400" r="200" stroke="white" stroke-width="0.5" opacity="0.2"/>
+        <circle cx="400" cy="400" r="100" stroke="white" stroke-width="0.5" opacity="0.1"/>
+        <path d="M200 600L400 200L600 600Z" stroke="white" stroke-width="0.5" opacity="0.15"/>
+      </svg>
+    </div>
+
+    <div class="relative z-10 flex flex-col justify-center items-center w-full px-12 text-center">
+      <div class="mb-8">
+        <svg width="72" height="72" viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="8" fill="white" fill-opacity="0.15"/>
+          <path d="M8 22V14L16 8L24 14V22H19V17H13V22H8Z" fill="white"/>
+          <circle cx="16" cy="14" r="2" fill="#FACC15"/>
+        </svg>
+      </div>
+      <h1 class="text-4xl font-extrabold text-white mb-3">
+        Welcome Back to <span class="text-secondary-400">BetRent</span>
+      </h1>
+      <p class="text-primary-200 text-lg max-w-md leading-relaxed">
+        Ethiopia's trusted rental marketplace. Find verified homes with transparent pricing.
+      </p>
+
+      <div class="mt-12 grid grid-cols-3 gap-6 max-w-sm w-full">
+        <div class="flex flex-col items-center gap-2">
+          <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+            <svg class="w-6 h-6 text-secondary-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+          </div>
+          <span class="text-xs text-primary-200 font-medium">Verified<br>Listings</span>
+        </div>
+        <div class="flex flex-col items-center gap-2">
+          <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+            <svg class="w-6 h-6 text-secondary-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"/></svg>
+          </div>
+          <span class="text-xs text-primary-200 font-medium">Transparent<br>Pricing</span>
+        </div>
+        <div class="flex flex-col items-center gap-2">
+          <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+            <svg class="w-6 h-6 text-secondary-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
+          </div>
+          <span class="text-xs text-primary-200 font-medium">Trusted<br>Community</span>
+        </div>
+      </div>
+
+      <div class="mt-12 flex items-center gap-3 px-6 py-4 bg-white/10 rounded-2xl backdrop-blur-sm max-w-sm">
+        <div class="flex -space-x-2 shrink-0">
+          <div class="w-8 h-8 rounded-full bg-secondary-500 border-2 border-primary-700 flex items-center justify-center text-xs font-bold text-gray-900">A</div>
+          <div class="w-8 h-8 rounded-full bg-primary-400 border-2 border-primary-700 flex items-center justify-center text-xs font-bold text-white">B</div>
+          <div class="w-8 h-8 rounded-full bg-white border-2 border-primary-700 flex items-center justify-center text-xs font-bold text-primary-700">K</div>
+        </div>
+        <p class="text-sm text-primary-100">
+          <span class="font-semibold text-white">10,000+</span> tenants & landlords already trust BetRent
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Form Panel -->
+  <div class="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-8 py-12 bg-gray-50">
+    <div class="w-full max-w-md">
+
+      {% if user.is_authenticated %}
+        <div class="text-center bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-100 flex items-center justify-center">
+            <svg class="w-8 h-8 text-primary-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <h2 class="text-xl font-bold text-gray-900 mb-2">You're already logged in</h2>
+          <p class="text-gray-500 mb-6">Welcome back, <span class="font-semibold text-primary-700">{{ user.get_full_name|default:user.username }}</span>!</p>
+          <div class="flex flex-col gap-3">
+            <a href="{% url 'dashboard' %}" class="w-full py-3 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 transition-all text-center">
+              Go to Dashboard
+            </a>
+            <a href="{% url 'home' %}" class="w-full py-3 rounded-xl text-sm font-semibold border-2 border-gray-200 text-gray-700 hover:bg-gray-100 transition-all text-center">
+              Back to Home
+            </a>
+          </div>
+        </div>
+
+      {% else %}
+        <!-- Mobile Logo -->
+        <div class="lg:hidden flex justify-center mb-8">
+          <a href="{% url 'home' %}" class="flex items-center gap-2">
+            <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="8" fill="#166534"/>
+              <path d="M8 22V14L16 8L24 14V22H19V17H13V22H8Z" fill="white"/>
+              <circle cx="16" cy="14" r="2" fill="#FACC15"/>
+            </svg>
+            <span class="text-2xl font-extrabold text-primary-700">Bet<span class="text-secondary-500">Rent</span></span>
+          </a>
+        </div>
+
+        <div class="text-center mb-8">
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
+          <p class="mt-2 text-gray-500">Access your rentals, bookings, and more</p>
+        </div>
+
+        <form method="POST" action="{% url 'login' %}" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 space-y-5" x-data="{ showPass: false }">
+          {% csrf_token %}
+
+          <!-- Phone Number -->
+          <div>
+            <label for="email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email or Phone Number</label>
+            <input
+              type="text"
+              id="email"
+              name="email"
+              placeholder="you@example.com or 09XXXXXXXX"
+              required
+              class="block w-full rounded-xl border border-gray-300 px-4 py-3 text-sm placeholder-gray-400 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-colors"
+            />
+          </div>
+
+          <!-- Password -->
+          <div>
+            <label for="password" class="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+            <div class="relative">
+              <input
+                :type="showPass ? 'text' : 'password'"
+                id="password"
+                name="password"
+                placeholder="Enter your password"
+                required
+                class="block w-full rounded-xl border border-gray-300 px-4 py-3 pr-12 text-sm placeholder-gray-400 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-colors"
+              />
+              <button
+                type="button"
+                @click="showPass = !showPass"
+                class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-gray-600 transition-colors"
+                tabindex="-1"
+              >
+                <svg x-show="!showPass" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <svg x-show="showPass" x-cloak class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember Me & Forgot -->
+          <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="remember" class="w-4 h-4 rounded border-gray-300 text-primary-700 focus:ring-primary-500/30" />
+              <span class="text-sm text-gray-600">Remember me</span>
+            </label>
+            <a href="#" class="text-sm font-medium text-primary-700 hover:text-primary-800 transition-colors">
+              Forgot password?
+            </a>
+          </div>
+
+          <!-- Submit -->
+          <button
+            type="submit"
+            class="w-full py-3 rounded-xl text-sm font-bold bg-primary-700 text-white hover:bg-primary-800 hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:ring-offset-2"
+          >
+            Login
+          </button>
+
+          <!-- Divider -->
+          <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-200"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="px-4 bg-white text-gray-400 font-medium">OR</span>
+            </div>
+          </div>
+
+          <!-- Register Link -->
+          <div class="text-center">
+            <p class="text-sm text-gray-500">
+              Don't have an account?
+              <a href="{% url 'register' %}" class="font-semibold text-primary-700 hover:text-primary-800 transition-colors">
+                Create an Account
+              </a>
+            </p>
+          </div>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

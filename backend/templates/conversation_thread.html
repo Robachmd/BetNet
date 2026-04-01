@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Chat — BetRent{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8 flex flex-col min-h-[70vh]">
+  <div class="mb-6">
+    <a href="{% url 'messages_inbox' %}" class="text-sm text-primary-700 font-medium hover:underline">&larr; Back to messages</a>
+    <h1 class="text-xl font-extrabold text-gray-900 mt-3">
+      {% if other_user %}{{ other_user.get_full_name|default:other_user.username }}{% else %}Conversation{% endif %}
+    </h1>
+    {% if conversation.property %}
+    <a href="{% url 'property_detail' conversation.property.slug %}" class="text-sm text-primary-600 hover:underline">{{ conversation.property.title }}</a>
+    {% endif %}
+  </div>
+
+  <div class="flex-1 rounded-2xl border border-gray-200 bg-gray-50 p-4 mb-4 overflow-y-auto max-h-[50vh] space-y-3">
+    {% for m in messages_list %}
+    <div class="flex {% if m.sender_id == user.id %}justify-end{% else %}justify-start{% endif %}">
+      <div class="max-w-[85%] rounded-2xl px-4 py-2.5 text-sm {% if m.sender_id == user.id %}bg-primary-700 text-white rounded-br-md{% else %}bg-white border border-gray-200 text-gray-800 rounded-bl-md{% endif %}">
+        <p class="whitespace-pre-wrap break-words">{{ m.content }}</p>
+        <p class="text-[10px] mt-1 opacity-70">{{ m.created_at|date:"M j, g:i A" }}</p>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-center text-gray-500 text-sm py-8">No messages yet. Say hello below.</p>
+    {% endfor %}
+  </div>
+
+  <form method="post" action="{% url 'conversation_thread' conversation.id %}" class="flex gap-2">
+    {% csrf_token %}
+    <input type="text" name="message" required autocomplete="off" placeholder="Type your message…"
+      class="flex-1 rounded-xl border border-gray-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500" />
+    <button type="submit" class="px-6 py-3 rounded-xl bg-primary-700 text-white text-sm font-semibold hover:bg-primary-800 shrink-0">Send</button>
+  </form>
+</div>
+{% endblock %}
