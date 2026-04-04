@@ -99,6 +99,7 @@ class PropertyListSerializer(serializers.ModelSerializer):
     )
     primary_image = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
+    favorite_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Property
@@ -123,6 +124,7 @@ class PropertyListSerializer(serializers.ModelSerializer):
             "is_available",
             "total_views",
             "is_favorited",
+            "favorite_id",
             "created_at",
         ]
 
@@ -143,6 +145,16 @@ class PropertyListSerializer(serializers.ModelSerializer):
             ).exists()
         return False
 
+    def get_favorite_id(self, obj):
+        """PK of FavoriteProperty row for DELETE /favorites/{id}/ (mobile clients)."""
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            fav = FavoriteProperty.objects.filter(
+                user=request.user, property=obj
+            ).values_list("pk", flat=True).first()
+            return fav
+        return None
+
 
 # ── Detail serializer (full payload) ─────────────────────────────────────────
 
@@ -154,6 +166,7 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
     owner = OwnerSummarySerializer(read_only=True)
     hall_detail = HallDetailSerializer(read_only=True)
     is_favorited = serializers.SerializerMethodField()
+    favorite_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Property
@@ -182,6 +195,7 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
             "verification_date",
             "total_views",
             "is_favorited",
+            "favorite_id",
             "created_at",
             "updated_at",
         ]
@@ -194,6 +208,14 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
             ).exists()
         return False
 
+    def get_favorite_id(self, obj):
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return FavoriteProperty.objects.filter(
+                user=request.user, property=obj
+            ).values_list("pk", flat=True).first()
+        return None
+
 
 # ── Create / Update serializer ───────────────────────────────────────────────
 
@@ -205,6 +227,8 @@ class PropertyCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Property
         fields = [
+            "id",
+            "slug",
             "title",
             "description",
             "property_type",
@@ -219,6 +243,7 @@ class PropertyCreateUpdateSerializer(serializers.ModelSerializer):
             "amenities",
             "hall_detail",
         ]
+        read_only_fields = ["id", "slug"]
 
     def validate(self, attrs):
         if attrs.get("property_type") == Property.PropertyType.HALL_RENTAL:
