@@ -43,6 +43,10 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (userData) => {
     const data = await authService.register(userData);
+    if (data.user) {
+      setUser(data.user);
+      setIsAuthenticated(true);
+    }
     return data;
   }, []);
 
@@ -89,9 +93,9 @@ export function AuthProvider({ children }) {
       logout,
       updateProfile,
       refreshUser,
-      isLandlord: user?.role === 'landlord',
-      isRenter: user?.role === 'renter',
-      isAdmin: user?.role === 'admin',
+      isLandlord: ['LANDLORD', 'landlord'].includes(user?.role),
+      isRenter: ['RENTER', 'renter'].includes(user?.role),
+      isAdmin: ['ADMIN', 'admin'].includes(user?.role),
     }),
     [user, isAuthenticated, isLoading, login, register, verifyOTP, logout, updateProfile, refreshUser]
   );

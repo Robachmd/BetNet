@@ -29,7 +29,9 @@ def api_root(request):
         'description': "Ethiopia's Trusted Rental Marketplace",
         'endpoints': {
             'accounts': '/api/accounts/',
+            'token_refresh': '/api/accounts/token/refresh/',
             'properties': '/api/properties/',
+            'property_list': '/api/properties/properties/',
             'bookings': '/api/bookings/',
             'reviews': '/api/reviews/',
             'chat': '/api/chat/',

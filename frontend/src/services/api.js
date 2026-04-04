@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = (
+  process.env.REACT_APP_API_URL || 'http://localhost:8000/api'
+).replace(/\/$/, '');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -15,11 +17,8 @@ let failedQueue = [];
 
 function processQueue(error, token = null) {
   failedQueue.forEach(({ resolve, reject }) => {
-    if (error) {
-      reject(error);
-    } else {
-      resolve(token);
-    }
+    if (error) reject(error);
+    else resolve(token);
   });
   failedQueue = [];
 }
@@ -45,6 +44,10 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (originalRequest.url?.includes('/accounts/token/refresh/')) {
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -61,24 +64,23 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) {
-          throw new Error('No refresh token available');
+        if (!refreshToken) throw new Error('No refresh token');
+
+        const { data } = await axios.post(
+          `${API_BASE_URL}/accounts/token/refresh/`,
+          { refresh: refreshToken }
+        );
+
+        const access = data.access;
+        if (!access) throw new Error('No access token in refresh response');
+
+        localStorage.setItem('accessToken', access);
+        if (data.refresh) {
+          localStorage.setItem('refreshToken', data.refresh);
         }
 
-        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refreshToken,
-        });
-
-        const { accessToken, refreshToken: newRefreshToken } = data;
-        localStorage.setItem('accessToken', accessToken);
-        if (newRefreshToken) {
-          localStorage.setItem('refreshToken', newRefreshToken);
-        }
-
-        api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
-        processQueue(null, accessToken);
-
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        processQueue(null, access);
+        originalRequest.headers.Authorization = `Bearer ${access}`;
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
@@ -89,7 +91,6 @@ api.interceptors.response.use(
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
-
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -101,3 +102,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+export { API_BASE_URL };

@@ -47,8 +47,13 @@ export default function PropertyCard({
 
   const handleFavorite = (e) => {
     e.stopPropagation();
-    setLiked(!liked);
-    onFavoriteToggle(id, !liked);
+    const next = !liked;
+    setLiked(next);
+    onFavoriteToggle({
+      id,
+      favoriteId: property.favorite_id,
+      willBeFavorited: next,
+    });
   };
 
   const prevImg = (e) => {
@@ -173,7 +178,11 @@ export default function PropertyCard({
         <div className="flex items-center gap-4 mb-3">
           <div className="flex items-center gap-1.5 text-sm text-gray-500">
             <IoBedOutline className="w-4 h-4" />
-            <span>{bedrooms} {bedrooms === 1 ? 'Bed' : 'Beds'}</span>
+            <span>
+              {property.bedroomsIsEnumLabel || typeof bedrooms === 'string'
+                ? bedrooms
+                : `${bedrooms} ${bedrooms === 1 ? 'Bed' : 'Beds'}`}
+            </span>
           </div>
           <div className="flex items-center gap-1.5 text-sm text-gray-500">
             <LuBath className="w-4 h-4" />

@@ -1,124 +1,191 @@
 import api from './api';
 
-const PROPERTIES_PREFIX = '/properties';
+const BASE = '/properties';
+
+function slugToTitle(s) {
+  if (!s) return '';
+  return s
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+function mapFrontendFilters(f = {}) {
+  const q = {};
+  const pageSize = f.page_size || f.limit || 48;
+  q.page_size = pageSize;
+
+  if (f.q || f.search) q.search = f.q || f.search;
+
+  const pt = (f.propertyType || '').toLowerCase();
+  if (pt === 'studio') {
+    q.bedrooms = 'STUDIO';
+  } else {
+    const typeMap = {
+      apartment: 'APARTMENT',
+      villa: 'VILLA',
+      house: 'SERVICE_HOUSE',
+      condominium: 'CONDOMINIUM',
+      commercial: 'BUSINESS_SHOP',
+      hall: 'HALL_RENTAL',
+    };
+    if (pt && typeMap[pt]) q.property_type = typeMap[pt];
+  }
+
+  if (f.minPrice) q.price_min = f.minPrice;
+  if (f.maxPrice) q.price_max = f.maxPrice;
+
+  if (f.city) q.city = slugToTitle(f.city);
+  if (f.subCity) q.sub_city = slugToTitle(f.subCity);
+
+  if (f.bedrooms && pt !== 'studio') {
+    const bMap = {
+      1: 'ONE',
+      2: 'TWO',
+      3: 'THREE_PLUS',
+      4: 'THREE_PLUS',
+      '5+': 'THREE_PLUS',
+    };
+    const key = String(f.bedrooms);
+    if (bMap[key]) q.bedrooms = bMap[key];
+  }
+
+  if (f.verifiedOnly === true || f.is_verified === true) q.is_verified = 'true';
+
+  if (f.sort === 'price_asc') q.ordering = 'price_monthly';
+  if (f.sort === 'price_desc') q.ordering = '-price_monthly';
+  if (f.page) q.page = f.page;
+
+  return q;
+}
+
+function buildParams(obj) {
+  const p = new URLSearchParams();
+  Object.entries(obj).forEach(([k, v]) => {
+    if (v === undefined || v === null || v === '') return;
+    p.append(k, String(v));
+  });
+  return p.toString();
+}
 
 export const propertyService = {
   async getProperties(filters = {}) {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        if (Array.isArray(value)) {
-          value.forEach((v) => params.append(key, v));
-        } else {
-          params.append(key, value);
-        }
-      }
-    });
-    const { data } = await api.get(`${PROPERTIES_PREFIX}?${params.toString()}`);
+    const qs = buildParams(mapFrontendFilters(filters));
+    const { data } = await api.get(`${BASE}/properties/?${qs}`);
     return data;
   },
 
-  async getPropertyById(id) {
-    const { data } = await api.get(`${PROPERTIES_PREFIX}/${id}`);
+  async searchProperties(query, filters = {}) {
+    return propertyService.getProperties({ ...filters, q: query });
+  },
+
+  async getPropertyBySlug(slug) {
+    const { data } = await api.get(`${BASE}/properties/${slug}/`);
     return data;
+  },
+
+  getPropertyById(slugOrId) {
+    return propertyService.getPropertyBySlug(slugOrId);
   },
 
   async createProperty(propertyData) {
-    const { data } = await api.post(PROPERTIES_PREFIX, propertyData);
+    const { data } = await api.post(`${BASE}/properties/`, propertyData);
     return data;
   },
 
-  async updateProperty(id, propertyData) {
-    const { data } = await api.put(`${PROPERTIES_PREFIX}/${id}`, propertyData);
+  async updateProperty(slug, propertyData) {
+    const { data } = await api.patch(`${BASE}/properties/${slug}/`, propertyData);
     return data;
   },
 
-  async deleteProperty(id) {
-    const { data } = await api.delete(`${PROPERTIES_PREFIX}/${id}`);
+  async deleteProperty(slug) {
+    const { data } = await api.delete(`${BASE}/properties/${slug}/`);
     return data;
   },
 
-  async uploadPropertyImages(propertyId, files) {
-    const formData = new FormData();
-    files.forEach((file) => formData.append('images', file));
-    const { data } = await api.post(
-      `${PROPERTIES_PREFIX}/${propertyId}/images`,
-      formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
-    );
-    return data;
+  async uploadPropertyImages(slug, files) {
+    const out = [];
+    for (let i = 0; i < files.length; i += 1) {
+      const formData = new FormData();
+      formData.append('image', files[i]);
+      formData.append('is_primary', i === 0 ? 'true' : 'false');
+      const { data } = await api.post(
+        `${BASE}/properties/${slug}/images/`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      out.push(data);
+    }
+    return out;
   },
 
-  async deletePropertyImage(propertyId, imageId) {
+  async deletePropertyImage(slug, imageId) {
     const { data } = await api.delete(
-      `${PROPERTIES_PREFIX}/${propertyId}/images/${imageId}`
+      `${BASE}/properties/${slug}/images/${imageId}/`
     );
     return data;
   },
 
   async getFeaturedProperties() {
-    const { data } = await api.get(`${PROPERTIES_PREFIX}/featured`);
+    const { data } = await api.get(`${BASE}/featured/?${buildParams({ page_size: 24 })}`);
     return data;
   },
 
   async getNearbyProperties(lat, lng, radius = 5) {
-    const { data } = await api.get(`${PROPERTIES_PREFIX}/nearby`, {
-      params: { lat, lng, radius },
-    });
-    return data;
-  },
-
-  async getPriceInsight(subCity, propertyType) {
-    const { data } = await api.get(`${PROPERTIES_PREFIX}/price-insight`, {
-      params: { subCity, propertyType },
-    });
-    return data;
-  },
-
-  async getMyProperties(params = {}) {
-    const { data } = await api.get(`${PROPERTIES_PREFIX}/my-listings`, { params });
-    return data;
-  },
-
-  async toggleFavorite(propertyId) {
-    const { data } = await api.post(`${PROPERTIES_PREFIX}/${propertyId}/favorite`);
-    return data;
-  },
-
-  async getFavorites(params = {}) {
-    const { data } = await api.get(`${PROPERTIES_PREFIX}/favorites`, { params });
-    return data;
-  },
-
-  async reportProperty(propertyId, reportData) {
-    const { data } = await api.post(
-      `${PROPERTIES_PREFIX}/${propertyId}/report`,
-      reportData
+    const { data } = await api.get(
+      `${BASE}/nearby/?${buildParams({
+        lat,
+        lng,
+        radius_km: radius,
+        page_size: 24,
+      })}`
     );
     return data;
   },
 
-  async searchProperties(query, filters = {}) {
-    const { data } = await api.get(`${PROPERTIES_PREFIX}/search`, {
-      params: { q: query, ...filters },
+  async getPriceInsight(subCity, city = 'Addis Ababa', propertyType) {
+    const params = { sub_city: subCity, city };
+    if (propertyType) params.property_type = propertyType;
+    const { data } = await api.get(`${BASE}/price-insights/?${buildParams(params)}`);
+    return data;
+  },
+
+  async getMyProperties(params = {}) {
+    const { data } = await api.get(
+      `${BASE}/my-properties/?${buildParams({ page_size: 100, ...params })}`
+    );
+    return data;
+  },
+
+  async addFavorite(propertyId) {
+    const { data } = await api.post(`${BASE}/favorites/`, { property: propertyId });
+    return data;
+  },
+
+  async removeFavorite(favoriteId) {
+    await api.delete(`${BASE}/favorites/${favoriteId}/`);
+  },
+
+  async getFavorites(params = {}) {
+    const { data } = await api.get(
+      `${BASE}/favorites/?${buildParams({ page_size: 48, ...params })}`
+    );
+    return data;
+  },
+
+  async reportProperty(propertyId, { reason, details }) {
+    const { data } = await api.post(`${BASE}/reports/`, {
+      property: propertyId,
+      reason,
+      description: details || '',
     });
     return data;
   },
 
   async getHallRentals(filters = {}) {
-    const { data } = await api.get(`${PROPERTIES_PREFIX}/halls`, {
-      params: filters,
-    });
-    return data;
-  },
-
-  async getPropertyTypes() {
-    const { data } = await api.get(`${PROPERTIES_PREFIX}/types`);
-    return data;
-  },
-
-  async getPropertyStats(propertyId) {
-    const { data } = await api.get(`${PROPERTIES_PREFIX}/${propertyId}/stats`);
+    const { data } = await api.get(
+      `${BASE}/halls/?${buildParams({ page_size: 48, ...filters })}`
+    );
     return data;
   },
 };

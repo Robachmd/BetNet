@@ -14,7 +14,7 @@ import Modal from '../components/common/Modal';
 import propertyService from '../services/properties';
 import bookingService from '../services/bookings';
 import { HALL_AMENITIES, PAGINATION_DEFAULT } from '../utils/constants';
-import { getErrorMessage } from '../utils/helpers';
+import { getErrorMessage, listFromApi } from '../utils/helpers';
 
 const CAPACITY_RANGES = [
   { value: '', label: 'Any Capacity' },
@@ -91,9 +91,12 @@ export default function HallRentalPage() {
       if (selectedAmenities.length > 0) filters.amenities = selectedAmenities;
 
       const data = await propertyService.getHallRentals(filters);
-      setHalls(data.properties || data.results || data || []);
-      setTotalCount(data.total || data.totalCount || 0);
-      setTotalPages(data.totalPages || Math.ceil((data.total || 0) / PAGINATION_DEFAULT.limit) || 1);
+      setHalls(listFromApi(data));
+      setTotalCount(data.count ?? data.total ?? data.totalCount ?? 0);
+      setTotalPages(
+        (data.total_pages ?? data.totalPages
+          ?? Math.ceil((data.count || 0) / PAGINATION_DEFAULT.limit)) || 1,
+      );
     } catch (err) {
       setError(getErrorMessage(err));
       setHalls([]);
@@ -363,7 +366,7 @@ export default function HallRentalPage() {
               <div key={hall.id} className="group relative">
                 <PropertyCard
                   property={hall}
-                  onClick={() => navigate(`/property/${hall.id}`)}
+                  onClick={() => navigate(`/property/${hall.slug || hall.id}`)}
                 />
                 {/* Hall-specific overlay info */}
                 <div className="absolute bottom-[140px] left-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -386,7 +389,7 @@ export default function HallRentalPage() {
           <div className="space-y-6">
             <PropertyMap
               properties={halls}
-              onPropertyClick={(p) => navigate(`/property/${p.id}`)}
+              onPropertyClick={(p) => navigate(`/property/${p.slug || p.id}`)}
               height="500px"
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -394,7 +397,7 @@ export default function HallRentalPage() {
                 <PropertyCard
                   key={hall.id}
                   property={hall}
-                  onClick={() => navigate(`/property/${hall.id}`)}
+                  onClick={() => navigate(`/property/${hall.slug || hall.id}`)}
                 />
               ))}
             </div>

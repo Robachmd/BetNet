@@ -403,7 +403,7 @@ export default function LandlordDashboard() {
                   {properties.slice(0, 5).map((property) => (
                     <div
                       key={property.id}
-                      onClick={() => navigate(`/property/${property.id}`)}
+                      onClick={() => navigate(`/property/${property.slug || property.id}`)}
                       className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors"
                     >
                       <img
@@ -463,7 +463,7 @@ export default function LandlordDashboard() {
                         <td className="px-5 py-3 text-gray-600 hidden md:table-cell">{property.views || 0}</td>
                         <td className="px-5 py-3 text-right">
                           <button
-                            onClick={() => navigate(`/dashboard/landlord/edit-property/${property.id}`)}
+                            onClick={() => navigate(`/dashboard/landlord/edit-property/${property.slug || property.id}`)}
                             className="text-green-700 hover:text-green-800 font-medium text-sm"
                           >
                             Edit

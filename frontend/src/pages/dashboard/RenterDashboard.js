@@ -17,7 +17,9 @@ import { bookingService } from '../../services/bookings';
 import { propertyService } from '../../services/properties';
 import { reviewService } from '../../services/reviews';
 import { notificationService } from '../../services/notifications';
-import { formatRelativeDate } from '../../utils/helpers';
+import {
+  formatRelativeDate, listFromApi, mapFavoriteRowsToCards, normalizePropertyForCard,
+} from '../../utils/helpers';
 
 function ErrorSection({ title, onRetry }) {
   return (
@@ -57,7 +59,7 @@ export default function RenterDashboard() {
     setErrorKey('bookings', null);
     try {
       const data = await bookingService.getMyBookings({ limit: 10 });
-      const list = data.bookings || data.data || data || [];
+      const list = listFromApi(data);
       const now = new Date();
       setBookings({
         upcoming: list.filter((b) => new Date(b.date) >= now && b.status !== 'cancelled'),
@@ -74,8 +76,8 @@ export default function RenterDashboard() {
     setLoadingKey('favorites', true);
     setErrorKey('favorites', null);
     try {
-      const data = await propertyService.getFavorites({ limit: 6 });
-      setFavorites(data.properties || data.data || data || []);
+      const data = await propertyService.getFavorites({ page_size: 6 });
+      setFavorites(mapFavoriteRowsToCards(listFromApi(data)));
     } catch {
       setErrorKey('favorites', true);
     } finally {
@@ -88,7 +90,7 @@ export default function RenterDashboard() {
     setErrorKey('recommended', null);
     try {
       const data = await propertyService.getFeaturedProperties();
-      setRecommended(data.properties || data.data || data || []);
+      setRecommended(listFromApi(data).map(normalizePropertyForCard));
     } catch {
       setErrorKey('recommended', true);
     } finally {
@@ -245,7 +247,7 @@ export default function RenterDashboard() {
                           booking={booking}
                           onCancel={(id) => bookingService.cancelBooking(id).then(loadBookings)}
                           onContact={() => navigate('/chat')}
-                          onViewProperty={(p) => navigate(`/property/${p.id}`)}
+                          onViewProperty={(p) => navigate(`/property/${p.slug || p.id}`)}
                         />
                       ))}
                     </div>
@@ -263,7 +265,7 @@ export default function RenterDashboard() {
                           key={booking.id}
                           booking={booking}
                           showActions={false}
-                          onViewProperty={(p) => navigate(`/property/${p.id}`)}
+                          onViewProperty={(p) => navigate(`/property/${p.slug || p.id}`)}
                         />
                       ))}
                     </div>
@@ -308,10 +310,16 @@ export default function RenterDashboard() {
                       key={property.id}
                       property={property}
                       isFavorited
-                      onFavoriteToggle={(id) =>
-                        propertyService.toggleFavorite(id).then(loadFavorites)
-                      }
-                      onClick={(p) => navigate(`/property/${p.id}`)}
+                      onFavoriteToggle={async ({ id, favoriteId, willBeFavorited }) => {
+                        try {
+                          if (willBeFavorited) await propertyService.addFavorite(id);
+                          else if (favoriteId) await propertyService.removeFavorite(favoriteId);
+                          await loadFavorites();
+                        } catch {
+                          setErrorKey('favorites', true);
+                        }
+                      }}
+                      onClick={(p) => navigate(`/property/${p.slug || p.id}`)}
                     />
                   ))}
                 </div>
@@ -403,10 +411,16 @@ export default function RenterDashboard() {
                   <PropertyCard
                     key={property.id}
                     property={property}
-                    onFavoriteToggle={(id, liked) =>
-                      propertyService.toggleFavorite(id).then(loadFavorites)
-                    }
-                    onClick={(p) => navigate(`/property/${p.id}`)}
+                    onFavoriteToggle={async ({ id, favoriteId, willBeFavorited }) => {
+                      try {
+                        if (willBeFavorited) await propertyService.addFavorite(id);
+                        else if (favoriteId) await propertyService.removeFavorite(favoriteId);
+                        await loadFavorites();
+                      } catch {
+                        setErrorKey('favorites', true);
+                      }
+                    }}
+                    onClick={(p) => navigate(`/property/${p.slug || p.id}`)}
                   />
                 ))}
               </div>

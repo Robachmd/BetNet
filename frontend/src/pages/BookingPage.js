@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate, useParams, Link } from 'react-router-dom';
 import {
   FiCheck, FiCalendar, FiMapPin, FiArrowLeft, FiAlertCircle,
   FiClock, FiHome,
@@ -16,10 +16,14 @@ const STEPS = ['Select Date', 'Booking Details', 'Confirmation'];
 
 export default function BookingPage() {
   const [searchParams] = useSearchParams();
+  const { slug: slugFromRoute } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
 
-  const propertyId = searchParams.get('propertyId');
+  const propertySlug =
+    slugFromRoute ||
+    searchParams.get('propertySlug') ||
+    searchParams.get('propertyId');
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -29,30 +33,38 @@ export default function BookingPage() {
   const [bookingResult, setBookingResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const isHall = property?.propertyType === 'hall';
+  const isHall =
+    property?.property_type === 'HALL_RENTAL' || property?.propertyType === 'hall';
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: `/booking?propertyId=${propertyId}` } });
+      navigate('/login', {
+        state: { from: `/booking?propertySlug=${propertySlug || ''}` },
+      });
       return;
     }
-    if (!propertyId) {
+    if (!propertySlug) {
       setError('No property selected.');
       setLoading(false);
       return;
     }
 
-    Promise.all([
-      propertyService.getPropertyById(propertyId),
-      bookingService.getBookingAvailability(propertyId).catch(() => ({ bookedDates: [] })),
-    ])
-      .then(([propData, availData]) => {
+    propertyService
+      .getPropertyBySlug(propertySlug)
+      .then(async (propData) => {
         setProperty(propData);
-        setBookedDates(availData.bookedDates || []);
+        const availData = await bookingService
+          .getBookingAvailability(propData.id)
+          .catch(() => ({}));
+        const dates = availData.dates || [];
+        const blocked = dates
+          .filter((d) => ['booked', 'unavailable', 'has_visits', 'past'].includes(d.status))
+          .map((d) => d.date);
+        setBookedDates(blocked);
       })
       .catch((err) => setError(getErrorMessage(err)))
       .finally(() => setLoading(false));
-  }, [propertyId, isAuthenticated, navigate]);
+  }, [propertySlug, isAuthenticated, navigate]);
 
   const handleDateSelect = (date) => {
     setSelectedDate(date);
@@ -67,7 +79,7 @@ export default function BookingPage() {
     setSubmitting(true);
     try {
       const bookingData = {
-        propertyId,
+        propertyId: property.id,
         date: selectedDate,
         ...formData,
       };
@@ -100,7 +112,10 @@ export default function BookingPage() {
     );
   }
 
-  const mainImage = property.images?.[0];
+  const mainImage =
+    property.images?.[0]?.image ||
+    property.images?.[0]?.url ||
+    property.primary_image;
 
   return (
     <div className="min-h-screen bg-gray-50">

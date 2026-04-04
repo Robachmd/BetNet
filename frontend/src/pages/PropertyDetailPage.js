@@ -22,10 +22,13 @@ import propertyService from '../services/properties';
 import reviewService from '../services/reviews';
 import bookingService from '../services/bookings';
 import { REPORT_REASONS } from '../utils/constants';
-import { formatPrice, formatRelativeDate, getImageUrl, getAvatarUrl, getErrorMessage, getInitials } from '../utils/helpers';
+import {
+  formatPrice, formatRelativeDate, getImageUrl, getAvatarUrl, getErrorMessage,
+  getInitials, listFromApi,
+} from '../utils/helpers';
 
 export default function PropertyDetailPage() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
 
@@ -38,26 +41,29 @@ export default function PropertyDetailPage() {
   const [priceInsight, setPriceInsight] = useState(null);
   const [bookedDates, setBookedDates] = useState([]);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [favoriteId, setFavoriteId] = useState(null);
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
   const [reportSubmitting, setReportSubmitting] = useState(false);
 
-  const isHall = property?.propertyType === 'hall';
+  const isHall =
+    property?.property_type === 'HALL_RENTAL' || property?.propertyType === 'hall';
 
   const fetchProperty = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await propertyService.getPropertyById(id);
+      const data = await propertyService.getPropertyBySlug(slug);
       setProperty(data);
-      setIsFavorited(data.isFavorited || false);
+      setIsFavorited(data.is_favorited || data.isFavorited || false);
+      setFavoriteId(data.favorite_id ?? null);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [slug]);
 
   useEffect(() => {
     fetchProperty();
@@ -66,56 +72,72 @@ export default function PropertyDetailPage() {
   useEffect(() => {
     if (!property) return;
 
-    reviewService.getPropertyReviews(id, { limit: 5 })
-      .then((data) => setReviews(data.reviews || data || []))
+    const propPk = property.id;
+
+    reviewService.getPropertyReviews(propPk, { limit: 5 })
+      .then((data) => setReviews(listFromApi(data)))
       .catch(() => {});
 
-    reviewService.getReviewStats(id)
+    reviewService.getReviewStats(propPk)
       .then((data) => setReviewStats(data))
       .catch(() => {});
 
-    if (property.location?.subCity && property.propertyType) {
-      propertyService.getPriceInsight(property.location.subCity, property.propertyType)
+    const sub = property.location?.sub_city || property.location?.subCity;
+    const city = property.location?.city;
+    const ptype = property.property_type || property.propertyType;
+    if (sub && ptype) {
+      propertyService.getPriceInsight(sub, city || 'Addis Ababa', ptype)
         .then((data) => setPriceInsight(data))
         .catch(() => {});
     }
 
     propertyService.getProperties({
-      propertyType: property.propertyType,
-      city: property.location?.city,
-      limit: 4,
+      propertyType: (ptype || '').toLowerCase().replace('hall_rental', 'hall'),
+      city: city ? city.toLowerCase().replace(/\s+/g, '-') : '',
+      limit: 8,
     })
       .then((data) => {
-        const list = (data.properties || data || []).filter((p) => p.id !== id);
+        const raw = data.results || data.properties || data || [];
+        const list = raw.filter((p) => p.slug !== slug && p.id !== propPk);
         setSimilarProperties(list.slice(0, 4));
       })
       .catch(() => {});
 
     if (isHall) {
-      bookingService.getBookingAvailability(id)
-        .then((data) => setBookedDates(data.bookedDates || []))
+      bookingService.getBookingAvailability(propPk)
+        .then((data) => setBookedDates(data.bookedDates || data.unavailable || []))
         .catch(() => {});
     }
-  }, [property, id, isHall]);
+  }, [property, slug, isHall]);
 
   const handleFavorite = async () => {
     if (!isAuthenticated) { navigate('/login'); return; }
+    if (!property) return;
     try {
-      await propertyService.toggleFavorite(id);
-      setIsFavorited(!isFavorited);
+      if (isFavorited && favoriteId) {
+        await propertyService.removeFavorite(favoriteId);
+        setIsFavorited(false);
+        setFavoriteId(null);
+      } else {
+        await propertyService.addFavorite(property.id);
+        setIsFavorited(true);
+        const refreshed = await propertyService.getPropertyBySlug(slug);
+        setFavoriteId(refreshed.favorite_id ?? null);
+      }
     } catch {}
   };
 
   const handleBookingSubmit = async (formData) => {
     if (!isAuthenticated) { navigate('/login'); return; }
+    if (!property) return;
     setBookingSubmitting(true);
     try {
       if (isHall) {
-        await bookingService.createBooking({ propertyId: id, ...formData });
+        await bookingService.createBooking({ propertyId: property.id, ...formData });
       } else {
-        await bookingService.scheduleViewing({ propertyId: id, ...formData });
+        await bookingService.scheduleViewing({ propertyId: property.id, ...formData });
       }
-      navigate(`/booking/confirmation?propertyId=${id}`);
+      navigate(`/booking/confirmation?propertyId=${property.id}`);
     } catch (err) {
       alert(getErrorMessage(err));
     } finally {
@@ -127,7 +149,10 @@ export default function PropertyDetailPage() {
     if (!reportReason) return;
     setReportSubmitting(true);
     try {
-      await propertyService.reportProperty(id, { reason: reportReason, details: reportDetails });
+      await propertyService.reportProperty(property.id, {
+        reason: reportReason,
+        details: reportDetails,
+      });
       setShowReportModal(false);
       setReportReason('');
       setReportDetails('');
@@ -455,7 +480,7 @@ export default function PropertyDetailPage() {
                 <PropertyCard
                   key={p.id}
                   property={p}
-                  onClick={(prop) => navigate(`/property/${prop.id}`)}
+                  onClick={(prop) => navigate(`/property/${prop.slug}`)}
                 />
               ))}
             </div>

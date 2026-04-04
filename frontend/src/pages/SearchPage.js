@@ -8,7 +8,9 @@ import Pagination from '../components/common/Pagination';
 import SearchBar from '../components/common/SearchBar';
 import propertyService from '../services/properties';
 import { ADDIS_ABABA_SUB_CITIES, PAGINATION_DEFAULT } from '../utils/constants';
-import { parseQueryString, buildQueryString, getErrorMessage } from '../utils/helpers';
+import {
+  parseQueryString, buildQueryString, getErrorMessage, listFromApi,
+} from '../utils/helpers';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First' },
@@ -82,9 +84,12 @@ export default function SearchPage() {
         ? await propertyService.searchProperties(query, apiFilters)
         : await propertyService.getProperties(apiFilters);
 
-      setProperties(data.properties || data.results || data || []);
-      setTotalCount(data.total || data.totalCount || 0);
-      setTotalPages(data.totalPages || Math.ceil((data.total || 0) / PAGINATION_DEFAULT.limit) || 1);
+      setProperties(listFromApi(data));
+      setTotalCount(data.count ?? data.total ?? data.totalCount ?? 0);
+      setTotalPages(
+        (data.total_pages ?? data.totalPages
+          ?? Math.ceil((data.count || 0) / PAGINATION_DEFAULT.limit)) || 1,
+      );
     } catch (err) {
       setError(getErrorMessage(err));
       setProperties([]);
@@ -132,16 +137,17 @@ export default function SearchPage() {
   };
 
   const handlePropertyClick = (property) => {
-    navigate(`/property/${property.id}`);
+    navigate(`/property/${property.slug || property.id}`);
   };
 
-  const handleFavoriteToggle = async (id) => {
+  const handleFavoriteToggle = async ({ id, favoriteId, willBeFavorited }) => {
     try {
-      await propertyService.toggleFavorite(id);
+      if (willBeFavorited) await propertyService.addFavorite(id);
+      else if (favoriteId) await propertyService.removeFavorite(favoriteId);
       setFavoriteIds((prev) => {
         const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
+        if (willBeFavorited) next.add(id);
+        else next.delete(id);
         return next;
       });
     } catch {}

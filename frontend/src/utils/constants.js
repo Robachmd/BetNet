@@ -3,8 +3,10 @@ export const APP_TAGLINE = 'Your Home Away From Home';
 export const DEFAULT_CURRENCY = 'ETB';
 export const DEFAULT_LOCALE = 'en';
 
-export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-export const UPLOADS_URL = process.env.REACT_APP_UPLOADS_URL || 'http://localhost:5000/uploads';
+export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+export const UPLOADS_URL =
+  process.env.REACT_APP_UPLOADS_URL ||
+  (API_URL.replace(/\/?api\/?$/i, '') || 'http://localhost:8000');
 
 export const PROPERTY_TYPES = [
   { value: 'apartment', label: 'Apartment', labelAm: 'አፓርትመንት' },

@@ -48,16 +48,94 @@ export function formatRelativeDate(dateStr) {
   }
 }
 
+function mediaOrigin() {
+  const base = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+  return base.replace(/\/?api\/?$/i, '') || 'http://localhost:8000';
+}
+
+export function listFromApi(data) {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (data.results && Array.isArray(data.results)) return data.results;
+  if (data.properties && Array.isArray(data.properties)) return data.properties;
+  if (data.bookings && Array.isArray(data.bookings)) return data.bookings;
+  if (data.data && Array.isArray(data.data)) return data.data;
+  return [];
+}
+
+/** Favorite list API returns { results: [{ id, property, property_detail }] } */
+export function mapFavoriteRowsToCards(rows) {
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .map((row) => {
+      const detail = row.property_detail;
+      if (!detail || typeof detail !== 'object') return null;
+      return normalizePropertyForCard({
+        ...detail,
+        favorite_id: row.id,
+        is_favorited: true,
+      });
+    })
+    .filter(Boolean);
+}
+
+const BEDROOM_LABEL = {
+  STUDIO: 'Studio',
+  ONE: '1 bed',
+  TWO: '2 beds',
+  THREE_PLUS: '3+ beds',
+};
+
+export function normalizePropertyForCard(raw) {
+  if (!raw) return {};
+  const loc = raw.location || {};
+  const ptRaw = (raw.property_type || raw.propertyType || '').toString();
+  const ptLabel = ptRaw.replace(/_/g, ' ').toLowerCase();
+  const img =
+    raw.primary_image ||
+    (raw.images && raw.images[0] && (raw.images[0].image || raw.images[0])) ||
+    '';
+
+  return {
+    ...raw,
+    id: raw.id,
+    slug: raw.slug,
+    favorite_id: raw.favorite_id,
+    title: raw.title,
+    images: Array.isArray(raw.images) && raw.images.length
+      ? raw.images.map((x) => (typeof x === 'string' ? x : x.image || x.url)).filter(Boolean)
+      : img
+        ? [img]
+        : [],
+    price: Number(raw.price_monthly ?? raw.price ?? 0),
+    priceUnit: '/month',
+    location: {
+      city: raw.city || loc.city,
+      subCity: raw.sub_city || loc.sub_city,
+    },
+    bedrooms:
+      raw.bedrooms in BEDROOM_LABEL ? BEDROOM_LABEL[raw.bedrooms] : Number(raw.bedrooms) || 0,
+    bedroomsIsEnumLabel: !!BEDROOM_LABEL[raw.bedrooms],
+    bathrooms: raw.bathrooms ?? 0,
+    propertyType: ptLabel || 'property',
+    isVerified: raw.is_verified ?? raw.isVerified,
+    isFeatured: raw.is_featured ?? raw.isFeatured,
+    isFavorited: raw.is_favorited ?? raw.isFavorited,
+  };
+}
+
 export function getImageUrl(path) {
   if (!path) return '/placeholder-property.jpg';
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  return `${UPLOADS_URL}/${path}`;
+  if (path.startsWith('/')) return `${mediaOrigin()}${path}`;
+  return `${UPLOADS_URL}/${path}`.replace(/([^:]\/)\/+/g, '$1');
 }
 
 export function getAvatarUrl(path) {
   if (!path) return '/default-avatar.png';
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  return `${UPLOADS_URL}/${path}`;
+  if (path.startsWith('/')) return `${mediaOrigin()}${path}`;
+  return `${UPLOADS_URL}/${path}`.replace(/([^:]\/)\/+/g, '$1');
 }
 
 export function truncateText(text, maxLength = 100) {

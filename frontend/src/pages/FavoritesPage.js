@@ -8,7 +8,9 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import Pagination from '../components/common/Pagination';
 import useAuth from '../hooks/useAuth';
 import propertyService from '../services/properties';
-import { formatPrice, getErrorMessage } from '../utils/helpers';
+import {
+  getErrorMessage, listFromApi, mapFavoriteRowsToCards,
+} from '../utils/helpers';
 
 export default function FavoritesPage() {
   const navigate = useNavigate();
@@ -33,10 +35,14 @@ export default function FavoritesPage() {
     setLoading(true);
     setError('');
     try {
-      const data = await propertyService.getFavorites({ page: currentPage, limit: 12 });
-      setFavorites(data.properties || data.results || data || []);
-      setTotalCount(data.total || data.totalCount || 0);
-      setTotalPages(data.totalPages || 1);
+      const data = await propertyService.getFavorites({ page: currentPage, page_size: 12 });
+      const rows = listFromApi(data);
+      setFavorites(mapFavoriteRowsToCards(rows));
+      setTotalCount(data.count ?? data.total ?? data.totalCount ?? rows.length);
+      setTotalPages(
+        (data.total_pages ?? data.totalPages
+          ?? Math.ceil((data.count || rows.length || 0) / 12)) || 1,
+      );
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -48,12 +54,18 @@ export default function FavoritesPage() {
     fetchFavorites();
   }, [fetchFavorites]);
 
-  const handleRemoveFavorite = async (propertyId) => {
-    setRemovingId(propertyId);
+  const handleRemoveFavorite = async (property) => {
+    const favId = property.favorite_id;
+    const propId = property.id;
+    if (!favId) {
+      setError('Could not remove favorite. Try refreshing the page.');
+      return;
+    }
+    setRemovingId(propId);
     try {
-      await propertyService.toggleFavorite(propertyId);
-      setFavorites((prev) => prev.filter((p) => p.id !== propertyId));
-      setTotalCount((c) => c - 1);
+      await propertyService.removeFavorite(favId);
+      setFavorites((prev) => prev.filter((p) => p.id !== propId));
+      setTotalCount((c) => Math.max(0, c - 1));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -62,7 +74,7 @@ export default function FavoritesPage() {
   };
 
   const handlePropertyClick = (property) => {
-    navigate(`/property/${property.id}`);
+    navigate(`/property/${property.slug || property.id}`);
   };
 
   if (authLoading) return <LoadingSpinner fullScreen text="Loading..." />;
@@ -124,11 +136,17 @@ export default function FavoritesPage() {
                     property={property}
                     onClick={handlePropertyClick}
                     isFavorited
-                    onFavoriteToggle={(id) => handleRemoveFavorite(id)}
+                    onFavoriteToggle={async ({ favoriteId, willBeFavorited }) => {
+                      if (!willBeFavorited && favoriteId) {
+                        await handleRemoveFavorite(
+                          { ...property, favorite_id: favoriteId },
+                        );
+                      }
+                    }}
                   />
                   {/* Remove overlay */}
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleRemoveFavorite(property.id); }}
+                    onClick={(e) => { e.stopPropagation(); handleRemoveFavorite(property); }}
                     disabled={removingId === property.id}
                     className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-lg disabled:opacity-50"
                     aria-label="Remove from favorites"

@@ -46,7 +46,9 @@ function ProtectedRoute({ children, allowedRoles }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user?.role)) {
+  const roleNorm = (user?.role || '').toLowerCase();
+  const allowedNorm = (allowedRoles || []).map((r) => r.toLowerCase());
+  if (allowedRoles && !allowedNorm.includes(roleNorm)) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -74,7 +76,7 @@ export default function App() {
         {/* Public routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/search" element={<SearchPage />} />
-        <Route path="/property/:id" element={<PropertyDetailPage />} />
+        <Route path="/property/:slug" element={<PropertyDetailPage />} />
         <Route path="/halls" element={<HallRentalPage />} />
 
         {/* Guest-only routes */}
@@ -84,7 +86,7 @@ export default function App() {
 
         {/* Protected routes */}
         <Route
-          path="/property/:id/book"
+          path="/property/:slug/book"
           element={<ProtectedRoute><BookingPage /></ProtectedRoute>}
         />
         <Route
@@ -116,7 +118,7 @@ export default function App() {
           }
         />
         <Route
-          path="/dashboard/landlord/edit-property/:id"
+          path="/dashboard/landlord/edit-property/:slug"
           element={
             <ProtectedRoute allowedRoles={['landlord']}>
               <EditPropertyPage />

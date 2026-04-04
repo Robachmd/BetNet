@@ -49,8 +49,8 @@ export default function RegisterPage() {
       if (!validateEthiopianPhone(form.phone)) {
         errors.phone = 'Enter a valid Ethiopian phone number (e.g. 09XXXXXXXX)';
       }
-      if (form.password.length < 6) {
-        errors.password = 'Password must be at least 6 characters';
+      if (form.password.length < 8) {
+        errors.password = 'Password must be at least 8 characters';
       }
       if (form.password !== form.confirmPassword) {
         errors.confirmPassword = 'Passwords do not match';
@@ -91,15 +91,14 @@ export default function RegisterPage() {
       const userData = {
         phone: normalizePhoneNumber(form.phone),
         password: form.password,
+        confirmPassword: form.confirmPassword,
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
         role: form.role,
       };
 
       await register(userData);
-      navigate('/verify-otp', {
-        state: { phone: userData.phone, from: '/', isRegistration: true },
-      });
+      navigate('/', { replace: true });
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {

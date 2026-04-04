@@ -319,7 +319,7 @@ export default function AdminListings() {
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1">
                             <button
-                              onClick={() => navigate(`/property/${property.id}`)}
+                              onClick={() => navigate(`/property/${property.slug || property.id}`)}
                               className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                               title="View"
                             >

@@ -1,6 +1,7 @@
 import React from 'react';
 import PropertyCard from './PropertyCard';
 import EmptyState from '../common/EmptyState';
+import { normalizePropertyForCard } from '../../utils/helpers';
 
 function SkeletonCard() {
   return (
@@ -59,15 +60,17 @@ export default function PropertyGrid({
 
   return (
     <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 ${className}`}>
-      {properties.map((property) => (
+      {properties.map((raw) => {
+        const property = normalizePropertyForCard(raw);
+        return (
         <PropertyCard
           key={property.id}
           property={property}
           onClick={onPropertyClick}
           onFavoriteToggle={onFavoriteToggle}
-          isFavorited={favoriteIds.has(property.id)}
+          isFavorited={property.isFavorited || favoriteIds.has(property.id)}
         />
-      ))}
+      )})}
     </div>
   );
 }

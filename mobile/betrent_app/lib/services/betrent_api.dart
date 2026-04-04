@@ -180,6 +180,20 @@ class BetRentApi {
     await _storage.clear();
   }
 
+  /// Django REST Framework returns `{ results: [...], count, ... }` for list views.
+  List<dynamic> _unwrapList(dynamic data) {
+    if (data is List<dynamic>) return data;
+    if (data is Map && data['results'] is List) {
+      return List<dynamic>.from(data['results'] as List);
+    }
+    throw ApiException('Unexpected API list format');
+  }
+
+  Map<String, dynamic> _withPageSize(Map<String, dynamic>? q) {
+    final m = <String, dynamic>{...(q ?? {}), 'page_size': 100};
+    return m;
+  }
+
   String _msgFromDio(DioException e) {
     final d = e.response?.data;
     if (d is Map && d['detail'] != null) return '${d['detail']}';
@@ -216,9 +230,9 @@ class BetRentApi {
     try {
       final res = await _dio.get(
         '/api/properties/properties/',
-        queryParameters: q.isEmpty ? null : q,
+        queryParameters: _withPageSize(q),
       );
-      final list = res.data as List<dynamic>;
+      final list = _unwrapList(res.data);
       return list
           .map((e) => PropertySummary.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -231,9 +245,9 @@ class BetRentApi {
     try {
       final res = await _dio.get(
         '/api/properties/search/',
-        queryParameters: {'q': q},
+        queryParameters: _withPageSize({'q': q}),
       );
-      final list = res.data as List<dynamic>;
+      final list = _unwrapList(res.data);
       return list
           .map((e) => PropertySummary.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -260,8 +274,11 @@ class BetRentApi {
   }
 
   Future<List<PropertySummary>> fetchFavorites() async {
-    final res = await _dio.get('/api/properties/favorites/');
-    final list = res.data as List<dynamic>;
+    final res = await _dio.get(
+      '/api/properties/favorites/',
+      queryParameters: const {'page_size': 100},
+    );
+    final list = _unwrapList(res.data);
     return list.map((e) {
       final m = e as Map<String, dynamic>;
       final detail = m['property_detail'] as Map<String, dynamic>?;
@@ -336,8 +353,11 @@ class BetRentApi {
   }
 
   Future<List<ConversationListItem>> fetchConversations() async {
-    final res = await _dio.get('/api/chat/conversations/');
-    final list = res.data as List<dynamic>;
+    final res = await _dio.get(
+      '/api/chat/conversations/',
+      queryParameters: const {'page_size': 100},
+    );
+    final list = _unwrapList(res.data);
     return list
         .map((e) => ConversationListItem.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -363,8 +383,9 @@ class BetRentApi {
   Future<List<ChatMessage>> fetchMessages(int conversationId) async {
     final res = await _dio.get(
       '/api/chat/conversations/$conversationId/messages/',
+      queryParameters: const {'page_size': 200},
     );
-    final list = res.data as List<dynamic>;
+    final list = _unwrapList(res.data);
     return list
         .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -381,8 +402,11 @@ class BetRentApi {
   }
 
   Future<List<AppNotification>> fetchNotifications() async {
-    final res = await _dio.get('/api/notifications/');
-    final list = res.data as List<dynamic>;
+    final res = await _dio.get(
+      '/api/notifications/',
+      queryParameters: const {'page_size': 100},
+    );
+    final list = _unwrapList(res.data);
     return list
         .map((e) => AppNotification.fromJson(e as Map<String, dynamic>))
         .toList();

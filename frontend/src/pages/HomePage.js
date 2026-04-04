@@ -11,7 +11,9 @@ import PropertyCard from '../components/property/PropertyCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import propertyService from '../services/properties';
 import { ADDIS_ABABA_SUB_CITIES } from '../utils/constants';
-import { formatPrice, getErrorMessage } from '../utils/helpers';
+import {
+  formatPrice, getErrorMessage, listFromApi, normalizePropertyForCard,
+} from '../utils/helpers';
 
 const PROPERTY_CATEGORIES = [
   { type: 'apartment', label: 'Apartment', icon: '🏢', color: 'bg-blue-50 text-blue-600' },
@@ -65,7 +67,7 @@ export default function HomePage() {
 
   useEffect(() => {
     propertyService.getFeaturedProperties()
-      .then((data) => setFeatured(data.properties || data || []))
+      .then((data) => setFeatured(listFromApi(data)))
       .catch((err) => setError(getErrorMessage(err)))
       .finally(() => setLoading(false));
   }, []);
@@ -87,11 +89,15 @@ export default function HomePage() {
   };
 
   const handlePropertyClick = (property) => {
-    navigate(`/property/${property.id}`);
+    const s = property.slug || property.id;
+    navigate(`/property/${s}`);
   };
 
-  const handleFavoriteToggle = (id) => {
-    propertyService.toggleFavorite(id).catch(() => {});
+  const handleFavoriteToggle = async ({ id, favoriteId, willBeFavorited }) => {
+    try {
+      if (willBeFavorited) await propertyService.addFavorite(id);
+      else if (favoriteId) await propertyService.removeFavorite(favoriteId);
+    } catch {}
   };
 
   const visibleFeatured = featured.slice(carouselIndex, carouselIndex + 4);
@@ -102,10 +108,8 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute inset-0 bg-[url('/hero-cityscape.jpg')] bg-cover bg-center" />
-          <div className="absolute inset-0 bg-gradient-to-b from-green-900/80 to-green-900/95" />
-        </div>
+        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.12),_transparent_50%),radial-gradient(ellipse_at_bottom_left,_rgba(16,185,129,0.15),_transparent_45%)]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-green-900/50 to-green-900/90" />
         <div className="absolute top-20 right-10 w-72 h-72 bg-green-400/10 rounded-full blur-3xl" />
         <div className="absolute bottom-10 left-10 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl" />
 
@@ -228,14 +232,16 @@ export default function HomePage() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {(visibleFeatured.length > 0 ? visibleFeatured : featured.slice(0, 4)).map((property) => (
+              {(visibleFeatured.length > 0 ? visibleFeatured : featured.slice(0, 4)).map((raw) => {
+                const property = normalizePropertyForCard(raw);
+                return (
                 <PropertyCard
                   key={property.id}
                   property={property}
                   onClick={handlePropertyClick}
                   onFavoriteToggle={handleFavoriteToggle}
                 />
-              ))}
+              )})}
             </div>
             <div className="text-center mt-10">
               <Link

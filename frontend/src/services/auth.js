@@ -1,42 +1,65 @@
 import api from './api';
 
-const AUTH_PREFIX = '/auth';
+const AUTH = '/accounts';
+
+function persistSession(data) {
+  const tokens = data.tokens || {};
+  const access = tokens.access || data.access;
+  const refresh = tokens.refresh || data.refresh;
+  if (access) localStorage.setItem('accessToken', access);
+  if (refresh) localStorage.setItem('refreshToken', refresh);
+  if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
+  return { ...data, accessToken: access, refreshToken: refresh };
+}
 
 export const authService = {
   async login(phone, password) {
-    const { data } = await api.post(`${AUTH_PREFIX}/login`, { phone, password });
-    if (data.accessToken) {
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('user', JSON.stringify(data.user));
-    }
-    return data;
+    const { data } = await api.post(`${AUTH}/login/`, {
+      phone_number: phone,
+      password,
+    });
+    return persistSession(data);
   },
 
   async register(userData) {
-    const { data } = await api.post(`${AUTH_PREFIX}/register`, userData);
-    return data;
+    const roleMap = { renter: 'RENTER', landlord: 'LANDLORD' };
+    const role =
+      roleMap[(userData.role || '').toLowerCase()] ||
+      (userData.role || 'RENTER').toUpperCase();
+
+    const { data } = await api.post(`${AUTH}/register/`, {
+      phone_number: userData.phone,
+      password: userData.password,
+      password_confirm: userData.confirmPassword || userData.password,
+      first_name: userData.firstName,
+      last_name: userData.lastName,
+      email: userData.email || '',
+      role,
+      preferred_language: userData.preferredLanguage || 'EN',
+    });
+    return persistSession(data);
   },
 
   async requestOTP(phone) {
-    const { data } = await api.post(`${AUTH_PREFIX}/request-otp`, { phone });
+    const { data } = await api.post(`${AUTH}/otp/request/`, {
+      phone_number: phone,
+    });
     return data;
   },
 
   async verifyOTP(phone, otp) {
-    const { data } = await api.post(`${AUTH_PREFIX}/verify-otp`, { phone, otp });
-    if (data.accessToken) {
-      localStorage.setItem('accessToken', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('user', JSON.stringify(data.user));
-    }
+    const { data } = await api.post(`${AUTH}/otp/verify/`, {
+      phone_number: phone,
+      otp,
+    });
+    if (data.tokens) return persistSession(data);
     return data;
   },
 
   logout() {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (refreshToken) {
-      api.post(`${AUTH_PREFIX}/logout`, { refreshToken }).catch(() => {});
+    const refresh = localStorage.getItem('refreshToken');
+    if (refresh) {
+      api.post(`${AUTH}/logout/`, { refresh }).catch(() => {});
     }
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
@@ -44,56 +67,31 @@ export const authService = {
   },
 
   async refreshToken() {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!refreshToken) throw new Error('No refresh token');
-
-    const { data } = await api.post(`${AUTH_PREFIX}/refresh`, { refreshToken });
-    localStorage.setItem('accessToken', data.accessToken);
-    if (data.refreshToken) {
-      localStorage.setItem('refreshToken', data.refreshToken);
-    }
+    const refresh = localStorage.getItem('refreshToken');
+    if (!refresh) throw new Error('No refresh token');
+    const { data } = await api.post(`${AUTH}/token/refresh/`, { refresh });
+    localStorage.setItem('accessToken', data.access);
+    if (data.refresh) localStorage.setItem('refreshToken', data.refresh);
     return data;
   },
 
   async getProfile() {
-    const { data } = await api.get(`${AUTH_PREFIX}/profile`);
+    const { data } = await api.get(`${AUTH}/profile/`);
     localStorage.setItem('user', JSON.stringify(data));
     return data;
   },
 
   async updateProfile(profileData) {
-    const { data } = await api.put(`${AUTH_PREFIX}/profile`, profileData);
+    const { data } = await api.patch(`${AUTH}/profile/`, profileData);
     localStorage.setItem('user', JSON.stringify(data));
     return data;
   },
 
-  async updateProfilePhoto(file) {
-    const formData = new FormData();
-    formData.append('photo', file);
-    const { data } = await api.put(`${AUTH_PREFIX}/profile/photo`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return data;
-  },
-
-  async changePassword(currentPassword, newPassword) {
-    const { data } = await api.put(`${AUTH_PREFIX}/change-password`, {
-      currentPassword,
-      newPassword,
-    });
-    return data;
-  },
-
-  async requestPasswordReset(phone) {
-    const { data } = await api.post(`${AUTH_PREFIX}/forgot-password`, { phone });
-    return data;
-  },
-
-  async resetPassword(phone, otp, newPassword) {
-    const { data } = await api.post(`${AUTH_PREFIX}/reset-password`, {
-      phone,
-      otp,
-      newPassword,
+  async changePassword(oldPassword, newPassword, newPasswordConfirm) {
+    const { data } = await api.post(`${AUTH}/change-password/`, {
+      old_password: oldPassword,
+      new_password: newPassword,
+      new_password_confirm: newPasswordConfirm || newPassword,
     });
     return data;
   },

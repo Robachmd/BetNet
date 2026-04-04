@@ -61,7 +61,7 @@ function ProgressBar({ currentStep, steps }) {
 }
 
 export default function EditPropertyPage() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -87,7 +87,7 @@ export default function EditPropertyPage() {
   useEffect(() => {
     const loadProperty = async () => {
       try {
-        const data = await propertyService.getPropertyById(id);
+        const data = await propertyService.getPropertyBySlug(slug);
         const property = data.property || data;
 
         reset({
@@ -130,7 +130,7 @@ export default function EditPropertyPage() {
     };
 
     loadProperty();
-  }, [id, reset, navigate]);
+  }, [slug, reset, navigate]);
 
   const handleNavigation = (key) => {
     const routes = {
@@ -206,7 +206,7 @@ export default function EditPropertyPage() {
   const deleteExistingImage = async (imageId) => {
     setDeletingImage(imageId);
     try {
-      await propertyService.deletePropertyImage(id, imageId);
+      await propertyService.deletePropertyImage(slug, imageId);
       setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
       toast.success('Image removed');
     } catch {
@@ -266,10 +266,10 @@ export default function EditPropertyPage() {
         videoUrl: data.videoUrl || undefined,
       };
 
-      await propertyService.updateProperty(id, propertyData);
+      await propertyService.updateProperty(slug, propertyData);
 
       if (newImages.length > 0) {
-        await propertyService.uploadPropertyImages(id, newImages);
+        await propertyService.uploadPropertyImages(slug, newImages);
       }
 
       toast.success('Property updated successfully!');
