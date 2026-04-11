@@ -63,6 +63,7 @@ export default function PropertyFilters({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     type: true,
+    listing: true,
     price: true,
     bedrooms: true,
     location: true,
@@ -72,6 +73,7 @@ export default function PropertyFilters({
 
   const {
     propertyType = '',
+    listingType = '',
     minPrice = '',
     maxPrice = '',
     bedrooms = '',
@@ -82,7 +84,7 @@ export default function PropertyFilters({
   } = filters;
 
   const activeCount = [
-    propertyType, minPrice, maxPrice, bedrooms, city, subCity, verifiedOnly,
+    propertyType, listingType, minPrice, maxPrice, bedrooms, city, subCity, verifiedOnly,
   ].filter(Boolean).length + amenities.length;
 
   const toggleSection = (key) =>
@@ -125,6 +127,19 @@ export default function PropertyFilters({
           {propertyTypes.map((t) => (
             <option key={t.value} value={t.value}>{t.label}</option>
           ))}
+        </select>
+      </Section>
+
+      <Section title="Rent or buy" sectionKey="listing">
+        <select
+          value={listingType}
+          onChange={(e) => handleChange('listingType', e.target.value)}
+          className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400"
+        >
+          <option value="">All listings</option>
+          <option value="rent">For rent</option>
+          <option value="sale">For sale</option>
+          <option value="short_term">Short-term rent</option>
         </select>
       </Section>
 

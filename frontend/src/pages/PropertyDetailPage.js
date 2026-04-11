@@ -73,6 +73,9 @@ export default function PropertyDetailPage() {
     if (!property) return;
 
     const propPk = property.id;
+    const listingTypeEff = String(
+      property.listing_type || property.listingType || 'rent',
+    ).toLowerCase();
 
     reviewService.getPropertyReviews(propPk, { limit: 5 })
       .then((data) => setReviews(listFromApi(data)))
@@ -85,7 +88,7 @@ export default function PropertyDetailPage() {
     const sub = property.location?.sub_city || property.location?.subCity;
     const city = property.location?.city;
     const ptype = property.property_type || property.propertyType;
-    if (sub && ptype) {
+    if (sub && ptype && listingTypeEff !== 'sale') {
       propertyService.getPriceInsight(sub, city || 'Addis Ababa', ptype)
         .then((data) => setPriceInsight(data))
         .catch(() => {});
@@ -93,6 +96,7 @@ export default function PropertyDetailPage() {
 
     propertyService.getProperties({
       propertyType: (ptype || '').toLowerCase().replace('hall_rental', 'hall'),
+      listingType: listingTypeEff || 'rent',
       city: city ? city.toLowerCase().replace(/\s+/g, '-') : '',
       limit: 8,
     })
@@ -189,13 +193,21 @@ export default function PropertyDetailPage() {
     );
   }
 
+  const listingType = String(property.listing_type || property.listingType || 'rent').toLowerCase();
   const {
-    title, description, price, priceUnit = '/month', images = [],
+    title, description, images = [],
     location = {}, bedrooms, bathrooms, area, propertyType,
     isVerified, isFeatured, status, amenities = [],
     landlord = {}, createdAt,
     hallCapacity, soundSystem, hasStage, hasProjector, hasCatering,
   } = property;
+
+  const price = Number(property.price ?? property.price_monthly ?? 0);
+  const priceUnit = listingType === 'sale'
+    ? 'Total price'
+    : listingType === 'short_term'
+      ? '/month (short-term)'
+      : '/month';
 
   const locationStr = [location.subCity, location.city].filter(Boolean).join(', ');
 
@@ -242,6 +254,16 @@ export default function PropertyDetailPage() {
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 {isFeatured && <Badge variant="featured" icon size="sm">Featured</Badge>}
                 {isVerified && <Badge variant="verified" icon size="sm">Verified</Badge>}
+                {listingType === 'sale' && (
+                  <Badge variant="pending" size="sm" className="bg-amber-50 text-amber-900 border-amber-200">
+                    For sale
+                  </Badge>
+                )}
+                {listingType === 'short_term' && (
+                  <Badge variant="neutral" size="sm" className="bg-sky-50 text-sky-800 border-sky-200">
+                    Short-term
+                  </Badge>
+                )}
                 {status && (
                   <Badge variant={status === 'available' ? 'success' : 'warning'} dot size="sm">
                     {status.charAt(0).toUpperCase() + status.slice(1)}

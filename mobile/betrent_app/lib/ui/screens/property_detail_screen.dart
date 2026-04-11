@@ -137,6 +137,12 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
             : <PropertyImage>[]);
     final price = NumberFormat.currency(symbol: s.priceCurrency, decimalDigits: 0)
         .format(double.tryParse(s.priceMonthly) ?? 0);
+    final lt = s.listingType.toLowerCase();
+    final priceLine = lt == 'sale'
+        ? '$price Total price'
+        : lt == 'short_term'
+            ? '$price / month (short-term)'
+            : '$price / month';
 
     return Scaffold(
       appBar: AppBar(
@@ -214,7 +220,7 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '$price / month',
+                  priceLine,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w700,

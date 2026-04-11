@@ -36,6 +36,10 @@ export default function BookingPage() {
   const isHall =
     property?.property_type === 'HALL_RENTAL' || property?.propertyType === 'hall';
 
+  const listingType = String(
+    property?.listing_type || property?.listingType || 'rent',
+  ).toLowerCase();
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login', {
@@ -255,7 +259,15 @@ export default function BookingPage() {
 
                 <div className="border-t border-gray-100 pt-4 space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">{isHall ? 'Hall Rental' : 'Monthly Rent'}</span>
+                    <span className="text-gray-500">
+                      {isHall
+                        ? 'Hall Rental'
+                        : listingType === 'sale'
+                          ? 'Total price'
+                          : listingType === 'short_term'
+                            ? 'Short-term rate (per month)'
+                            : 'Monthly rent'}
+                    </span>
                     <span className="font-semibold text-gray-800">{formatPrice(property.price)}</span>
                   </div>
                   {selectedDate && (

@@ -204,7 +204,7 @@
         </a>
 
         <p class="text-2xl font-extrabold text-primary-700 mb-2">
-          ETB {{ property.price_monthly|floatformat:0|intcomma }}<span class="text-sm font-medium text-gray-500">/mo</span>
+          ETB {{ property.price_monthly|floatformat:0|intcomma }}{% if property.listing_type == 'sale' %}<span class="text-sm font-medium text-gray-500"> Total price</span>{% elif property.listing_type == 'short_term' %}<span class="text-sm font-medium text-gray-500">/mo (short-term)</span>{% else %}<span class="text-sm font-medium text-gray-500">/mo</span>{% endif %}
         </p>
 
         <div class="flex items-center gap-1.5 text-sm text-gray-500 mb-3">

@@ -175,7 +175,14 @@
             <div class="flex items-center justify-between mt-4">
               <div>
                 <p class="text-lg font-bold text-primary-700">
-                  {{ fav.property.price_monthly|floatformat:0 }} <span class="text-sm font-medium text-gray-500">ETB/mo</span>
+                  {{ fav.property.price_monthly|floatformat:0 }} ETB
+                  {% if fav.property.listing_type == 'sale' %}
+                  <span class="text-sm font-medium text-gray-500">Total price</span>
+                  {% elif fav.property.listing_type == 'short_term' %}
+                  <span class="text-sm font-medium text-gray-500">/mo (short-term)</span>
+                  {% else %}
+                  <span class="text-sm font-medium text-gray-500">/mo</span>
+                  {% endif %}
                 </p>
               </div>
               <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-gray-100 text-gray-600">

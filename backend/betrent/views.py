@@ -196,6 +196,13 @@ def _residential_bedrooms_bathrooms_from_post(post):
     return bedrooms_val, bathrooms_val
 
 
+def _listing_type_from_post(post) -> str:
+    raw = (post.get("listing_type") or "rent").strip().lower()
+    if raw in ("rent", "sale", "short_term"):
+        return raw
+    return "rent"
+
+
 def _business_shop_class_count_from_post(post):
     """Number of classes (rooms/sections) for BUSINESS_SHOP."""
     raw = (post.get("shop_class_count") or "").strip()
@@ -631,24 +638,40 @@ def property_detail(request, slug):
         .filter(
             property_type=prop.property_type,
             location__city=prop.location.city,
+            listing_type=prop.listing_type,
         )
         .exclude(pk=prop.pk)[:4]
     )
 
-    price_insight = (
-        Property.objects
-        .filter(
-            property_type=prop.property_type,
-            location__sub_city=prop.location.sub_city,
-            is_available=True,
-            is_published=True,
-        )
-        .aggregate(
-            avg_price=Avg("price_monthly"),
-            min_price=Min("price_monthly"),
-            max_price=Max("price_monthly"),
-        )
+    insight_qs = Property.objects.filter(
+        property_type=prop.property_type,
+        location__sub_city=prop.location.sub_city,
+        is_available=True,
+        is_published=True,
+        listing_type=prop.listing_type,
     )
+    agg = insight_qs.aggregate(
+        avg_price=Avg("price_monthly"),
+        min_price=Min("price_monthly"),
+        max_price=Max("price_monthly"),
+    )
+    cnt = insight_qs.count()
+    min_p, max_p, avg_p = agg["min_price"], agg["max_price"], agg["avg_price"]
+    if (
+        cnt > 0
+        and min_p is not None
+        and max_p is not None
+        and avg_p is not None
+        and max_p > 0
+    ):
+        price_insight = {
+            "min": min_p,
+            "max": max_p,
+            "avg": avg_p,
+            "count": cnt,
+        }
+    else:
+        price_insight = None
 
     is_favorited = False
     has_booked = False
@@ -746,6 +769,7 @@ def add_property(request):
                 title=request.POST.get("title", ""),
                 description=request.POST.get("description", ""),
                 property_type=ptype,
+                listing_type=_listing_type_from_post(request.POST),
                 bedrooms=bedrooms_val,
                 bathrooms=bathrooms_val,
                 shop_class_count=shop_cc,
@@ -884,6 +908,7 @@ def edit_property(request, slug):
             prop.price_currency = request.POST.get(
                 "price_currency", prop.price_currency
             )
+            prop.listing_type = _listing_type_from_post(request.POST)
             prop.is_available = "is_available" in request.POST
             prop.save()
 

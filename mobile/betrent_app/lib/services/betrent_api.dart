@@ -307,6 +307,7 @@ class BetRentApi {
       'bathrooms': 1,
       'price_monthly': priceMonthly.toStringAsFixed(2),
       'price_currency': 'ETB',
+      'listing_type': 'rent',
       'location': {
         'city': city,
         'sub_city': subCity,

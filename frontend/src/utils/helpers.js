@@ -117,6 +117,10 @@ export function normalizePropertyForCard(raw) {
   const loc = raw.location || {};
   const ptRaw = (raw.property_type || raw.propertyType || '').toString();
   const ptLabel = ptRaw.replace(/_/g, ' ').toLowerCase();
+  const listingType = String(raw.listing_type || raw.listingType || 'rent').toLowerCase();
+  let priceUnit = '/month';
+  if (listingType === 'sale') priceUnit = 'Total price';
+  else if (listingType === 'short_term') priceUnit = '/month (short-term)';
   const img =
     raw.primary_image ||
     (raw.images && raw.images[0] && (raw.images[0].image || raw.images[0])) ||
@@ -134,7 +138,8 @@ export function normalizePropertyForCard(raw) {
         ? [img]
         : [],
     price: Number(raw.price_monthly ?? raw.price ?? 0),
-    priceUnit: '/month',
+    listingType,
+    priceUnit,
     location: {
       city: raw.city || loc.city,
       subCity: raw.sub_city || loc.sub_city,

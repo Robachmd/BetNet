@@ -69,6 +69,7 @@ class PropertyAdmin(admin.ModelAdmin):
     list_display = [
         "title",
         "property_type",
+        "listing_type",
         "owner",
         "price_display",
         "city_display",
@@ -80,6 +81,7 @@ class PropertyAdmin(admin.ModelAdmin):
     ]
     list_filter = [
         "property_type",
+        "listing_type",
         "bedrooms",
         "is_verified",
         "is_featured",

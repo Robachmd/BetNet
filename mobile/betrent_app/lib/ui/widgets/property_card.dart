@@ -18,6 +18,12 @@ class PropertyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final price = NumberFormat.currency(symbol: property.priceCurrency, decimalDigits: 0)
         .format(double.tryParse(property.priceMonthly) ?? 0);
+    final lt = property.listingType.toLowerCase();
+    final priceTail = lt == 'sale'
+        ? ' Total price'
+        : lt == 'short_term'
+            ? '/mo (short-term)'
+            : '/mo';
     final scheme = Theme.of(context).colorScheme;
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -71,7 +77,7 @@ class PropertyCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '$price / mo',
+                    '$price$priceTail',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: scheme.primary,
                           fontWeight: FontWeight.bold,

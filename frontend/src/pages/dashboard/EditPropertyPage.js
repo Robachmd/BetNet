@@ -11,7 +11,7 @@ import Sidebar from '../../components/layout/Sidebar';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { propertyService } from '../../services/properties';
 import {
-  PROPERTY_TYPES, CITIES, ADDIS_ABABA_SUB_CITIES, AMENITIES,
+  PROPERTY_TYPES, LISTING_TYPES, CITIES, ADDIS_ABABA_SUB_CITIES, AMENITIES,
   HALL_AMENITIES, MAX_IMAGES_PER_PROPERTY, ACCEPTED_IMAGE_TYPES,
 } from '../../utils/constants';
 import {
@@ -84,6 +84,7 @@ export default function EditPropertyPage() {
   } = useForm();
 
   const propertyType = watch('propertyType');
+  const listingType = watch('listingType');
   const city = watch('city');
   const isHall = isHallPropertyType(propertyType);
 
@@ -112,7 +113,7 @@ export default function EditPropertyPage() {
           dailyRate: property.hallDetails?.dailyRate || '',
           capacity: property.hallDetails?.capacity || property.capacity || '',
           videoUrl: property.videoUrl || '',
-          listingType: property.listingType || 'rent',
+          listingType: property.listing_type || property.listingType || 'rent',
         });
 
         setExistingImages(
@@ -245,7 +246,7 @@ export default function EditPropertyPage() {
         title: data.title,
         description: data.description,
         propertyType: data.propertyType,
-        listingType: data.listingType,
+        listing_type: data.listingType || 'rent',
         bedrooms: isHall ? undefined : (data.bedrooms ? Number(data.bedrooms) : undefined),
         bathrooms: isHall ? undefined : (data.bathrooms ? Number(data.bathrooms) : undefined),
         area: data.area ? Number(data.area) : undefined,
@@ -322,6 +323,15 @@ export default function EditPropertyPage() {
                 {PROPERTY_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
               {errors.propertyType && <p className={errorCls}>{errors.propertyType.message}</p>}
+            </div>
+            <div>
+              <label className={labelClass}>Offer as</label>
+              <p className="text-xs text-gray-500 mb-2">Rent, sell, or short-term listing.</p>
+              <select {...register('listingType')} className={inputClass}>
+                {LISTING_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
             </div>
             {!isHall && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -436,7 +446,13 @@ export default function EditPropertyPage() {
             <h2 className="text-xl font-semibold text-gray-900">Pricing</h2>
             {!isHall ? (
               <div>
-                <label className={labelClass}>Monthly Rent (ETB) *</label>
+                <label className={labelClass}>
+                  {listingType === 'sale'
+                    ? 'Total price (ETB) *'
+                    : listingType === 'short_term'
+                      ? 'Monthly rate — short-term (ETB) *'
+                      : 'Monthly rent (ETB) *'}
+                </label>
                 <input {...register('monthlyRent', { required: !isHall && 'Required', min: { value: 1, message: 'Must be positive' } })} type="number" className={inputClass} />
                 {errors.monthlyRent && <p className={errorCls}>{errors.monthlyRent.message}</p>}
               </div>
@@ -447,14 +463,6 @@ export default function EditPropertyPage() {
                 <div><label className={labelClass}>Capacity</label><input {...register('capacity')} type="number" className={inputClass} /></div>
               </>
             )}
-            <div>
-              <label className={labelClass}>Listing Type</label>
-              <select {...register('listingType')} className={inputClass}>
-                <option value="rent">For Rent</option>
-                <option value="sale">For Sale</option>
-                <option value="short_term">Short-term</option>
-              </select>
-            </div>
           </div>
         );
 
@@ -546,6 +554,12 @@ export default function EditPropertyPage() {
         const values = getValues();
         const selectedType = PROPERTY_TYPES.find((t) => t.value === values.propertyType);
         const selectedCity = CITIES.find((c) => c.value === values.city);
+        const lt = (values.listingType || 'rent').toString().toLowerCase();
+        const priceReviewSuffix = lt === 'sale'
+          ? 'Total price'
+          : lt === 'short_term'
+            ? 'ETB/mo (short-term)'
+            : 'ETB/mo';
 
         return (
           <div className="space-y-6">
@@ -562,7 +576,7 @@ export default function EditPropertyPage() {
                 <div><span className="text-gray-400">Title:</span> <span className="font-medium text-gray-800">{values.title}</span></div>
                 <div><span className="text-gray-400">Type:</span> <span className="font-medium text-gray-800">{selectedType?.label}</span></div>
                 <div><span className="text-gray-400">City:</span> <span className="font-medium text-gray-800">{selectedCity?.label}</span></div>
-                <div><span className="text-gray-400">Price:</span> <span className="font-medium text-gray-800">{isHall ? `${values.dailyRate || values.hourlyRate || 0} ETB` : `${values.monthlyRent} ETB/mo`}</span></div>
+                <div><span className="text-gray-400">Price:</span> <span className="font-medium text-gray-800">{isHall ? `${values.dailyRate || values.hourlyRate || 0} ETB` : `${values.monthlyRent} ${priceReviewSuffix}`}</span></div>
                 <div><span className="text-gray-400">Images:</span> <span className="font-medium text-gray-800">{existingImages.length} existing + {newImages.length} new</span></div>
                 <div><span className="text-gray-400">Status:</span> <span className="font-medium text-gray-800 capitalize">{availabilityStatus}</span></div>
               </div>

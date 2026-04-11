@@ -400,7 +400,10 @@ export default function LandlordDashboard() {
                 />
               ) : (
                 <div className="space-y-3">
-                  {properties.slice(0, 5).map((property) => (
+                  {properties.slice(0, 5).map((property) => {
+                    const lt = String(property.listing_type || property.listingType || 'rent').toLowerCase();
+                    const priceTail = lt === 'sale' ? ' Total price' : lt === 'short_term' ? '/month (short-term)' : '/month';
+                    return (
                     <div
                       key={property.id}
                       onClick={() => navigate(`/property/${property.slug || property.id}`)}
@@ -413,7 +416,7 @@ export default function LandlordDashboard() {
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 truncate">{property.title}</p>
-                        <p className="text-xs text-gray-400">{formatPrice(property.price)}/month</p>
+                        <p className="text-xs text-gray-400">{formatPrice(property.price)}{priceTail}</p>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
@@ -422,7 +425,8 @@ export default function LandlordDashboard() {
                         <p className="text-xs text-gray-400">{property.inquiries || 0} inquiries</p>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

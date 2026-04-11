@@ -34,6 +34,7 @@ export default function SearchPage() {
     const parsed = parseQueryString(searchParams.toString());
     return {
       propertyType: parsed.propertyType || '',
+      listingType: parsed.listingType || '',
       minPrice: parsed.minPrice || '',
       maxPrice: parsed.maxPrice || '',
       bedrooms: parsed.bedrooms || '',
@@ -113,7 +114,7 @@ export default function SearchPage() {
 
   const handleClearFilters = () => {
     setFilters({
-      propertyType: '', minPrice: '', maxPrice: '', bedrooms: '',
+      propertyType: '', listingType: '', minPrice: '', maxPrice: '', bedrooms: '',
       city: '', subCity: '', amenities: [], verifiedOnly: false,
     });
     setQuery('');

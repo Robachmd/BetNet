@@ -22,17 +22,41 @@ export default function BookingCard({
 }) {
   const {
     id,
-    property = {},
-    date = '',
+    property: propFromBooking = {},
+    property_detail: propertyDetailRaw,
+    date: dateField = '',
+    visit_date: visitDateField = '',
     endDate = '',
     timeSlot = '',
+    visit_time: visitTimeField = '',
     status = 'pending',
     createdAt = '',
     guestCount = 0,
     eventType = '',
   } = booking;
 
+  const detail = propertyDetailRaw || booking.propertyDetail || {};
+  const mergedFromDetail = Object.keys(detail).length
+    ? {
+      title: detail.title,
+      image: detail.primary_image,
+      price: detail.price_monthly,
+      city: detail.city,
+      subCity: detail.sub_city,
+      slug: detail.slug,
+      id: detail.id,
+      listing_type: detail.listing_type,
+    }
+    : {};
+  const property = { ...propFromBooking, ...mergedFromDetail };
+
+  const date = dateField || visitDateField || '';
+  const timeSlotEff = timeSlot || visitTimeField || '';
+
   const statusInfo = statusConfig[status] || statusConfig.pending;
+
+  const lt = String(property.listing_type || property.listingType || 'rent').toLowerCase();
+  const priceSuffix = lt === 'sale' ? 'Total price' : lt === 'short_term' ? '/month (short-term)' : '/month';
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
@@ -87,10 +111,10 @@ export default function BookingCard({
                 <span> — {formatDate(endDate)}</span>
               )}
             </div>
-            {timeSlot && (
+            {timeSlotEff && (
               <div className="flex items-center gap-1.5">
                 <FiClock className="w-4 h-4 text-gray-400" />
-                <span>{timeSlot}</span>
+                <span>{timeSlotEff}</span>
               </div>
             )}
             {guestCount > 0 && (
@@ -101,9 +125,9 @@ export default function BookingCard({
             )}
           </div>
 
-          {property.price && (
+          {(property.price != null && property.price !== '') && (
             <p className="text-sm font-semibold text-green-700 mb-3">
-              {formatETB(property.price)} ETB {property.priceUnit || '/month'}
+              {formatETB(property.price)} ETB {property.priceUnit || priceSuffix}
             </p>
           )}
 

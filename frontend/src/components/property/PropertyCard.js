@@ -28,6 +28,7 @@ export default function PropertyCard({
     images = [],
     price = 0,
     priceUnit = '/month',
+    listingType = 'rent',
     location = {},
     bedrooms = 0,
     bathrooms = 0,
@@ -44,6 +45,7 @@ export default function PropertyCard({
 
   const placeholderImg = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTVlN2ViIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE4IiBmaWxsPSIjOWNhM2FmIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
   const imgs = images.length > 0 ? images : [placeholderImg];
+  const lt = (listingType || property.listing_type || 'rent').toString().toLowerCase();
 
   const handleFavorite = (e) => {
     e.stopPropagation();
@@ -88,7 +90,17 @@ export default function PropertyCard({
         )}
 
         {/* Top badges */}
-        <div className="absolute top-3 left-3 flex items-center gap-2">
+        <div className="absolute top-3 left-3 flex items-center gap-2 flex-wrap">
+          {lt === 'sale' && (
+            <Badge variant="pending" size="sm" className="bg-amber-100 text-amber-900 border-amber-200">
+              For sale
+            </Badge>
+          )}
+          {lt === 'short_term' && (
+            <Badge variant="neutral" size="sm" className="bg-sky-50 text-sky-800 border-sky-200">
+              Short-term
+            </Badge>
+          )}
           {isFeatured && (
             <Badge variant="featured" size="sm" icon>
               Featured
@@ -190,7 +202,7 @@ export default function PropertyCard({
           </div>
         </div>
 
-        <div className="flex items-baseline gap-1">
+        <div className="flex items-baseline gap-1 flex-wrap">
           <span className="text-lg font-bold text-green-800">{formatETB(price)} ETB</span>
           <span className="text-sm text-gray-400">{priceUnit}</span>
         </div>

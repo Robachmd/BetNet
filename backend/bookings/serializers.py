@@ -24,6 +24,7 @@ class _PropertySummarySerializer(serializers.ModelSerializer):
             "slug",
             "title",
             "property_type",
+            "listing_type",
             "price_monthly",
             "price_currency",
             "city",

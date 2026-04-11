@@ -115,6 +115,11 @@ class Property(models.Model):
         BUSINESS_SHOP = "BUSINESS_SHOP", "Business Shop"
         HALL_RENTAL = "HALL_RENTAL", "Hall Rental"
 
+    class ListingType(models.TextChoices):
+        RENT = "rent", "For rent"
+        SALE = "sale", "For sale"
+        SHORT_TERM = "short_term", "Short-term rental"
+
     class BedroomCount(models.TextChoices):
         STUDIO = "STUDIO", "Studio"
         ONE = "ONE", "1 Bedroom"
@@ -160,8 +165,17 @@ class Property(models.Model):
         max_digits=12,
         decimal_places=2,
         validators=[MinValueValidator(0)],
+        help_text="Monthly rent, short-term rate, or total asking price when listing is for sale.",
     )
     price_currency = models.CharField(max_length=3, default="ETB")
+
+    listing_type = models.CharField(
+        max_length=12,
+        choices=ListingType.choices,
+        default=ListingType.RENT,
+        db_index=True,
+        help_text="Whether the owner is offering the property for rent, sale, or short-term rent.",
+    )
 
     location = models.OneToOneField(
         Location, on_delete=models.CASCADE, related_name="property"

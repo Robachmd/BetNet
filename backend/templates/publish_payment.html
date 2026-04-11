@@ -34,7 +34,10 @@
       <div class="flex-1 min-w-0">
         <h3 class="font-semibold text-gray-900 truncate">{{ property.title }}</h3>
         <p class="text-sm text-gray-500">{{ property.location }}</p>
-        <p class="text-primary-700 font-bold mt-1">ETB {{ property.price_monthly|floatformat:0|intcomma }} / month</p>
+        <p class="text-primary-700 font-bold mt-1">
+          ETB {{ property.price_monthly|floatformat:0|intcomma }}
+          {% if property.listing_type == 'sale' %}<span class="text-gray-600 font-semibold">Total price</span>{% elif property.listing_type == 'short_term' %}<span class="text-gray-600">/ month (short-term)</span>{% else %}<span class="text-gray-600">/ month</span>{% endif %}
+        </p>
         <span class="inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
           Unpublished
         </span>

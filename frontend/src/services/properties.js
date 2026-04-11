@@ -52,6 +52,11 @@ function mapFrontendFilters(f = {}) {
 
   if (f.verifiedOnly === true || f.is_verified === true) q.is_verified = 'true';
 
+  const lt = (f.listingType || f.listing_type || '').toString().toLowerCase();
+  if (lt === 'rent' || lt === 'sale' || lt === 'short_term') {
+    q.listing_type = lt;
+  }
+
   if (f.sort === 'price_asc') q.ordering = 'price_monthly';
   if (f.sort === 'price_desc') q.ordering = '-price_monthly';
   if (f.page) q.page = f.page;

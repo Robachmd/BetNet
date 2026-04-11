@@ -11,7 +11,7 @@ import Sidebar from '../../components/layout/Sidebar';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { propertyService } from '../../services/properties';
 import {
-  PROPERTY_TYPES, CITIES, ADDIS_ABABA_SUB_CITIES, AMENITIES,
+  PROPERTY_TYPES, LISTING_TYPES, CITIES, ADDIS_ABABA_SUB_CITIES, AMENITIES,
   HALL_AMENITIES, MAX_IMAGES_PER_PROPERTY, ACCEPTED_IMAGE_TYPES,
 } from '../../utils/constants';
 import { validateImageFile, getErrorMessage, isHallPropertyType } from '../../utils/helpers';
@@ -86,6 +86,7 @@ export default function AddPropertyPage() {
   });
 
   const propertyType = watch('propertyType');
+  const listingType = watch('listingType');
   const city = watch('city');
   const isHall = isHallPropertyType(propertyType);
 
@@ -202,7 +203,7 @@ export default function AddPropertyPage() {
         title: data.title,
         description: data.description,
         propertyType: data.propertyType,
-        listingType: data.listingType,
+        listing_type: data.listingType || 'rent',
         bedrooms: isHall ? undefined : (data.bedrooms ? Number(data.bedrooms) : undefined),
         bathrooms: isHall ? undefined : (data.bathrooms ? Number(data.bathrooms) : undefined),
         area: data.area ? Number(data.area) : undefined,
@@ -287,6 +288,16 @@ export default function AddPropertyPage() {
                 ))}
               </select>
               {errors.propertyType && <p className={errorClass}>{errors.propertyType.message}</p>}
+            </div>
+
+            <div>
+              <label className={labelClass}>Offer as *</label>
+              <p className="text-xs text-gray-500 mb-2">Choose whether you are renting out the property or selling it.</p>
+              <select {...register('listingType')} className={inputClass}>
+                {LISTING_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
             </div>
 
             {!isHall && (
@@ -455,18 +466,28 @@ export default function AddPropertyPage() {
         return (
           <div className="space-y-5">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Pricing</h2>
-            <p className="text-sm text-gray-500 mb-6">Set the price for your property.</p>
+            <p className="text-sm text-gray-500 mb-6">
+              {listingType === 'sale'
+                ? 'Enter the total sale price. Buyers pay this amount to own the property, not a monthly rent.'
+                : 'Set the price for your property.'}
+            </p>
 
             {!isHall ? (
               <div>
-                <label className={labelClass}>Monthly Rent (ETB) *</label>
+                <label className={labelClass}>
+                  {listingType === 'sale'
+                    ? 'Total price (ETB) *'
+                    : listingType === 'short_term'
+                      ? 'Monthly rate — short-term (ETB) *'
+                      : 'Monthly rent (ETB) *'}
+                </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">ETB</span>
                   <input
-                    {...register('monthlyRent', { required: !isHall && 'Monthly rent is required', min: { value: 1, message: 'Must be positive' } })}
+                    {...register('monthlyRent', { required: !isHall && 'Price is required', min: { value: 1, message: 'Must be positive' } })}
                     type="number"
                     className={`${inputClass} pl-14`}
-                    placeholder="10,000"
+                    placeholder={listingType === 'sale' ? 'e.g., 15,000,000' : '10,000'}
                   />
                 </div>
                 {errors.monthlyRent && <p className={errorClass}>{errors.monthlyRent.message}</p>}
@@ -509,15 +530,6 @@ export default function AddPropertyPage() {
                 </div>
               </div>
             )}
-
-            <div>
-              <label className={labelClass}>Listing Type</label>
-              <select {...register('listingType')} className={inputClass}>
-                <option value="rent">For Rent</option>
-                <option value="sale">For Sale</option>
-                <option value="short_term">Short-term Rental</option>
-              </select>
-            </div>
           </div>
         );
 
@@ -607,6 +619,12 @@ export default function AddPropertyPage() {
         const selectedCity = CITIES.find((c) => c.value === values.city);
         const selectedSubCity = ADDIS_ABABA_SUB_CITIES.find((sc) => sc.value === values.subCity);
         const selectedType = PROPERTY_TYPES.find((t) => t.value === values.propertyType);
+        const selectedListing = LISTING_TYPES.find((t) => t.value === values.listingType);
+        const priceReviewLabel = values.listingType === 'sale'
+          ? 'Total price'
+          : values.listingType === 'short_term'
+            ? 'Short-term monthly rate'
+            : 'Monthly rent';
 
         return (
           <div className="space-y-6">
@@ -618,6 +636,7 @@ export default function AddPropertyPage() {
                 title: 'Basic Info', items: [
                   { label: 'Title', value: values.title },
                   { label: 'Type', value: selectedType?.label },
+                  { label: 'Offer', value: selectedListing?.label || values.listingType },
                   { label: 'Description', value: values.description?.slice(0, 100) + (values.description?.length > 100 ? '...' : '') },
                   ...(!isHall ? [
                     { label: 'Bedrooms', value: values.bedrooms },
@@ -640,7 +659,7 @@ export default function AddPropertyPage() {
                   { label: 'Hourly Rate', value: values.hourlyRate ? `${values.hourlyRate} ETB` : '-' },
                   { label: 'Daily Rate', value: values.dailyRate ? `${values.dailyRate} ETB` : '-' },
                 ] : [
-                  { label: 'Monthly Rent', value: values.monthlyRent ? `${values.monthlyRent} ETB` : '-' },
+                  { label: priceReviewLabel, value: values.monthlyRent ? `${values.monthlyRent} ETB` : '-' },
                 ],
               },
             ].map((section) => (

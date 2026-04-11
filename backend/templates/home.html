@@ -50,7 +50,7 @@
           {% if p.is_featured %}<span class="absolute top-2 right-2 bg-yellow-500 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-md">&#9733; Featured</span>{% endif %}
         </div>
         <div class="p-3">
-          <div class="font-extrabold text-primary-700 text-sm">ETB {{ p.price_monthly|floatformat:0 }}/mo</div>
+          <div class="font-extrabold text-primary-700 text-sm">ETB {{ p.price_monthly|floatformat:0 }}{% if p.listing_type == 'sale' %} <span class="text-gray-500 font-semibold">Total price</span>{% elif p.listing_type == 'short_term' %}<span class="text-gray-500">/mo (short-term)</span>{% else %}/mo{% endif %}</div>
           <div class="text-[11px] text-gray-500 mt-0.5">{{ p.location.sub_city }}, {{ p.location.city }}</div>
         </div>
       </a>
@@ -313,7 +313,7 @@
         </div>
         <div class="p-4">
           <h3 class="font-bold text-gray-900 group-hover:text-primary-700 transition truncate">{{ p.title }}</h3>
-          <div class="text-primary-700 font-extrabold text-lg mt-1">ETB {{ p.price_monthly|floatformat:0 }}<span class="text-xs font-normal text-gray-400">/mo</span></div>
+          <div class="text-primary-700 font-extrabold text-lg mt-1">ETB {{ p.price_monthly|floatformat:0 }}{% if p.listing_type == 'sale' %}<span class="text-xs font-normal text-gray-400"> Total price</span>{% elif p.listing_type == 'short_term' %}<span class="text-xs font-normal text-gray-400">/mo (short-term)</span>{% else %}<span class="text-xs font-normal text-gray-400">/mo</span>{% endif %}</div>
           <div class="flex items-center gap-1 text-gray-500 text-xs mt-2">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 0115 0z"/></svg>
             {{ p.location.sub_city }}, {{ p.location.city }}

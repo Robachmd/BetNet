@@ -7,6 +7,7 @@ class PropertySummary {
     required this.title,
     required this.propertyType,
     this.bedrooms,
+    this.listingType = 'rent',
     required this.priceMonthly,
     required this.priceCurrency,
     required this.city,
@@ -24,6 +25,8 @@ class PropertySummary {
   final String title;
   final String propertyType;
   final String? bedrooms;
+  /// rent | sale | short_term
+  final String listingType;
   final String priceMonthly;
   final String priceCurrency;
   final String city;
@@ -49,6 +52,7 @@ class PropertySummary {
       title: j['title'] as String,
       propertyType: j['property_type'] as String? ?? '',
       bedrooms: j['bedrooms'] as String?,
+      listingType: (j['listing_type'] as String?) ?? 'rent',
       priceMonthly: '${j['price_monthly']}',
       priceCurrency: j['price_currency'] as String? ?? 'ETB',
       city: j['city'] as String? ?? '',
@@ -70,6 +74,7 @@ class PropertySummary {
         'title': title,
         'property_type': propertyType,
         'bedrooms': bedrooms,
+        'listing_type': listingType,
         'price_monthly': priceMonthly,
         'price_currency': priceCurrency,
         'city': city,
@@ -92,6 +97,7 @@ class PropertySummary {
       title: title,
       propertyType: propertyType,
       bedrooms: bedrooms,
+      listingType: listingType,
       priceMonthly: priceMonthly,
       priceCurrency: priceCurrency,
       city: city,
@@ -174,6 +180,7 @@ class PropertyDetail {
       title: j['title'] as String,
       propertyType: j['property_type'] as String? ?? '',
       bedrooms: j['bedrooms'] as String?,
+      listingType: (j['listing_type'] as String?) ?? 'rent',
       priceMonthly: '${j['price_monthly']}',
       priceCurrency: j['price_currency'] as String? ?? 'ETB',
       city: loc?['city'] as String? ?? '',
@@ -197,6 +204,7 @@ class PropertyDetail {
       title: summary.title,
       propertyType: summary.propertyType,
       bedrooms: summary.bedrooms,
+      listingType: summary.listingType,
       priceMonthly: summary.priceMonthly,
       priceCurrency: summary.priceCurrency,
       city: summary.city,

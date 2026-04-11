@@ -8,6 +8,9 @@ class PropertyFilter(django_filters.FilterSet):
     property_type = django_filters.ChoiceFilter(
         choices=Property.PropertyType.choices,
     )
+    listing_type = django_filters.ChoiceFilter(
+        choices=Property.ListingType.choices,
+    )
     bedrooms = django_filters.ChoiceFilter(
         choices=Property.BedroomCount.choices,
     )
@@ -45,6 +48,7 @@ class PropertyFilter(django_filters.FilterSet):
         model = Property
         fields = [
             "property_type",
+            "listing_type",
             "bedrooms",
             "is_verified",
             "is_available",

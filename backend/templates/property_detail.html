@@ -136,12 +136,26 @@
           <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">
             {{ property.get_property_type_display }}
           </span>
+          {% if property.listing_type == 'sale' %}
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">For sale</span>
+          {% elif property.listing_type == 'short_term' %}
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800">Short-term</span>
+          {% else %}
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">For rent</span>
+          {% endif %}
         </div>
 
         <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-3">{{ property.title }}</h1>
 
         <p class="text-3xl font-extrabold text-primary-700 mb-4">
-          ETB {{ property.price_monthly|floatformat:0|intcomma }} <span class="text-base font-medium text-gray-500">/ month</span>
+          ETB {{ property.price_monthly|floatformat:0|intcomma }}
+          {% if property.listing_type == 'sale' %}
+          <span class="text-base font-medium text-gray-500"> Total price</span>
+          {% elif property.listing_type == 'short_term' %}
+          <span class="text-base font-medium text-gray-500">/ month <span class="text-gray-400">(short-term)</span></span>
+          {% else %}
+          <span class="text-base font-medium text-gray-500">/ month</span>
+          {% endif %}
         </p>
 
         <div class="flex flex-wrap items-center gap-2 text-gray-500 mb-4">
@@ -528,7 +542,9 @@
         <p class="text-3xl font-extrabold text-primary-700 mb-1">
           ETB {{ property.price_monthly|floatformat:0|intcomma }}
         </p>
-        <p class="text-sm text-gray-500 mb-6">per month</p>
+        <p class="text-sm text-gray-500 mb-6">
+          {% if property.listing_type == 'sale' %}Total price{% elif property.listing_type == 'short_term' %}Per month (short-term){% else %}Per month{% endif %}
+        </p>
 
         <div class="space-y-3">
           {% if user.is_authenticated and user != property.owner %}
@@ -690,7 +706,7 @@
           <a href="{% url 'property_detail' prop.slug %}">
             <h3 class="font-bold text-gray-900 hover:text-primary-700 transition-colors line-clamp-1 mb-1">{{ prop.title }}</h3>
           </a>
-          <p class="text-xl font-extrabold text-primary-700 mb-1">ETB {{ prop.price_monthly|floatformat:0|intcomma }}<span class="text-xs font-medium text-gray-500">/mo</span></p>
+          <p class="text-xl font-extrabold text-primary-700 mb-1">ETB {{ prop.price_monthly|floatformat:0|intcomma }}{% if prop.listing_type == 'sale' %}<span class="text-xs font-medium text-gray-500"> Total price</span>{% elif prop.listing_type == 'short_term' %}<span class="text-xs font-medium text-gray-500">/mo (short-term)</span>{% else %}<span class="text-xs font-medium text-gray-500">/mo</span>{% endif %}</p>
           <p class="text-sm text-gray-500 flex items-center gap-1">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             {{ prop.location.sub_city }}, {{ prop.location.city }}
@@ -709,7 +725,7 @@
 <div class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 p-3 lg:hidden">
   <div class="flex items-center gap-3 max-w-lg mx-auto">
     <div class="flex-1">
-      <p class="text-xs text-gray-500">Monthly rent</p>
+      <p class="text-xs text-gray-500">{% if property.listing_type == 'sale' %}Total price{% elif property.listing_type == 'short_term' %}Short-term rate{% else %}Monthly rent{% endif %}</p>
       <p class="text-lg font-extrabold text-primary-700">ETB {{ property.price_monthly|floatformat:0|intcomma }}</p>
     </div>
     <button @click="showBooking = true; window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})"

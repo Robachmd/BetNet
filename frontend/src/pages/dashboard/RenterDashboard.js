@@ -62,8 +62,14 @@ export default function RenterDashboard() {
       const list = listFromApi(data);
       const now = new Date();
       setBookings({
-        upcoming: list.filter((b) => new Date(b.date) >= now && b.status !== 'cancelled'),
-        past: list.filter((b) => new Date(b.date) < now || b.status === 'completed'),
+        upcoming: list.filter((b) => {
+          const d = new Date(b.date || b.visit_date || 0);
+          return d >= now && b.status !== 'cancelled';
+        }),
+        past: list.filter((b) => {
+          const d = new Date(b.date || b.visit_date || 0);
+          return d < now || b.status === 'completed';
+        }),
       });
     } catch {
       setErrorKey('bookings', true);
