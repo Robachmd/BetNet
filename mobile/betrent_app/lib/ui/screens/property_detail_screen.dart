@@ -116,7 +116,7 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
     }
     final uri = Uri(scheme: 'tel', path: phone.replaceAll(RegExp(r'\s'), ''));
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 

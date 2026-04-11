@@ -17,7 +17,7 @@ export const PROPERTY_TYPES = [
   { value: 'commercial', label: 'Commercial Space', labelAm: 'የንግድ ቦታ' },
   { value: 'office', label: 'Office', labelAm: 'ቢሮ' },
   { value: 'warehouse', label: 'Warehouse', labelAm: 'መጋዘን' },
-  { value: 'hall', label: 'Event Hall', labelAm: 'አዳራሽ' },
+  { value: 'hall', label: 'Hall Rental', labelAm: 'አዳራሽ ኪራይ' },
   { value: 'shop', label: 'Shop', labelAm: 'ሱቅ' },
 ];
 

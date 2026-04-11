@@ -336,6 +336,40 @@ class BetRentApi {
     return res.data as Map<String, dynamic>;
   }
 
+  /// Starts a server-side payment and returns `checkout_url` when the provider supports redirect.
+  /// [paymentType] e.g. `LISTING_FEE`, `FEATURED_LISTING`; [paymentMethod] `CHAPA`, `TELEBIRR`, `STRIPE`.
+  Future<Map<String, dynamic>> initiatePayment({
+    required String paymentType,
+    required double amount,
+    required String paymentMethod,
+    int? propertyId,
+    int? hallBookingId,
+    String description = '',
+    String? phone,
+  }) async {
+    final base = AppConfig.apiBaseUrl;
+    final res = await _dio.post(
+      '/api/payments/initiate/',
+      data: <String, dynamic>{
+        'payment_type': paymentType,
+        'amount': amount.toStringAsFixed(2),
+        'currency': 'ETB',
+        'payment_method': paymentMethod,
+        if (propertyId != null) 'property_id': propertyId,
+        if (hallBookingId != null) 'hall_booking_id': hallBookingId,
+        'description': description,
+        'callback_url': '$base/',
+        'return_url': '$base/',
+        if (phone != null && phone.isNotEmpty) 'phone': phone,
+      },
+    );
+    final raw = res.data;
+    if (raw is! Map) {
+      throw ApiException('Unexpected payment response');
+    }
+    return Map<String, dynamic>.from(raw);
+  }
+
   Future<void> uploadPropertyImage({
     required String propertySlug,
     required String filePath,
@@ -437,7 +471,7 @@ class AuthState {
   const AuthState._(this.phase, this.user);
   const AuthState.bootstrapping() : this._(AuthPhase.bootstrapping, null);
   const AuthState.guest() : this._(AuthPhase.guest, null);
-  const AuthState.authenticated(this.user)
+  const AuthState.authenticated(BetRentUser user)
       : this._(AuthPhase.authenticated, user);
 
   final AuthPhase phase;

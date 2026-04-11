@@ -86,6 +86,32 @@ const BEDROOM_LABEL = {
   THREE_PLUS: '3+ beds',
 };
 
+const API_PROPERTY_TYPE_TO_FORM = {
+  APARTMENT: 'apartment',
+  SERVICE_HOUSE: 'house',
+  VILLA: 'villa',
+  CONDOMINIUM: 'condominium',
+  BUSINESS_SHOP: 'shop',
+  HALL_RENTAL: 'hall',
+  REAL_ESTATE: 'office',
+};
+
+/** Map DRF `property_type` enum to Add/Edit Property form `<select>` values. */
+export function propertyTypeFormFromApi(apiType) {
+  if (apiType == null || apiType === '') return '';
+  const key = String(apiType).toUpperCase();
+  if (API_PROPERTY_TYPE_TO_FORM[key]) return API_PROPERTY_TYPE_TO_FORM[key];
+  return String(apiType).toLowerCase();
+}
+
+/** True for hall / event space — hide bedrooms and bathrooms in forms. */
+export function isHallPropertyType(propertyType) {
+  if (propertyType == null || propertyType === '') return false;
+  const u = String(propertyType).toUpperCase().replace(/[\s-]+/g, '_');
+  if (u === 'HALL_RENTAL' || u === 'HALL') return true;
+  return String(propertyType).toLowerCase() === 'hall';
+}
+
 export function normalizePropertyForCard(raw) {
   if (!raw) return {};
   const loc = raw.location || {};

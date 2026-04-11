@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/config.dart';
 import '../../services/betrent_api.dart';
+import '../../utils/external_checkout.dart';
 import 'filters_screen.dart';
 
 class AddListingScreen extends ConsumerStatefulWidget {
@@ -32,6 +34,112 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
     _subCity.dispose();
     _specific.dispose();
     super.dispose();
+  }
+
+  Future<void> _runListingFeeCheckout({
+    required int propertyId,
+    required String title,
+    required String paymentMethod,
+  }) async {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final api = ref.read(betRentApiProvider);
+    final phone = ref.read(authControllerProvider).user?.phoneNumber ?? '';
+    if (paymentMethod == 'TELEBIRR' && phone.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Telebirr needs a phone number on your account.'),
+        ),
+      );
+      return;
+    }
+    try {
+      final data = await api.initiatePayment(
+        paymentType: 'LISTING_FEE',
+        amount: AppConfig.defaultListingFeeEtb,
+        paymentMethod: paymentMethod,
+        propertyId: propertyId,
+        description: 'Listing fee: $title',
+        phone: phone.isEmpty ? null : phone,
+      );
+      final url = data['checkout_url'] as String?;
+      if (url == null || url.isEmpty) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('No checkout link returned. Complete payment on the website if needed.'),
+          ),
+        );
+        return;
+      }
+      final opened = await openPaymentCheckoutUrl(url);
+      if (!mounted) return;
+      if (opened) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Finish payment in your browser or bank app, then return here.',
+            ),
+          ),
+        );
+      } else {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Could not open the payment page. Try again or use the website.'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(content: Text('$e')));
+      }
+    }
+  }
+
+  Future<void> _offerPublishPayment({
+    required int propertyId,
+    required String title,
+  }) async {
+    if (!mounted) return;
+    const fee = AppConfig.defaultListingFeeEtb;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Publish listing'),
+        content: Text(
+          'Pay $fee ETB listing fee to publish. Choose a method — you will leave the app '
+          'so Chapa or Telebirr can open your bank or wallet app.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Later'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _runListingFeeCheckout(
+                propertyId: propertyId,
+                title: title,
+                paymentMethod: 'CHAPA',
+              );
+            },
+            child: const Text('Chapa'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _runListingFeeCheckout(
+                propertyId: propertyId,
+                title: title,
+                paymentMethod: 'TELEBIRR',
+              );
+            },
+            child: const Text('Telebirr'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _pickImages() async {
@@ -79,9 +187,21 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Listing created. Complete any publish steps on the web if required.')),
+          const SnackBar(content: Text('Listing created.')),
         );
-        Navigator.pop(context);
+        final rawId = body['id'];
+        final propertyId = switch (rawId) {
+          int v => v,
+          num v => v.toInt(),
+          _ => null,
+        };
+        if (propertyId != null) {
+          await _offerPublishPayment(
+            propertyId: propertyId,
+            title: _title.text.trim(),
+          );
+        }
+        if (mounted) Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {

@@ -14,7 +14,10 @@ import {
   PROPERTY_TYPES, CITIES, ADDIS_ABABA_SUB_CITIES, AMENITIES,
   HALL_AMENITIES, MAX_IMAGES_PER_PROPERTY, ACCEPTED_IMAGE_TYPES,
 } from '../../utils/constants';
-import { validateImageFile, getImageUrl, getErrorMessage } from '../../utils/helpers';
+import {
+  validateImageFile, getImageUrl, getErrorMessage,
+  propertyTypeFormFromApi, isHallPropertyType,
+} from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
 const STEPS = [
@@ -82,7 +85,7 @@ export default function EditPropertyPage() {
 
   const propertyType = watch('propertyType');
   const city = watch('city');
-  const isHall = propertyType === 'hall';
+  const isHall = isHallPropertyType(propertyType);
 
   useEffect(() => {
     const loadProperty = async () => {
@@ -93,7 +96,7 @@ export default function EditPropertyPage() {
         reset({
           title: property.title || '',
           description: property.description || '',
-          propertyType: property.propertyType || '',
+          propertyType: propertyTypeFormFromApi(property.property_type || property.propertyType),
           bedrooms: property.bedrooms || '',
           bathrooms: property.bathrooms || '',
           area: property.area || '',
@@ -243,8 +246,8 @@ export default function EditPropertyPage() {
         description: data.description,
         propertyType: data.propertyType,
         listingType: data.listingType,
-        bedrooms: data.bedrooms ? Number(data.bedrooms) : undefined,
-        bathrooms: data.bathrooms ? Number(data.bathrooms) : undefined,
+        bedrooms: isHall ? undefined : (data.bedrooms ? Number(data.bedrooms) : undefined),
+        bathrooms: isHall ? undefined : (data.bathrooms ? Number(data.bathrooms) : undefined),
         area: data.area ? Number(data.area) : undefined,
         status: availabilityStatus,
         location: {

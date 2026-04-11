@@ -26,4 +26,7 @@ class AppConfig {
 
   /// Poll interval for in-app notifications while app is foregrounded.
   static const Duration notificationPollInterval = Duration(minutes: 2);
+
+  /// Must match Django `LISTING_FEE_ETB` default when initiating pay-to-publish from mobile.
+  static const double defaultListingFeeEtb = 150;
 }
