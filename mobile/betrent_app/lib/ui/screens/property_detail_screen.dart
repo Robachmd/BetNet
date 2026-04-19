@@ -6,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/models/property.dart';
 import '../../services/betrent_api.dart';
-import 'chat_thread_screen.dart';
 import 'login_screen.dart';
 
 final _propertyDetailProvider =
@@ -76,37 +75,6 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
     }
   }
 
-  Future<void> _openChat(PropertyDetail d) async {
-    final auth = ref.read(authControllerProvider);
-    if (!auth.isAuthenticated) {
-      if (!mounted) return;
-      await Navigator.push<void>(
-        context,
-        MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
-      );
-      return;
-    }
-    final api = ref.read(betRentApiProvider);
-    try {
-      final cid = await api.createConversation(
-        participantId: d.owner.id,
-        propertyId: d.summary.id,
-        initialMessage: 'Hi, I am interested in "${d.summary.title}".',
-      );
-      if (!mounted) return;
-      await Navigator.push<void>(
-        context,
-        MaterialPageRoute<void>(
-          builder: (_) => ChatThreadScreen(conversationId: cid, title: d.owner.firstName),
-        ),
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-      }
-    }
-  }
-
   Future<void> _callOwner(String? phone) async {
     if (phone == null || phone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -157,7 +125,10 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
                     height: 22,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Icon(s.isFavorited ? Icons.favorite : Icons.favorite_border),
+                : Icon(
+                    s.isFavorited ? Icons.favorite : Icons.favorite_border,
+                    color: s.isFavorited ? Colors.red : null,
+                  ),
           ),
         ],
       ),
@@ -236,24 +207,13 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
                 const SizedBox(height: 8),
                 Text(d.description),
                 const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () => _openChat(d),
-                        icon: const Icon(Icons.chat),
-                        label: const Text('Message landlord'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _callOwner(d.owner.phoneNumber),
-                        icon: const Icon(Icons.phone),
-                        label: const Text('Call'),
-                      ),
-                    ),
-                  ],
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _callOwner(d.owner.phoneNumber),
+                    icon: const Icon(Icons.phone),
+                    label: const Text('Call'),
+                  ),
                 ),
                 if (d.mapsUrl != null && d.mapsUrl!.isNotEmpty) ...[
                   const SizedBox(height: 12),

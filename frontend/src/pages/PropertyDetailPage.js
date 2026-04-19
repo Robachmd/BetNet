@@ -231,7 +231,7 @@ export default function PropertyDetailPage() {
               <FiShare2 className="w-5 h-5" />
             </button>
             <button onClick={handleFavorite} className="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Favorite">
-              <FiHeart className={`w-5 h-5 ${isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} />
+              <FiHeart className={`w-5 h-5 ${isFavorited ? 'fill-red-600 text-red-600' : 'text-gray-500'}`} />
             </button>
           </div>
         </div>

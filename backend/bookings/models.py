@@ -56,6 +56,15 @@ class Booking(models.Model):
     )
     message = models.TextField(blank=True, default="")
     landlord_response = models.TextField(blank=True, default="")
+    contact_agreement_ack = models.BooleanField(
+        default=False,
+        help_text="Renter confirmed they agreed this visit via chat or phone in advance.",
+    )
+    visit_reminder_sent = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Set when a visit-day reminder notification was sent.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

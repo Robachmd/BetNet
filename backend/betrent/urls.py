@@ -92,8 +92,12 @@ urlpatterns = [
     path('halls/', views.halls_view, name='halls'),
     path('profile/', views.profile_view, name='profile'),
     path('messages/', views.messages_inbox, name='messages_inbox'),
+    path(
+        'messages/start-owner/<int:user_id>/',
+        views.start_owner_to_owner_message,
+        name='start_owner_dm',
+    ),
     path('messages/<int:conversation_id>/', views.conversation_thread, name='conversation_thread'),
-    path('property/<slug:slug>/message/', views.start_property_message, name='start_property_message'),
     path('publish/<slug:slug>/', views.publish_payment, name='publish_payment'),
     path('publish/<slug:slug>/pay/', views.process_publish_payment, name='process_publish_payment'),
 

@@ -1,9 +1,11 @@
 import logging
+from datetime import datetime
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.conf import settings
 from django.core.mail import send_mail
+from django.utils import timezone as django_timezone
 
 from .models import Notification, NotificationPreference
 
@@ -144,6 +146,86 @@ def notify_price_drop(property_obj, old_price):
                     "new_price": str(property_obj.price_monthly),
                 },
             )
+
+
+def notify_visit_booking_created(booking):
+    """Notify landlord when a renter requests a property visit."""
+    if booking.booking_type != booking.BookingType.VISIT:
+        return
+    prop = booking.property
+    aware_dt = django_timezone.make_aware(
+        datetime.combine(booking.visit_date, booking.visit_time)
+    )
+    dt_str = django_timezone.localtime(aware_dt).strftime("%b %d, %Y at %I:%M %p")
+    create_notification(
+        recipient=prop.owner,
+        notification_type=Notification.NotificationType.BOOKING_VISIT_REQUEST,
+        title="New visit request",
+        message=(
+            f'{booking.renter.get_full_name() or booking.renter} requested a visit to '
+            f'"{prop.title}" on {dt_str}.'
+        ),
+        data={
+            "booking_id": booking.pk,
+            "property_id": prop.pk,
+            "property_slug": prop.slug,
+        },
+    )
+
+
+def send_visit_day_reminders():
+    """
+    Send notifications for visits scheduled for today. Idempotent per booking.
+    Call from cron: python manage.py send_visit_reminders
+    """
+    from bookings.models import Booking
+
+    today = django_timezone.localdate()
+    qs = Booking.objects.filter(
+        booking_type=Booking.BookingType.VISIT,
+        visit_date=today,
+        visit_reminder_sent=False,
+        status__in=[Booking.Status.PENDING, Booking.Status.CONFIRMED],
+    ).select_related("property", "property__owner", "renter")
+
+    for booking in qs.iterator():
+        prop = booking.property
+        aware_dt = django_timezone.make_aware(
+            datetime.combine(booking.visit_date, booking.visit_time)
+        )
+        time_str = django_timezone.localtime(aware_dt).strftime("%I:%M %p")
+        title = f"Visit today: {prop.title}"
+        body = (
+            f'Your visit for "{prop.title}" is scheduled today at {time_str}.'
+        )
+        create_notification(
+            recipient=booking.renter,
+            notification_type=Notification.NotificationType.VISIT_REMINDER,
+            title=title,
+            message=body,
+            data={
+                "booking_id": booking.pk,
+                "property_id": prop.pk,
+                "property_slug": prop.slug,
+            },
+        )
+        create_notification(
+            recipient=prop.owner,
+            notification_type=Notification.NotificationType.VISIT_REMINDER,
+            title=title,
+            message=(
+                f'Visit scheduled today at {time_str} with '
+                f"{booking.renter.get_full_name() or booking.renter} for "
+                f'"{prop.title}".'
+            ),
+            data={
+                "booking_id": booking.pk,
+                "property_id": prop.pk,
+                "property_slug": prop.slug,
+            },
+        )
+        booking.visit_reminder_sent = True
+        booking.save(update_fields=["visit_reminder_sent", "updated_at"])
 
 
 def notify_booking_update(booking):

@@ -11,17 +11,20 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db import IntegrityError
 from django.db.models import Avg, Count, F, Max, Min, Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_date, parse_time
 from django.utils.translation import check_for_language, gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts.models import User
 from bookings.models import Booking, HallBooking
 from chat.models import Conversation, Message
+from notifications.services import notify_booking_update, notify_visit_booking_created
 from payments.models import Payment
 from properties.city_utils import resolve_city_from_post
 from properties.models import (
@@ -38,6 +41,34 @@ from reviews.models import Review
 
 MAX_LISTING_PROPERTY_VIDEOS = 5
 MAX_PROPERTY_VIDEO_BYTES = 75 * 1024 * 1024
+
+
+def _parse_visit_time_from_post(value: str):
+    """Parse time from booking form; supports HTML5 time and common browser variants."""
+    s = (value or "").strip()
+    if not s:
+        return None
+    t = parse_time(s)
+    if t is not None:
+        return t
+    if "." in s and s.count(":") >= 1:
+        t = parse_time(s.split(".", 1)[0])
+        if t is not None:
+            return t
+    for fmt in (
+        "%H:%M:%S",
+        "%H:%M",
+        "%I:%M %p",
+        "%I:%M:%S %p",
+        "%I:%M%p",
+        "%I:%M:%S%p",
+    ):
+        try:
+            return datetime.strptime(s, fmt).time()
+        except ValueError:
+            continue
+    return None
+
 
 # Map User.preferred_language (EN/AM/OM) to Django locale codes (en/am/om)
 _USER_LANG_TO_DJANGO = {"EN": "en", "AM": "am", "OM": "om"}
@@ -62,6 +93,114 @@ def _language_cookie_code_for_user(user):
     return _USER_LANG_TO_DJANGO.get(
         (getattr(user, "preferred_language", None) or "").upper(), ""
     )
+
+
+def _activity_feed_url_from_notification_data(data: dict):
+    """Resolve a link for dashboard activity from notification JSON data."""
+    if not data:
+        return None
+    slug = data.get("property_slug")
+    if slug:
+        try:
+            return reverse("property_detail", kwargs={"slug": slug})
+        except Exception:
+            pass
+    pid = data.get("property_id")
+    if pid:
+        slug = Property.objects.filter(pk=pid).values_list("slug", flat=True).first()
+        if slug:
+            try:
+                return reverse("property_detail", kwargs={"slug": slug})
+            except Exception:
+                pass
+    cid = data.get("conversation_id")
+    if cid:
+        try:
+            return reverse("conversation_thread", kwargs={"conversation_id": cid})
+        except Exception:
+            pass
+    return None
+
+
+def _dashboard_activity_feed(user, *, as_landlord: bool, limit: int = 25):
+    """Merge notifications, favorites, messages, and listing events into one timeline."""
+    from notifications.models import Notification
+
+    rows = []
+
+    for n in Notification.objects.filter(recipient=user).order_by("-created_at")[:80]:
+        d = n.data if isinstance(n.data, dict) else {}
+        rows.append(
+            {
+                "at": n.created_at,
+                "kind": "notification",
+                "title": n.title,
+                "body": (n.message or "")[:400],
+                "url": _activity_feed_url_from_notification_data(d),
+            }
+        )
+
+    if not as_landlord:
+        for fav in (
+            FavoriteProperty.objects.filter(user=user)
+            .select_related("property")
+            .order_by("-created_at")[:25]
+        ):
+            rows.append(
+                {
+                    "at": fav.created_at,
+                    "kind": "favorite",
+                    "title": _("Saved a listing"),
+                    "body": fav.property.title,
+                    "url": reverse(
+                        "property_detail", kwargs={"slug": fav.property.slug}
+                    ),
+                }
+            )
+
+    for msg in (
+        Message.objects.filter(sender=user)
+        .select_related("conversation", "conversation__property")
+        .order_by("-created_at")[:25]
+    ):
+        conv = msg.conversation
+        prop = getattr(conv, "property", None)
+        text = (msg.content or "").strip()
+        if not text and prop:
+            text = prop.title
+        url = None
+        if conv:
+            url = reverse(
+                "conversation_thread", kwargs={"conversation_id": conv.pk}
+            )
+        rows.append(
+            {
+                "at": msg.created_at,
+                "kind": "message",
+                "title": _("Sent a message"),
+                "body": text[:400],
+                "url": url,
+            }
+        )
+
+    if as_landlord:
+        for prop in Property.objects.filter(owner=user).order_by("-created_at")[:15]:
+            rows.append(
+                {
+                    "at": prop.created_at,
+                    "kind": "listing",
+                    "title": (
+                        _("Published a listing")
+                        if prop.is_published
+                        else _("Added a listing")
+                    ),
+                    "body": prop.title,
+                    "url": reverse("property_detail", kwargs={"slug": prop.slug}),
+                }
+            )
+
+    rows.sort(key=lambda r: r["at"], reverse=True)
+    return rows[:limit]
 
 
 # ---------------------------------------------------------------------------
@@ -408,7 +547,7 @@ def logout_view(request):
 @login_required
 def dashboard_view(request):
     if request.user.role == User.Role.ADMIN:
-        return redirect("/admin/")
+        return redirect("renter_dashboard")
     if request.user.role == User.Role.LANDLORD:
         return redirect("landlord_dashboard")
     return redirect("renter_dashboard")
@@ -453,12 +592,16 @@ def renter_dashboard(request):
         .prefetch_related("property__images")
     )
 
+    reviews_count = Review.objects.filter(reviewer=user).count()
+
     return render(request, "renter_dashboard.html", {
         "upcoming_bookings": upcoming_bookings,
         "past_bookings": past_bookings,
         "favorites": favorites,
         "favorites_count": favorites.count(),
         "bookings_count": Booking.objects.filter(renter=user).count(),
+        "reviews_count": reviews_count,
+        "activity_feed": _dashboard_activity_feed(user, as_landlord=False),
     })
 
 
@@ -522,6 +665,7 @@ def landlord_dashboard(request):
         "unpublished_count": unpublished_count,
         "published_count": published_count,
         "listing_payments": listing_payments,
+        "activity_feed": _dashboard_activity_feed(user, as_landlord=True),
     })
 
 
@@ -602,8 +746,17 @@ def search_view(request):
         "sort_order", "name"
     )
 
+    favorite_property_ids = set()
+    if request.user.is_authenticated:
+        favorite_property_ids = set(
+            FavoriteProperty.objects.filter(user=request.user).values_list(
+                "property_id", flat=True
+            )
+        )
+
     return render(request, "search.html", {
         "properties": page,
+        "favorite_property_ids": favorite_property_ids,
         "query": q,
         "property_types": Property.PropertyType.choices,
         "bedroom_choices": Property.BedroomCount.choices,
@@ -707,6 +860,7 @@ def property_detail(request, slug):
 
     is_favorited = False
     has_booked = False
+    has_listing_chat = False
     if request.user.is_authenticated:
         is_favorited = FavoriteProperty.objects.filter(
             user=request.user, property=prop
@@ -716,6 +870,15 @@ def property_detail(request, slug):
             property=prop,
             status__in=[Booking.Status.PENDING, Booking.Status.CONFIRMED],
         ).exists()
+        if request.user != prop.owner:
+            conv = (
+                Conversation.objects.filter(property=prop, is_active=True)
+                .filter(participants=request.user)
+                .filter(participants=prop.owner)
+                .first()
+            )
+            if conv:
+                has_listing_chat = conv.messages.exists()
 
     hall_detail = None
     if prop.is_hall:
@@ -733,6 +896,7 @@ def property_detail(request, slug):
         "price_insight": price_insight,
         "is_favorited": is_favorited,
         "has_booked": has_booked,
+        "has_listing_chat": has_listing_chat,
         "hall_detail": hall_detail,
         "today": timezone.now().date(),
     })
@@ -1069,33 +1233,30 @@ def toggle_favorite(request, property_id):
 def book_visit(request, slug):
     prop = get_object_or_404(Property, slug=slug)
 
-    visit_date_str = request.POST.get("visit_date", "")
-    visit_time_str = request.POST.get("visit_time", "")
+    visit_date_str = (request.POST.get("visit_date") or "").strip()
+    visit_time_str = (request.POST.get("visit_time") or "").strip()
     booking_type = request.POST.get("booking_type", Booking.BookingType.VISIT)
     message_text = request.POST.get("message", "")
+
+    if booking_type not in Booking.BookingType.values:
+        booking_type = Booking.BookingType.VISIT
 
     if not visit_date_str or not visit_time_str:
         messages.error(request, _("Visit date and time are required."))
         return redirect("property_detail", slug=slug)
 
-    try:
-        visit_date = date.fromisoformat(visit_date_str)
-    except ValueError:
+    visit_date = parse_date(visit_date_str)
+    if not visit_date:
         messages.error(request, _("Invalid date format."))
         return redirect("property_detail", slug=slug)
 
-    visit_time_str = visit_time_str.strip()
-    try:
-        visit_time = datetime.strptime(visit_time_str, "%H:%M").time()
-    except ValueError:
-        try:
-            visit_time = datetime.strptime(visit_time_str, "%H:%M:%S").time()
-        except ValueError:
-            messages.error(
-                request,
-                _("Invalid time format. Use hours and minutes (e.g. 14:30)."),
-            )
-            return redirect("property_detail", slug=slug)
+    visit_time = _parse_visit_time_from_post(visit_time_str)
+    if not visit_time:
+        messages.error(
+            request,
+            _("Invalid time format. Use hours and minutes (e.g. 14:30)."),
+        )
+        return redirect("property_detail", slug=slug)
 
     if visit_date < timezone.now().date():
         messages.error(request, _("Visit date cannot be in the past."))
@@ -1103,6 +1264,16 @@ def book_visit(request, slug):
 
     if prop.owner == request.user:
         messages.error(request, _("You cannot book your own property."))
+        return redirect("property_detail", slug=slug)
+
+    if not request.POST.get("agreed_contact"):
+        messages.error(
+            request,
+            _(
+                "Please confirm you and the owner agreed on a visit date and time "
+                "via chat or phone before submitting this request."
+            ),
+        )
         return redirect("property_detail", slug=slug)
 
     existing = Booking.objects.filter(
@@ -1117,14 +1288,24 @@ def book_visit(request, slug):
         )
         return redirect("property_detail", slug=slug)
 
-    Booking.objects.create(
-        property=prop,
-        renter=request.user,
-        booking_type=booking_type,
-        visit_date=visit_date,
-        visit_time=visit_time,
-        message=message_text,
-    )
+    try:
+        booking = Booking.objects.create(
+            property=prop,
+            renter=request.user,
+            booking_type=booking_type,
+            visit_date=visit_date,
+            visit_time=visit_time,
+            message=message_text,
+            contact_agreement_ack=True,
+        )
+        notify_visit_booking_created(booking)
+    except (ValidationError, ValueError, IntegrityError):
+        messages.error(
+            request,
+            _("Could not save your booking. Please check the date and time and try again."),
+        )
+        return redirect("property_detail", slug=slug)
+
     messages.success(
         request,
         _("Your visit has been booked! The landlord will confirm soon."),
@@ -1192,6 +1373,8 @@ def manage_booking(request, booking_id):
     if response_text:
         booking.landlord_response = response_text
     booking.save(update_fields=["status", "landlord_response", "updated_at"])
+
+    notify_booking_update(booking)
 
     messages.success(
         request,
@@ -1279,35 +1462,36 @@ def messages_inbox(request):
 
 
 @login_required
-def start_property_message(request, slug):
-    prop = get_object_or_404(
-        Property.objects.select_related("owner"),
-        slug=slug,
-    )
-    is_admin = request.user.role == User.Role.ADMIN
-    is_owner = prop.owner == request.user
-    if not prop.is_published and not is_owner and not is_admin:
-        messages.warning(request, _("This listing is not available."))
-        return redirect("home")
-    if is_owner:
-        messages.info(
-            request,
-            _(
-                "Renters will message you here. Open Messages in the menu to reply."
-            ),
-        )
+def start_owner_to_owner_message(request, user_id):
+    """
+    Direct chat between property owners (no listing attached).
+    Separate thread from property-scoped conversations.
+    """
+    other = get_object_or_404(User, pk=user_id, is_active=True)
+    if other.pk == request.user.pk:
+        messages.error(request, _("You cannot message yourself."))
         return redirect("messages_inbox")
 
-    landlord = prop.owner
+    owner_roles = {User.Role.LANDLORD, User.Role.ADMIN}
+    if request.user.role not in owner_roles or other.role not in owner_roles:
+        messages.error(
+            request,
+            _("Owner-to-owner chat is only available between property owners."),
+        )
+        return redirect("home")
+
     conv = (
-        Conversation.objects.filter(property=prop, is_active=True)
+        Conversation.objects.filter(
+            property__isnull=True,
+            is_active=True,
+        )
         .filter(participants=request.user)
-        .filter(participants=landlord)
+        .filter(participants=other)
         .first()
     )
     if not conv:
-        conv = Conversation.objects.create(property=prop)
-        conv.participants.add(request.user, landlord)
+        conv = Conversation.objects.create()
+        conv.participants.add(request.user, other)
     return redirect("conversation_thread", conversation_id=conv.pk)
 
 

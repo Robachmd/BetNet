@@ -192,8 +192,8 @@
         <form method="POST" action="{% url 'toggle_favorite' property.id %}" class="absolute top-3 right-3">
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-          <button type="submit" class="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center hover:bg-red-50 hover:scale-110 transition-all duration-200" title="{% trans 'Toggle favorites' %}">
-            <svg class="w-5 h-5 text-gray-400 hover:text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          <button type="submit" class="w-9 h-9 rounded-full backdrop-blur-sm shadow-sm flex items-center justify-center hover:scale-110 transition-all duration-200 {% if property.id in favorite_property_ids %}bg-red-50{% else %}bg-white/90 hover:bg-red-50{% endif %}" title="{% trans 'Toggle favorites' %}">
+            <svg class="w-5 h-5 {% if property.id in favorite_property_ids %}text-red-600{% else %}text-gray-400 hover:text-red-500{% endif %}" fill="{% if property.id in favorite_property_ids %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
           </button>
         </form>
         {% endif %}

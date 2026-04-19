@@ -4,7 +4,7 @@
 {% block title %}{{ property.title }} — {% trans "BetRent" %}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" x-data="{ current: 0, showPhone: false, showBooking: false }">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" x-data="{ current: 0, showPhone: false }">
 
   <!-- Breadcrumb -->
   <nav class="flex items-center gap-2 text-sm text-gray-500 mb-6 overflow-x-auto whitespace-nowrap" aria-label="{% trans 'Breadcrumb' %}">
@@ -549,11 +549,11 @@
 
         <div class="space-y-3">
           {% if user.is_authenticated and user != property.owner %}
-          <button @click="showBooking = !showBooking"
+          <a href="#book-visit-panel"
             class="w-full inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             {% trans "Book a Visit" %}
-          </button>
+          </a>
           {% elif not user.is_authenticated %}
           <a href="{% url 'login' %}?next={{ request.path }}"
             class="w-full inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 hover:shadow-lg transition-all duration-200">
@@ -568,8 +568,8 @@
             <input type="hidden" name="next" value="{{ request.get_full_path }}" />
             <button type="submit"
               class="w-full inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold border-2 transition-all duration-200
-                {% if is_favorited %}border-red-300 bg-red-50 text-red-600 hover:bg-red-100{% else %}border-gray-200 text-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600{% endif %}">
-              <svg class="w-5 h-5" fill="{% if is_favorited %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                {% if is_favorited %}border-red-500 bg-red-50 text-red-600 hover:bg-red-100{% else %}border-gray-200 text-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600{% endif %}">
+              <svg class="w-5 h-5 {% if is_favorited %}text-red-600{% endif %}" fill="{% if is_favorited %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
               {% if is_favorited %}{% trans "Saved to Favorites" %}{% else %}{% trans "Save to Favorites" %}{% endif %}
             </button>
           </form>
@@ -582,11 +582,15 @@
           {% endif %}
 
           {% if user.is_authenticated and user != property.owner %}
-          <a href="{% url 'start_property_message' property.slug %}"
-            class="w-full inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold bg-secondary-500 text-gray-900 hover:bg-secondary-400 transition-all duration-200">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-            {% trans "Message landlord" %}
+          {% if user.role == 'LANDLORD' or user.role == 'ADMIN' %}
+          {% if property.owner.role == 'LANDLORD' or property.owner.role == 'ADMIN' %}
+          <a href="{% url 'start_owner_dm' property.owner.id %}"
+            class="w-full inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold border-2 border-secondary-400 text-gray-800 bg-white hover:bg-secondary-50 transition-all duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/></svg>
+            {% trans "Chat with this owner" %}
           </a>
+          {% endif %}
+          {% endif %}
           {% endif %}
 
           <button type="button" @click="showPhone = !showPhone"
@@ -603,7 +607,7 @@
         </div>
 
         <!-- Phone number reveal -->
-        <div x-show="showPhone" x-cloak x-transition class="mt-4 p-4 rounded-xl bg-primary-50 border border-primary-200">
+        <div id="property-phone-reveal" x-show="showPhone" x-cloak x-transition class="mt-4 p-4 rounded-xl bg-primary-50 border border-primary-200 scroll-mt-24">
           {% if user.is_authenticated %}
           <p class="text-sm text-gray-600 mb-1">{% trans "Landlord phone:" %}</p>
           <p class="text-lg font-bold text-primary-700">{% if property.owner.phone_number %}{{ property.owner.phone_number }}{% else %}{% trans "Not provided" %}{% endif %}</p>
@@ -614,43 +618,82 @@
           <p class="text-lg font-bold text-gray-400">+251 9** *** ***</p>
           {% endif %}
         </div>
-      </div>
 
-      <!-- Book a Visit Form -->
       {% if user.is_authenticated and user != property.owner %}
-      <div x-show="showBooking" x-cloak x-transition
-        class="bg-white rounded-2xl border border-gray-200 p-6">
-        <h3 class="text-lg font-bold text-gray-900 mb-4">{% trans "Book a Visit" %}</h3>
+      <!-- Book a Visit: same card as actions for clearer flow -->
+      <div id="book-visit-panel" class="mt-6 pt-6 border-t border-gray-100 scroll-mt-28 lg:scroll-mt-32">
         {% if has_booked %}
-        <div class="rounded-xl bg-secondary-50 border border-secondary-200 p-4 text-sm text-secondary-700">
-          {% trans "You already have a pending visit request for this property." %}
+        <div class="flex items-start gap-3 mb-3">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h3 class="text-base font-bold text-gray-900 leading-tight">{% trans "Visit request" %}</h3>
+            <p class="text-xs text-gray-500 mt-1">{% trans "You already have an active request for this listing." %}</p>
+          </div>
         </div>
         {% else %}
+        <div class="flex items-start gap-3 mb-4">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-100 text-primary-700">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h3 class="text-base font-bold text-gray-900 leading-tight">{% trans "Schedule a visit" %}</h3>
+            <p class="text-xs text-gray-500 mt-1 leading-snug">{% trans "Agree a time by chat or phone first, then pick date and time. Reminders are sent on the visit day." %}</p>
+          </div>
+        </div>
+
+        {% if has_listing_chat %}
+        <p class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-medium text-emerald-800">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+          {% trans "You have messages on this listing" %}
+        </p>
+        {% endif %}
+
+        <p class="text-xs text-gray-600 mb-4 leading-relaxed">
+          {% if user.role == 'LANDLORD' %}
+          {% if property.owner.role == 'LANDLORD' or property.owner.role == 'ADMIN' %}
+          <a href="{% url 'start_owner_dm' property.owner.id %}" class="font-medium text-primary-700 hover:underline">{% trans "Chat" %}</a>
+          <span class="text-gray-400 mx-1">·</span>
+          {% endif %}
+          {% endif %}
+          <button type="button" class="font-medium text-primary-700 hover:underline text-left"
+            @click="showPhone = true; $nextTick(() => { document.getElementById('property-phone-reveal')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }) })">{% trans "Phone" %}</button>
+          <span class="text-gray-500"> — {% trans "then submit below." %}</span>
+        </p>
+
         <form method="POST" action="{% url 'book_visit' property.slug %}" class="space-y-4">
           {% csrf_token %}
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Preferred Date" %}</label>
-            <input type="date" name="visit_date" required min="{{ today|date:'Y-m-d' }}"
-              class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="min-w-0">
+              <label for="visit_date_input" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Date" %}</label>
+              <input id="visit_date_input" type="date" name="visit_date" required min="{{ today|date:'Y-m-d' }}"
+                class="w-full py-2.5 px-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
+            </div>
+            <div class="min-w-0">
+              <label for="visit_time_input" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Time" %}</label>
+              <input id="visit_time_input" type="time" name="visit_time" required
+                class="w-full py-2.5 px-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
+            </div>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Preferred Time" %}</label>
-            <input type="time" name="visit_time" required
-              class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
+            <label for="visit_msg_input" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Note to owner (optional)" %}</label>
+            <textarea id="visit_msg_input" name="message" rows="2" placeholder="{% trans 'e.g. I will be 10 minutes early' %}"
+              class="w-full py-2.5 px-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all resize-none"></textarea>
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Message (optional)" %}</label>
-            <textarea name="message" rows="3" placeholder="{% trans 'Hello, I would like to schedule a visit...' %}"
-              class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all resize-none"></textarea>
-          </div>
+          <label class="flex items-start gap-3 cursor-pointer rounded-xl border border-gray-200 bg-white p-3 text-xs text-gray-700 leading-snug">
+            <input type="checkbox" name="agreed_contact" value="1" required class="mt-0.5 w-4 h-4 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500/30" />
+            <span>{% trans "We agreed this visit time via chat and/or phone." %}</span>
+          </label>
           <button type="submit"
-            class="w-full py-3 px-6 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 hover:shadow-lg transition-all duration-200">
-            {% trans "Request Visit" %}
+            class="w-full py-3 px-4 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 shadow-sm hover:shadow transition-all">
+            {% trans "Send visit request" %}
           </button>
         </form>
         {% endif %}
       </div>
       {% endif %}
+      </div>
 
       <!-- Landlord Info -->
       <div class="bg-white rounded-2xl border border-gray-200 p-6">
@@ -719,22 +762,22 @@
   </div>
   {% endif %}
 
-</div>
-
-<!-- Mobile sticky bottom bar -->
-{% if user.is_authenticated and user != property.owner %}
-<div class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 p-3 lg:hidden">
-  <div class="flex items-center gap-3 max-w-lg mx-auto">
-    <div class="flex-1">
-      <p class="text-xs text-gray-500">{% if property.listing_type == 'sale' %}{% trans "Total price" %}{% elif property.listing_type == 'short_term' %}{% trans "Short-term rate" %}{% else %}{% trans "Monthly rent" %}{% endif %}</p>
-      <p class="text-lg font-extrabold text-primary-700">ETB {{ property.price_monthly|floatformat:0|intcomma }}</p>
+  <!-- Mobile sticky bottom bar: link to booking form (no JS required) -->
+  {% if user.is_authenticated and user != property.owner %}
+  <div class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 p-3 lg:hidden">
+    <div class="flex items-center gap-3 max-w-lg mx-auto">
+      <div class="flex-1">
+        <p class="text-xs text-gray-500">{% if property.listing_type == 'sale' %}{% trans "Total price" %}{% elif property.listing_type == 'short_term' %}{% trans "Short-term rate" %}{% else %}{% trans "Monthly rent" %}{% endif %}</p>
+        <p class="text-lg font-extrabold text-primary-700">ETB {{ property.price_monthly|floatformat:0|intcomma }}</p>
+      </div>
+      <a href="#book-visit-panel"
+        class="flex-1 py-3 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 transition-all text-center">
+        {% trans "Book a Visit" %}
+      </a>
     </div>
-    <button @click="showBooking = true; window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})"
-      class="flex-1 py-3 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 transition-all">
-      {% trans "Book a Visit" %}
-    </button>
   </div>
+  <div class="h-20 lg:hidden"></div>
+  {% endif %}
+
 </div>
-<div class="h-20 lg:hidden"></div>
-{% endif %}
 {% endblock %}

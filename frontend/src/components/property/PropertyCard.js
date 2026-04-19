@@ -128,7 +128,7 @@ export default function PropertyCard({
         >
           <FiHeart
             className={`w-5 h-5 transition-colors ${
-              liked ? 'fill-red-500 text-red-500' : 'text-gray-600'
+              liked ? 'fill-red-600 text-red-600' : 'text-gray-600'
             }`}
           />
         </button>

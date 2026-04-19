@@ -12,6 +12,8 @@ class Notification(models.Model):
         REVIEW_RECEIVED = "REVIEW_RECEIVED", "Review Received"
         LISTING_VERIFIED = "LISTING_VERIFIED", "Listing Verified"
         PAYMENT_RECEIVED = "PAYMENT_RECEIVED", "Payment Received"
+        BOOKING_VISIT_REQUEST = "BOOKING_VISIT_REQUEST", "Visit Booking Request"
+        VISIT_REMINDER = "VISIT_REMINDER", "Visit Reminder"
         SYSTEM = "SYSTEM", "System"
 
     recipient = models.ForeignKey(
@@ -20,7 +22,7 @@ class Notification(models.Model):
         related_name="notifications",
     )
     notification_type = models.CharField(
-        max_length=20,
+        max_length=32,
         choices=NotificationType.choices,
         db_index=True,
     )
