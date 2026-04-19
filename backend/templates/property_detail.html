@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
-{% load humanize %}
+{% load i18n humanize %}
 
-{% block title %}{{ property.title }} — BetRent{% endblock %}
+{% block title %}{{ property.title }} — {% trans "BetRent" %}{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" x-data="{ current: 0, showPhone: false, showBooking: false }">
 
   <!-- Breadcrumb -->
-  <nav class="flex items-center gap-2 text-sm text-gray-500 mb-6 overflow-x-auto whitespace-nowrap" aria-label="Breadcrumb">
-    <a href="{% url 'home' %}" class="hover:text-primary-700 transition-colors">Home</a>
+  <nav class="flex items-center gap-2 text-sm text-gray-500 mb-6 overflow-x-auto whitespace-nowrap" aria-label="{% trans 'Breadcrumb' %}">
+    <a href="{% url 'home' %}" class="hover:text-primary-700 transition-colors">{% trans "Home" %}</a>
     <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>
     <a href="{% url 'search' %}?city={{ property.location.city }}" class="hover:text-primary-700 transition-colors">{{ property.location.city }}</a>
     <svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>
@@ -24,13 +24,13 @@
         <svg class="w-5 h-5 text-yellow-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
       </div>
       <div>
-        <p class="font-bold text-yellow-800">This listing is not yet published</p>
-        <p class="text-sm text-yellow-700">Complete payment to make it visible to renters.</p>
+        <p class="font-bold text-yellow-800">{% trans "This listing is not yet published" %}</p>
+        <p class="text-sm text-yellow-700">{% trans "Complete payment to make it visible to renters." %}</p>
       </div>
     </div>
     <a href="{% url 'publish_payment' property.slug %}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-green-600 hover:bg-green-700 transition-all shadow-sm shrink-0">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      Pay &amp; Publish
+      {% trans "Pay & Publish" %}
     </a>
   </div>
   {% endif %}
@@ -90,7 +90,7 @@
       <div class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
           <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/></svg>
-          Property videos
+          {% trans "Property videos" %}
         </h2>
         <div class="space-y-5">
           {% for v in property_videos %}
@@ -98,12 +98,12 @@
             {% if v.video %}
             <video controls class="w-full max-h-[min(70vh,520px)] object-contain mx-auto" preload="metadata" playsinline>
               <source src="{{ v.video.url }}" type="{{ v.video_mime_type }}" />
-              Your browser does not support embedded video.
+              {% trans "Your browser does not support embedded video." %}
             </video>
             {% elif v.video_url %}
             <div class="p-4 text-center">
               <a href="{{ v.video_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm font-semibold text-primary-300 hover:text-white">
-                Open external video
+                {% trans "Open external video" %}
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
               </a>
             </div>
@@ -120,28 +120,28 @@
           {% if property.is_verified %}
           <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-primary-100 text-primary-700">
             <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-            Verified
+            {% trans "Verified" %}
           </span>
           {% endif %}
           {% if property.is_featured %}
           <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-secondary-100 text-secondary-700">
             <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-            Featured
+            {% trans "Featured" %}
           </span>
           {% endif %}
           <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold
             {% if property.is_available %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
-            {% if property.is_available %}Available{% else %}Rented{% endif %}
+            {% if property.is_available %}{% trans "Available" %}{% else %}{% trans "Rented" %}{% endif %}
           </span>
           <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">
             {{ property.get_property_type_display }}
           </span>
           {% if property.listing_type == 'sale' %}
-          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">For sale</span>
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">{% trans "For sale" %}</span>
           {% elif property.listing_type == 'short_term' %}
-          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800">Short-term</span>
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800">{% trans "Short-term" %}</span>
           {% else %}
-          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">For rent</span>
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">{% trans "For rent" %}</span>
           {% endif %}
         </div>
 
@@ -150,11 +150,11 @@
         <p class="text-3xl font-extrabold text-primary-700 mb-4">
           ETB {{ property.price_monthly|floatformat:0|intcomma }}
           {% if property.listing_type == 'sale' %}
-          <span class="text-base font-medium text-gray-500"> Total price</span>
+          <span class="text-base font-medium text-gray-500"> {% trans "Total price" %}</span>
           {% elif property.listing_type == 'short_term' %}
-          <span class="text-base font-medium text-gray-500">/ month <span class="text-gray-400">(short-term)</span></span>
+          <span class="text-base font-medium text-gray-500">{% trans "/ month" %} <span class="text-gray-400">{% trans "(short-term)" %}</span></span>
           {% else %}
-          <span class="text-base font-medium text-gray-500">/ month</span>
+          <span class="text-base font-medium text-gray-500">{% trans "/ month" %}</span>
           {% endif %}
         </p>
 
@@ -163,19 +163,13 @@
           <span class="text-sm">{{ property.location.city }}, {{ property.location.sub_city }}{% if property.location.specific_location %} · {{ property.location.specific_location }}{% endif %}</span>
           {% if property.floor_number is not None %}
           <span class="text-sm text-gray-400">·</span>
-          <span class="text-sm font-medium text-gray-700">Floor {{ property.floor_number }}</span>
+          <span class="text-sm font-medium text-gray-700">{% blocktrans trimmed with n=property.floor_number %}Floor {{ n }}{% endblocktrans %}</span>
           {% endif %}
           {% if property.location.maps_url %}
           <a href="{{ property.location.maps_url }}" target="_blank" rel="noopener noreferrer"
             class="inline-flex items-center gap-1.5 ml-1 px-3 py-1 rounded-lg text-xs font-semibold bg-primary-600 text-white hover:bg-primary-700 transition-colors">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-            Open in Maps
-          </a>
-          {% elif property.location.latitude is not None and property.location.longitude is not None %}
-          <a href="https://www.google.com/maps?q={{ property.location.latitude }},{{ property.location.longitude }}" target="_blank" rel="noopener noreferrer"
-            class="inline-flex items-center gap-1.5 ml-1 px-3 py-1 rounded-lg text-xs font-semibold bg-primary-600 text-white hover:bg-primary-700 transition-colors">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-            Open in Maps
+            {% trans "Open in Maps" %}
           </a>
           {% endif %}
         </div>
@@ -185,9 +179,12 @@
             {% if property.shop_class_count %}
             <span class="flex items-center gap-1.5">
               <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5 3v18m10-18v18M9 9h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15"/></svg>
-              <strong>{{ property.shop_class_count }}</strong>
-              {% if property.shop_class_count == 1 %}class{% else %}classes{% endif %}
-              <span class="text-gray-400 font-normal">(rooms / areas)</span>
+              {% blocktrans count counter=property.shop_class_count %}
+              <strong>{{ counter }}</strong> class
+              {% plural %}
+              <strong>{{ counter }}</strong> classes
+              {% endblocktrans %}
+              <span class="text-gray-400 font-normal">{% trans "(rooms / areas)" %}</span>
             </span>
             {% endif %}
           {% else %}
@@ -197,7 +194,11 @@
           </span>
           <span class="flex items-center gap-1.5">
             <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 4v12m0 0l-4-4m4 4l4-4"/></svg>
-            <strong>{{ property.bathrooms }}</strong> Bathroom{{ property.bathrooms|pluralize }}
+            {% blocktrans count counter=property.bathrooms %}
+            <strong>{{ counter }}</strong> bathroom
+            {% plural %}
+            <strong>{{ counter }}</strong> bathrooms
+            {% endblocktrans %}
           </span>
           {% endif %}
           {% if property.area_sqm %}
@@ -208,153 +209,153 @@
           {% endif %}
           <span class="flex items-center gap-1.5 text-gray-400">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-            {{ property.total_views }} views
+            {% blocktrans count counter=property.total_views %}{{ counter }} view{% plural %}{{ counter }} views{% endblocktrans %}
           </span>
           <span class="flex items-center gap-1.5 text-gray-400">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            Posted {{ property.created_at|timesince }} ago
+            {% blocktrans with ago=property.created_at|timesince %}Posted {{ ago }} ago{% endblocktrans %}
           </span>
         </div>
       </div>
 
       <!-- Description -->
       <div class="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Description</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{% trans "Description" %}</h2>
         <div class="prose prose-sm prose-gray max-w-none text-gray-600 leading-relaxed whitespace-pre-line">{{ property.description }}</div>
       </div>
 
       <!-- Amenities -->
       {% if property.amenities %}
       <div class="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-5">Amenities & Features</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-5">{% trans "Amenities & Features" %}</h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {% with a=property.amenities %}
           <div class="flex items-center gap-3 text-sm">
             <svg class="w-5 h-5 text-blue-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/></svg>
-            <span><strong>Water:</strong> {{ a.get_water_availability_display }}</span>
+            <span><strong>{% trans "Water" %}</strong>: {{ a.get_water_availability_display }}</span>
           </div>
           <div class="flex items-center gap-3 text-sm">
             <svg class="w-5 h-5 text-yellow-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            <span><strong>Electricity:</strong> {{ a.get_electricity_stability_display }}</span>
+            <span><strong>{% trans "Electricity" %}</strong>: {{ a.get_electricity_stability_display }}</span>
           </div>
 
           {% if a.has_parking %}
           <div class="flex items-center gap-3 text-sm">
             <svg class="w-5 h-5 text-primary-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 13l4 4L19 7"/></svg>
-            <span>Parking</span>
+            <span>{% trans "Parking" %}</span>
           </div>
           {% else %}
           <div class="flex items-center gap-3 text-sm text-gray-400">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            <span>Parking</span>
+            <span>{% trans "Parking" %}</span>
           </div>
           {% endif %}
 
           {% if a.has_wifi %}
           <div class="flex items-center gap-3 text-sm">
             <svg class="w-5 h-5 text-primary-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 13l4 4L19 7"/></svg>
-            <span>WiFi</span>
+            <span>{% trans "WiFi" %}</span>
           </div>
           {% else %}
           <div class="flex items-center gap-3 text-sm text-gray-400">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            <span>WiFi</span>
+            <span>{% trans "WiFi" %}</span>
           </div>
           {% endif %}
 
           {% if a.has_security %}
           <div class="flex items-center gap-3 text-sm">
             <svg class="w-5 h-5 text-primary-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 13l4 4L19 7"/></svg>
-            <span>Security Guard</span>
+            <span>{% trans "Security Guard" %}</span>
           </div>
           {% else %}
           <div class="flex items-center gap-3 text-sm text-gray-400">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            <span>Security Guard</span>
+            <span>{% trans "Security Guard" %}</span>
           </div>
           {% endif %}
 
           {% if a.has_generator %}
           <div class="flex items-center gap-3 text-sm">
             <svg class="w-5 h-5 text-primary-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 13l4 4L19 7"/></svg>
-            <span>Generator</span>
+            <span>{% trans "Generator" %}</span>
           </div>
           {% else %}
           <div class="flex items-center gap-3 text-sm text-gray-400">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            <span>Generator</span>
+            <span>{% trans "Generator" %}</span>
           </div>
           {% endif %}
 
           {% if a.is_furnished %}
           <div class="flex items-center gap-3 text-sm">
             <svg class="w-5 h-5 text-primary-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 13l4 4L19 7"/></svg>
-            <span>Furnished</span>
+            <span>{% trans "Furnished" %}</span>
           </div>
           {% else %}
           <div class="flex items-center gap-3 text-sm text-gray-400">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            <span>Furnished</span>
+            <span>{% trans "Furnished" %}</span>
           </div>
           {% endif %}
 
           {% if a.has_elevator %}
           <div class="flex items-center gap-3 text-sm">
             <svg class="w-5 h-5 text-primary-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 13l4 4L19 7"/></svg>
-            <span>Elevator</span>
+            <span>{% trans "Elevator" %}</span>
           </div>
           {% else %}
           <div class="flex items-center gap-3 text-sm text-gray-400">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            <span>Elevator</span>
+            <span>{% trans "Elevator" %}</span>
           </div>
           {% endif %}
 
           {% if a.has_balcony %}
           <div class="flex items-center gap-3 text-sm">
             <svg class="w-5 h-5 text-primary-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 13l4 4L19 7"/></svg>
-            <span>Balcony</span>
+            <span>{% trans "Balcony" %}</span>
           </div>
           {% else %}
           <div class="flex items-center gap-3 text-sm text-gray-400">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            <span>Balcony</span>
+            <span>{% trans "Balcony" %}</span>
           </div>
           {% endif %}
 
           {% if a.has_garden %}
           <div class="flex items-center gap-3 text-sm">
             <svg class="w-5 h-5 text-primary-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 13l4 4L19 7"/></svg>
-            <span>Garden</span>
+            <span>{% trans "Garden" %}</span>
           </div>
           {% else %}
           <div class="flex items-center gap-3 text-sm text-gray-400">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            <span>Garden</span>
+            <span>{% trans "Garden" %}</span>
           </div>
           {% endif %}
 
           {% if a.has_cctv %}
           <div class="flex items-center gap-3 text-sm">
             <svg class="w-5 h-5 text-primary-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 13l4 4L19 7"/></svg>
-            <span>CCTV</span>
+            <span>{% trans "CCTV" %}</span>
           </div>
           {% else %}
           <div class="flex items-center gap-3 text-sm text-gray-400">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            <span>CCTV</span>
+            <span>{% trans "CCTV" %}</span>
           </div>
           {% endif %}
 
           {% if a.pets_allowed %}
           <div class="flex items-center gap-3 text-sm">
             <svg class="w-5 h-5 text-primary-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 13l4 4L19 7"/></svg>
-            <span>Pets Allowed</span>
+            <span>{% trans "Pets Allowed" %}</span>
           </div>
           {% else %}
           <div class="flex items-center gap-3 text-sm text-gray-400">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-            <span>Pets Allowed</span>
+            <span>{% trans "Pets Allowed" %}</span>
           </div>
           {% endif %}
           {% endwith %}
@@ -367,24 +368,24 @@
       <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl border border-purple-200 p-6">
         <h2 class="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
           <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-          Hall Details
+          {% trans "Hall Details" %}
         </h2>
         {% with h=property.hall_detail %}
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <div class="bg-white rounded-xl p-4 text-center border border-purple-100">
             <p class="text-2xl font-extrabold text-purple-700">{{ h.capacity }}</p>
-            <p class="text-xs text-gray-500 mt-1">Max Capacity</p>
+            <p class="text-xs text-gray-500 mt-1">{% trans "Max Capacity" %}</p>
           </div>
           {% if h.price_per_hour %}
           <div class="bg-white rounded-xl p-4 text-center border border-purple-100">
             <p class="text-2xl font-extrabold text-purple-700">ETB {{ h.price_per_hour|floatformat:0|intcomma }}</p>
-            <p class="text-xs text-gray-500 mt-1">Per Hour</p>
+            <p class="text-xs text-gray-500 mt-1">{% trans "Per Hour" %}</p>
           </div>
           {% endif %}
           {% if h.price_per_day %}
           <div class="bg-white rounded-xl p-4 text-center border border-purple-100">
             <p class="text-2xl font-extrabold text-purple-700">ETB {{ h.price_per_day|floatformat:0|intcomma }}</p>
-            <p class="text-xs text-gray-500 mt-1">Per Day</p>
+            <p class="text-xs text-gray-500 mt-1">{% trans "Per Day" %}</p>
           </div>
           {% endif %}
         </div>
@@ -395,7 +396,7 @@
             {% else %}
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
             {% endif %}
-            Sound System
+            {% trans "Sound System" %}
           </div>
           <div class="flex items-center gap-2 text-sm {% if h.has_stage %}text-gray-700{% else %}text-gray-400{% endif %}">
             {% if h.has_stage %}
@@ -403,7 +404,7 @@
             {% else %}
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
             {% endif %}
-            Stage
+            {% trans "Stage" %}
           </div>
           <div class="flex items-center gap-2 text-sm {% if h.decoration_allowed %}text-gray-700{% else %}text-gray-400{% endif %}">
             {% if h.decoration_allowed %}
@@ -411,7 +412,7 @@
             {% else %}
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
             {% endif %}
-            Decoration
+            {% trans "Decoration" %}
           </div>
           <div class="flex items-center gap-2 text-sm {% if h.catering_available %}text-gray-700{% else %}text-gray-400{% endif %}">
             {% if h.catering_available %}
@@ -419,11 +420,11 @@
             {% else %}
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
             {% endif %}
-            Catering
+            {% trans "Catering" %}
           </div>
           <div class="flex items-center gap-2 text-sm text-gray-700">
             <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16"/></svg>
-            {% if h.is_indoor %}Indoor{% else %}Outdoor{% endif %}
+            {% if h.is_indoor %}{% trans "Indoor" %}{% else %}{% trans "Outdoor" %}{% endif %}
           </div>
           {% if h.hall_type %}
           <div class="flex items-center gap-2 text-sm text-gray-700">
@@ -439,13 +440,13 @@
       <!-- Price Insight -->
       {% if price_insight %}
       <div class="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-1">Area Price Comparison</h2>
-        <p class="text-sm text-gray-500 mb-5">{{ property.location.sub_city }} · Based on {{ price_insight.count }} listings</p>
+        <h2 class="text-lg font-bold text-gray-900 mb-1">{% trans "Area Price Comparison" %}</h2>
+        <p class="text-sm text-gray-500 mb-5">{% blocktrans with sub=property.location.sub_city count counter=price_insight.count %}{{ sub }} · Based on {{ counter }} listing{% plural %}{{ sub }} · Based on {{ counter }} listings{% endblocktrans %}</p>
 
         <div class="space-y-4">
           <div>
             <div class="flex justify-between text-sm mb-1.5">
-              <span class="text-gray-600">Lowest</span>
+              <span class="text-gray-600">{% trans "Lowest" %}</span>
               <span class="font-bold text-primary-600">ETB {{ price_insight.min|floatformat:0|intcomma }}</span>
             </div>
             <div class="h-3 rounded-full bg-gray-100 overflow-hidden">
@@ -454,7 +455,7 @@
           </div>
           <div>
             <div class="flex justify-between text-sm mb-1.5">
-              <span class="text-gray-600">Average</span>
+              <span class="text-gray-600">{% trans "Average" %}</span>
               <span class="font-bold text-secondary-600">ETB {{ price_insight.avg|floatformat:0|intcomma }}</span>
             </div>
             <div class="h-3 rounded-full bg-gray-100 overflow-hidden">
@@ -463,7 +464,7 @@
           </div>
           <div>
             <div class="flex justify-between text-sm mb-1.5">
-              <span class="text-gray-600">Highest</span>
+              <span class="text-gray-600">{% trans "Highest" %}</span>
               <span class="font-bold text-red-500">ETB {{ price_insight.max|floatformat:0|intcomma }}</span>
             </div>
             <div class="h-3 rounded-full bg-gray-100 overflow-hidden">
@@ -474,19 +475,19 @@
 
         <div class="mt-5 pt-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p class="text-sm text-gray-500">This property</p>
+            <p class="text-sm text-gray-500">{% trans "This property" %}</p>
             <p class="text-xl font-extrabold text-gray-900">ETB {{ property.price_monthly|floatformat:0|intcomma }}</p>
           </div>
           <div>
             {% if property.price_monthly <= price_insight.avg %}
             <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-primary-100 text-primary-700">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 13l4 4L19 7"/></svg>
-              Good Deal
+              {% trans "Good Deal" %}
             </span>
             {% else %}
             <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-secondary-100 text-secondary-700">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 9v2m0 4h.01"/></svg>
-              Above Average
+              {% trans "Above Average" %}
             </span>
             {% endif %}
           </div>
@@ -496,7 +497,7 @@
 
       <!-- Reviews -->
       <div class="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-5">Reviews</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-5">{% trans "Reviews" %}</h2>
         {% if reviews %}
         <div class="space-y-5">
           {% for review in reviews %}
@@ -507,7 +508,7 @@
               </div>
               <div>
                 <p class="text-sm font-semibold text-gray-900">{{ review.reviewer.get_full_name|default:review.reviewer.username }}</p>
-                <p class="text-xs text-gray-400">{{ review.created_at|timesince }} ago</p>
+                <p class="text-xs text-gray-400">{% blocktrans with ago=review.created_at|timesince %}{{ ago }} ago{% endblocktrans %}</p>
               </div>
               <div class="ml-auto flex items-center gap-0.5">
                 {% for i in "12345" %}
@@ -526,7 +527,7 @@
         {% else %}
         <div class="text-center py-8">
           <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-          <p class="text-sm text-gray-500">No reviews yet. Be the first to review!</p>
+          <p class="text-sm text-gray-500">{% trans "No reviews yet. Be the first to review!" %}</p>
         </div>
         {% endif %}
       </div>
@@ -543,7 +544,7 @@
           ETB {{ property.price_monthly|floatformat:0|intcomma }}
         </p>
         <p class="text-sm text-gray-500 mb-6">
-          {% if property.listing_type == 'sale' %}Total price{% elif property.listing_type == 'short_term' %}Per month (short-term){% else %}Per month{% endif %}
+          {% if property.listing_type == 'sale' %}{% trans "Total price" %}{% elif property.listing_type == 'short_term' %}{% trans "Per month (short-term)" %}{% else %}{% trans "Per month" %}{% endif %}
         </p>
 
         <div class="space-y-3">
@@ -551,13 +552,13 @@
           <button @click="showBooking = !showBooking"
             class="w-full inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            Book a Visit
+            {% trans "Book a Visit" %}
           </button>
           {% elif not user.is_authenticated %}
           <a href="{% url 'login' %}?next={{ request.path }}"
             class="w-full inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 hover:shadow-lg transition-all duration-200">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
-            Login to Book a Visit
+            {% trans "Login to Book a Visit" %}
           </a>
           {% endif %}
 
@@ -569,14 +570,14 @@
               class="w-full inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold border-2 transition-all duration-200
                 {% if is_favorited %}border-red-300 bg-red-50 text-red-600 hover:bg-red-100{% else %}border-gray-200 text-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600{% endif %}">
               <svg class="w-5 h-5" fill="{% if is_favorited %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-              {% if is_favorited %}Saved to Favorites{% else %}Save to Favorites{% endif %}
+              {% if is_favorited %}{% trans "Saved to Favorites" %}{% else %}{% trans "Save to Favorites" %}{% endif %}
             </button>
           </form>
           {% else %}
           <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}"
             class="w-full inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold border-2 border-gray-200 text-gray-700 hover:border-red-300 hover:bg-red-50 transition-all">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-            Login to Save Favorites
+            {% trans "Login to Save Favorites" %}
           </a>
           {% endif %}
 
@@ -584,31 +585,31 @@
           <a href="{% url 'start_property_message' property.slug %}"
             class="w-full inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold bg-secondary-500 text-gray-900 hover:bg-secondary-400 transition-all duration-200">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-            Message landlord
+            {% trans "Message landlord" %}
           </a>
           {% endif %}
 
           <button type="button" @click="showPhone = !showPhone"
             class="w-full inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold border-2 border-gray-200 text-gray-700 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700 transition-all duration-200">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            {% if user.is_authenticated %}Show phone{% else %}Phone (login){% endif %}
+            {% if user.is_authenticated %}{% trans "Show phone" %}{% else %}{% trans "Phone (login)" %}{% endif %}
           </button>
 
           <button onclick="navigator.share ? navigator.share({title: '{{ property.title }}', url: window.location.href}) : navigator.clipboard.writeText(window.location.href)"
             class="w-full inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold border-2 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-            Share
+            {% trans "Share" %}
           </button>
         </div>
 
         <!-- Phone number reveal -->
         <div x-show="showPhone" x-cloak x-transition class="mt-4 p-4 rounded-xl bg-primary-50 border border-primary-200">
           {% if user.is_authenticated %}
-          <p class="text-sm text-gray-600 mb-1">Landlord phone:</p>
-          <p class="text-lg font-bold text-primary-700">{{ property.owner.phone_number|default:"Not provided" }}</p>
+          <p class="text-sm text-gray-600 mb-1">{% trans "Landlord phone:" %}</p>
+          <p class="text-lg font-bold text-primary-700">{% if property.owner.phone_number %}{{ property.owner.phone_number }}{% else %}{% trans "Not provided" %}{% endif %}</p>
           {% else %}
           <p class="text-sm text-gray-600">
-            <a href="{% url 'login' %}?next={{ request.path }}" class="text-primary-700 font-semibold hover:underline">Login</a> to see the full phone number
+            <a href="{% url 'login' %}?next={{ request.path }}" class="text-primary-700 font-semibold hover:underline">{% trans "Login" %}</a> {% trans "to see the full phone number" %}
           </p>
           <p class="text-lg font-bold text-gray-400">+251 9** *** ***</p>
           {% endif %}
@@ -619,32 +620,32 @@
       {% if user.is_authenticated and user != property.owner %}
       <div x-show="showBooking" x-cloak x-transition
         class="bg-white rounded-2xl border border-gray-200 p-6">
-        <h3 class="text-lg font-bold text-gray-900 mb-4">Book a Visit</h3>
+        <h3 class="text-lg font-bold text-gray-900 mb-4">{% trans "Book a Visit" %}</h3>
         {% if has_booked %}
         <div class="rounded-xl bg-secondary-50 border border-secondary-200 p-4 text-sm text-secondary-700">
-          You already have a pending visit request for this property.
+          {% trans "You already have a pending visit request for this property." %}
         </div>
         {% else %}
         <form method="POST" action="{% url 'book_visit' property.slug %}" class="space-y-4">
           {% csrf_token %}
           <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Preferred Date</label>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Preferred Date" %}</label>
             <input type="date" name="visit_date" required min="{{ today|date:'Y-m-d' }}"
               class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Preferred Time</label>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Preferred Time" %}</label>
             <input type="time" name="visit_time" required
               class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Message (optional)</label>
-            <textarea name="message" rows="3" placeholder="Hello, I'd like to schedule a visit..."
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Message (optional)" %}</label>
+            <textarea name="message" rows="3" placeholder="{% trans 'Hello, I would like to schedule a visit...' %}"
               class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all resize-none"></textarea>
           </div>
           <button type="submit"
             class="w-full py-3 px-6 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 hover:shadow-lg transition-all duration-200">
-            Request Visit
+            {% trans "Request Visit" %}
           </button>
         </form>
         {% endif %}
@@ -653,7 +654,7 @@
 
       <!-- Landlord Info -->
       <div class="bg-white rounded-2xl border border-gray-200 p-6">
-        <h3 class="text-lg font-bold text-gray-900 mb-4">Landlord Info</h3>
+        <h3 class="text-lg font-bold text-gray-900 mb-4">{% trans "Landlord Info" %}</h3>
         <div class="flex items-center gap-3 mb-4">
           <div class="w-14 h-14 rounded-full bg-primary-700 flex items-center justify-center text-white text-xl font-bold uppercase">
             {{ property.owner.first_name|default:property.owner.username|truncatechars:1 }}
@@ -661,11 +662,11 @@
           <div>
             <p class="font-semibold text-gray-900">{{ property.owner.get_full_name|default:property.owner.username }}</p>
             <p class="text-xs text-gray-500">
-              {{ property.owner.get_role_display|default:"Landlord" }}
+              {% if property.owner.get_role_display %}{{ property.owner.get_role_display }}{% else %}{% trans "Landlord" %}{% endif %}
               {% if property.owner.is_verified %}
               <span class="inline-flex items-center gap-0.5 ml-1 text-primary-600">
                 <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                Verified
+                {% trans "Verified" %}
               </span>
               {% endif %}
             </p>
@@ -674,7 +675,7 @@
         <div class="space-y-2 text-sm text-gray-600">
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-            Member since {{ property.owner.date_joined|date:"M Y" }}
+            {% blocktrans with m=property.owner.date_joined|date:"M Y" %}Member since {{ m }}{% endblocktrans %}
           </div>
         </div>
       </div>
@@ -685,7 +686,7 @@
   <!-- Similar Properties -->
   {% if similar_properties %}
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <h2 class="text-2xl font-extrabold text-gray-900 mb-6">Similar Properties</h2>
+    <h2 class="text-2xl font-extrabold text-gray-900 mb-6">{% trans "Similar Properties" %}</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       {% for prop in similar_properties %}
       <article class="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-primary-200 transition-all duration-300 hover:-translate-y-1">
@@ -699,14 +700,14 @@
             </div>
           {% endif %}
           {% if prop.is_verified %}
-          <span class="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-primary-500 text-white shadow-sm">Verified</span>
+          <span class="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-primary-500 text-white shadow-sm">{% trans "Verified" %}</span>
           {% endif %}
         </div>
         <div class="p-5">
           <a href="{% url 'property_detail' prop.slug %}">
             <h3 class="font-bold text-gray-900 hover:text-primary-700 transition-colors line-clamp-1 mb-1">{{ prop.title }}</h3>
           </a>
-          <p class="text-xl font-extrabold text-primary-700 mb-1">ETB {{ prop.price_monthly|floatformat:0|intcomma }}{% if prop.listing_type == 'sale' %}<span class="text-xs font-medium text-gray-500"> Total price</span>{% elif prop.listing_type == 'short_term' %}<span class="text-xs font-medium text-gray-500">/mo (short-term)</span>{% else %}<span class="text-xs font-medium text-gray-500">/mo</span>{% endif %}</p>
+          <p class="text-xl font-extrabold text-primary-700 mb-1">ETB {{ prop.price_monthly|floatformat:0|intcomma }}{% if prop.listing_type == 'sale' %}<span class="text-xs font-medium text-gray-500"> {% trans "Total price" %}</span>{% elif prop.listing_type == 'short_term' %}<span class="text-xs font-medium text-gray-500">{% trans "/mo (short-term)" %}</span>{% else %}<span class="text-xs font-medium text-gray-500">{% trans "/mo" %}</span>{% endif %}</p>
           <p class="text-sm text-gray-500 flex items-center gap-1">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             {{ prop.location.sub_city }}, {{ prop.location.city }}
@@ -725,12 +726,12 @@
 <div class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 p-3 lg:hidden">
   <div class="flex items-center gap-3 max-w-lg mx-auto">
     <div class="flex-1">
-      <p class="text-xs text-gray-500">{% if property.listing_type == 'sale' %}Total price{% elif property.listing_type == 'short_term' %}Short-term rate{% else %}Monthly rent{% endif %}</p>
+      <p class="text-xs text-gray-500">{% if property.listing_type == 'sale' %}{% trans "Total price" %}{% elif property.listing_type == 'short_term' %}{% trans "Short-term rate" %}{% else %}{% trans "Monthly rent" %}{% endif %}</p>
       <p class="text-lg font-extrabold text-primary-700">ETB {{ property.price_monthly|floatformat:0|intcomma }}</p>
     </div>
     <button @click="showBooking = true; window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})"
       class="flex-1 py-3 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 transition-all">
-      Book a Visit
+      {% trans "Book a Visit" %}
     </button>
   </div>
 </div>

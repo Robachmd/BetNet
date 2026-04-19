@@ -1,32 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiFacebook, FiInstagram, FiTwitter, FiYoutube, FiMail, FiPhone, FiMapPin } from 'react-icons/fi';
-
-const footerLinks = {
-  Company: [
-    { label: 'About Us', href: '/about' },
-    { label: 'How It Works', href: '/how-it-works' },
-    { label: 'Careers', href: '/careers' },
-    { label: 'Press', href: '/press' },
-  ],
-  Support: [
-    { label: 'Help Center', href: '/help' },
-    { label: 'Safety', href: '/safety' },
-    { label: 'Terms of Service', href: '/terms' },
-    { label: 'Privacy Policy', href: '/privacy' },
-  ],
-  'For Landlords': [
-    { label: 'List Your Property', href: '/list-property' },
-    { label: 'Landlord Dashboard', href: '/dashboard' },
-    { label: 'Pricing Plans', href: '/pricing' },
-    { label: 'Resources', href: '/resources' },
-  ],
-  Discover: [
-    { label: 'Addis Ababa', href: '/search?city=addis-ababa' },
-    { label: 'Hawassa', href: '/search?city=hawassa' },
-    { label: 'Bahir Dar', href: '/search?city=bahir-dar' },
-    { label: 'Adama', href: '/search?city=adama' },
-  ],
-};
 
 const socialLinks = [
   { icon: FiFacebook, href: '#', label: 'Facebook' },
@@ -36,23 +10,65 @@ const socialLinks = [
 ];
 
 export default function Footer({ onNavigate = () => {} }) {
+  const { t } = useTranslation();
+
+  const footerColumns = useMemo(
+    () => [
+      {
+        titleKey: 'footer.sectionCompany',
+        links: [
+          { labelKey: 'footer.linkAboutUs', href: '/about' },
+          { labelKey: 'footer.linkHowItWorks', href: '/how-it-works' },
+          { labelKey: 'footer.linkCareers', href: '/careers' },
+          { labelKey: 'footer.linkPress', href: '/press' },
+        ],
+      },
+      {
+        titleKey: 'footer.support',
+        links: [
+          { labelKey: 'footer.linkHelpCenter', href: '/help' },
+          { labelKey: 'footer.linkSafety', href: '/safety' },
+          { labelKey: 'footer.termsOfService', href: '/terms' },
+          { labelKey: 'footer.privacyPolicy', href: '/privacy' },
+        ],
+      },
+      {
+        titleKey: 'footer.sectionForLandlords',
+        links: [
+          { labelKey: 'footer.linkListProperty', href: '/list-property' },
+          { labelKey: 'footer.linkLandlordDashboard', href: '/dashboard' },
+          { labelKey: 'footer.linkPricingPlans', href: '/pricing' },
+          { labelKey: 'footer.linkResources', href: '/resources' },
+        ],
+      },
+      {
+        titleKey: 'footer.sectionDiscover',
+        links: [
+          { labelKey: '', href: '/search?city=addis-ababa', labelPlain: 'Addis Ababa' },
+          { labelKey: '', href: '/search?city=hawassa', labelPlain: 'Hawassa' },
+          { labelKey: '', href: '/search?city=bahir-dar', labelPlain: 'Bahir Dar' },
+          { labelKey: '', href: '/search?city=adama', labelPlain: 'Adama' },
+        ],
+      },
+    ],
+    [],
+  );
+
   return (
     <footer className="bg-gray-900 text-gray-300">
-      {/* Main footer */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-10">
-          {/* Brand column */}
           <div className="col-span-2 md:col-span-3 lg:col-span-1 mb-4 lg:mb-0">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 bg-gradient-to-br from-green-600 to-green-400 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">B</span>
               </div>
               <span className="text-xl font-bold text-white">
-                Bet<span className="text-green-400">Rent</span>
+                {t('app.name')}
               </span>
             </div>
             <p className="text-sm text-gray-400 mb-5 max-w-xs">
-              Ethiopia&apos;s trusted rental marketplace. Find your next home or list your property with confidence.
+              {t('footer.trustedBlurb')}
             </p>
             <div className="space-y-2.5">
               <a href="mailto:info@betrent.et" className="flex items-center gap-2 text-sm text-gray-400 hover:text-green-400 transition-colors">
@@ -62,24 +78,23 @@ export default function Footer({ onNavigate = () => {} }) {
                 <FiPhone className="w-4 h-4" /> +251 911 000 000
               </a>
               <p className="flex items-center gap-2 text-sm text-gray-400">
-                <FiMapPin className="w-4 h-4 flex-shrink-0" /> Bole, Addis Ababa, Ethiopia
+                <FiMapPin className="w-4 h-4 flex-shrink-0" /> Bole, {t('home.addisAbaba')}, Ethiopia
               </p>
             </div>
           </div>
 
-          {/* Link columns */}
-          {Object.entries(footerLinks).map(([title, links]) => (
-            <div key={title}>
-              <h4 className="text-sm font-semibold text-white mb-4">{title}</h4>
+          {footerColumns.map((col) => (
+            <div key={col.titleKey}>
+              <h4 className="text-sm font-semibold text-white mb-4">{t(col.titleKey)}</h4>
               <ul className="space-y-2.5">
-                {links.map((link) => (
-                  <li key={link.label}>
+                {col.links.map((link) => (
+                  <li key={link.href + (link.labelKey || link.labelPlain)}>
                     <a
                       href={link.href}
                       onClick={(e) => { e.preventDefault(); onNavigate(link.href); }}
                       className="text-sm text-gray-400 hover:text-green-400 transition-colors"
                     >
-                      {link.label}
+                      {link.labelPlain || t(link.labelKey)}
                     </a>
                   </li>
                 ))}
@@ -88,10 +103,9 @@ export default function Footer({ onNavigate = () => {} }) {
           ))}
         </div>
 
-        {/* Divider */}
         <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} BetRent. All rights reserved.
+            {t('footer.copyright', { year: new Date().getFullYear() })}
           </p>
           <div className="flex items-center gap-3">
             {socialLinks.map((social) => (

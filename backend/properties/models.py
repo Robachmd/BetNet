@@ -10,7 +10,58 @@ from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator, MinValueValidator
 
 
+class City(models.Model):
+    """Canonical Ethiopian cities for listings, search, and filters."""
+
+    name = models.CharField(max_length=120, unique=True, db_index=True)
+    slug = models.SlugField(max_length=140, unique=True, blank=True, db_index=True)
+    region = models.CharField(
+        max_length=120,
+        blank=True,
+        default="",
+        help_text="Regional state or charter (for grouping and search).",
+    )
+    search_text = models.TextField(
+        blank=True,
+        default="",
+        help_text="Optional alternate spellings / transliterations (space-separated).",
+    )
+    sort_order = models.PositiveIntegerField(
+        default=100,
+        db_index=True,
+        help_text="Lower values appear first in dropdowns.",
+    )
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+        verbose_name_plural = "cities"
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.name)[:120] or "city"
+            slug = base
+            n = 1
+            while City.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base}-{n}"
+                n += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+
 class Location(models.Model):
+    city_ref = models.ForeignKey(
+        City,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="locations",
+        help_text="Canonical city; keeps Location.city string in sync when set.",
+    )
     city = models.CharField(max_length=100, db_index=True)
     sub_city = models.CharField(max_length=100, db_index=True)
     woreda = models.CharField(max_length=50, blank=True, default="")
@@ -43,6 +94,11 @@ class Location(models.Model):
 
     class Meta:
         ordering = ["city", "sub_city"]
+
+    def save(self, *args, **kwargs):
+        if self.city_ref_id:
+            self.city = self.city_ref.name
+        super().save(*args, **kwargs)
 
     def __str__(self):
         parts = [self.city, self.sub_city]

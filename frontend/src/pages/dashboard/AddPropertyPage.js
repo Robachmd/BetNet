@@ -78,8 +78,7 @@ export default function AddPropertyPage() {
   } = useForm({
     defaultValues: {
       title: '', description: '', propertyType: '', bedrooms: '', bathrooms: '',
-      area: '', city: '', subCity: '', specificLocation: '', latitude: '',
-      longitude: '', amenities: [], hallAmenities: [], monthlyRent: '',
+      area: '', city: '', subCity: '', specificLocation: '', amenities: [], hallAmenities: [], monthlyRent: '',
       hourlyRate: '', dailyRate: '', capacity: '', videoUrl: '',
       listingType: 'rent',
     },
@@ -211,9 +210,6 @@ export default function AddPropertyPage() {
           city: data.city,
           subCity: data.subCity,
           specificLocation: data.specificLocation,
-          coordinates: data.latitude && data.longitude
-            ? { lat: Number(data.latitude), lng: Number(data.longitude) }
-            : undefined,
         },
         amenities: data.amenities,
         price: isHall ? undefined : Number(data.monthlyRent),
@@ -227,10 +223,11 @@ export default function AddPropertyPage() {
       };
 
       const result = await propertyService.createProperty(propertyData);
-      const propertyId = result.property?.id || result.id;
+      const created = result.property || result;
+      const propertySlug = created.slug;
 
-      if (images.length > 0 && propertyId) {
-        await propertyService.uploadPropertyImages(propertyId, images);
+      if (images.length > 0 && propertySlug) {
+        await propertyService.uploadPropertyImages(propertySlug, images);
       }
 
       localStorage.removeItem('betrent_property_draft');
@@ -362,25 +359,6 @@ export default function AddPropertyPage() {
                 className={inputClass}
                 placeholder="e.g., Near Edna Mall, Behind Friendship Hotel"
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>Latitude</label>
-                <input {...register('latitude')} type="number" step="any" className={inputClass} placeholder="9.0192" />
-              </div>
-              <div>
-                <label className={labelClass}>Longitude</label>
-                <input {...register('longitude')} type="number" step="any" className={inputClass} placeholder="38.7525" />
-              </div>
-            </div>
-
-            <div className="bg-gray-100 rounded-xl h-48 flex items-center justify-center text-gray-400">
-              <div className="text-center">
-                <FiMapPin className="w-8 h-8 mx-auto mb-2" />
-                <p className="text-sm">Map pin selector</p>
-                <p className="text-xs">Click on the map to set location</p>
-              </div>
             </div>
           </div>
         );
@@ -538,7 +516,7 @@ export default function AddPropertyPage() {
           <div className="space-y-5">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Media</h2>
             <p className="text-sm text-gray-500 mb-6">
-              Upload photos of your property ({images.length}/{MAX_IMAGES_PER_PROPERTY}).
+              Upload multiple photos of your property (up to {MAX_IMAGES_PER_PROPERTY}; {images.length} selected).
             </p>
 
             {/* Drag & Drop Upload */}

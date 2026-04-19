@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from .models import (
+    City,
     Location,
     Amenities,
     Property,
@@ -11,6 +12,15 @@ from .models import (
     FavoriteProperty,
     PropertyReport,
 )
+
+
+@admin.register(City)
+class CityAdmin(admin.ModelAdmin):
+    list_display = ["name", "region", "sort_order", "is_active", "created_at"]
+    list_filter = ["is_active", "region"]
+    search_fields = ["name", "region", "search_text", "slug"]
+    ordering = ["sort_order", "name"]
+    readonly_fields = ["created_at"]
 
 
 class PropertyImageInline(admin.TabularInline):
@@ -41,9 +51,10 @@ class HallDetailInline(admin.StackedInline):
 
 @admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
-    list_display = ["city", "sub_city", "woreda", "kebele", "created_at"]
+    list_display = ["city", "city_ref", "sub_city", "woreda", "kebele", "created_at"]
     list_filter = ["city", "sub_city"]
     search_fields = ["city", "sub_city", "specific_location"]
+    raw_id_fields = ["city_ref"]
 
 
 @admin.register(Amenities)

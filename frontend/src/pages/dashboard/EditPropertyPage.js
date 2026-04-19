@@ -104,8 +104,6 @@ export default function EditPropertyPage() {
           city: property.location?.city || '',
           subCity: property.location?.subCity || '',
           specificLocation: property.location?.specificLocation || '',
-          latitude: property.location?.coordinates?.lat || '',
-          longitude: property.location?.coordinates?.lng || '',
           amenities: property.amenities || [],
           hallAmenities: property.hallDetails?.amenities || [],
           monthlyRent: property.price || '',
@@ -255,9 +253,6 @@ export default function EditPropertyPage() {
           city: data.city,
           subCity: data.subCity,
           specificLocation: data.specificLocation,
-          coordinates: data.latitude && data.longitude
-            ? { lat: Number(data.latitude), lng: Number(data.longitude) }
-            : undefined,
         },
         amenities: data.amenities,
         price: isHall ? undefined : Number(data.monthlyRent),
@@ -381,10 +376,6 @@ export default function EditPropertyPage() {
               <label className={labelClass}>Specific Location</label>
               <input {...register('specificLocation')} className={inputClass} placeholder="e.g., Near Edna Mall" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className={labelClass}>Latitude</label><input {...register('latitude')} type="number" step="any" className={inputClass} /></div>
-              <div><label className={labelClass}>Longitude</label><input {...register('longitude')} type="number" step="any" className={inputClass} /></div>
-            </div>
           </div>
         );
 
@@ -470,6 +461,9 @@ export default function EditPropertyPage() {
         return (
           <div className="space-y-5">
             <h2 className="text-xl font-semibold text-gray-900">Media</h2>
+            <p className="text-sm text-gray-500">
+              Add up to {MAX_IMAGES_PER_PROPERTY} photos total (existing + new).
+            </p>
 
             {/* Existing Images */}
             {existingImages.length > 0 && (

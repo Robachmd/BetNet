@@ -11,6 +11,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
 from .models import (
+    City,
     Property,
     PropertyImage,
     PropertyVideo,
@@ -19,6 +20,7 @@ from .models import (
     HallDetail,
 )
 from .serializers import (
+    CitySerializer,
     PropertyListSerializer,
     PropertyDetailSerializer,
     PropertyCreateUpdateSerializer,
@@ -300,3 +302,28 @@ class PropertySearchView(generics.ListAPIView):
                 | Q(location__specific_location__icontains=q)
             )
         return qs
+
+
+# ── Ethiopian cities (searchable dropdown + mobile clients) ────────────────
+
+
+class CitySearchView(generics.ListAPIView):
+    """
+    Search cities by name, region, or alternate spellings (search_text).
+    Query params: q (optional) — empty returns top cities by sort_order.
+    """
+
+    serializer_class = CitySerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
+
+    def get_queryset(self):
+        qs = City.objects.filter(is_active=True).order_by("sort_order", "name")
+        q = self.request.query_params.get("q", "").strip()
+        if q:
+            qs = qs.filter(
+                Q(name__icontains=q)
+                | Q(region__icontains=q)
+                | Q(search_text__icontains=q)
+            )
+        return qs[:100]

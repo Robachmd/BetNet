@@ -1,11 +1,12 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Messages — BetRent{% endblock %}
+{% block title %}{% trans "Messages — BetRent" %}{% endblock %}
 
 {% block content %}
 <div class="max-w-3xl mx-auto px-4 py-10">
-  <h1 class="text-2xl font-extrabold text-gray-900 mb-2">Messages</h1>
-  <p class="text-gray-500 text-sm mb-8">Chats with landlords and renters about listings.</p>
+  <h1 class="text-2xl font-extrabold text-gray-900 mb-2">{% trans "Messages" %}</h1>
+  <p class="text-gray-500 text-sm mb-8">{% trans "Chats with landlords and renters about listings." %}</p>
 
   {% if conversations %}
   <ul class="space-y-3">
@@ -28,7 +29,7 @@
             {% endif %}
             {% endwith %}
           </div>
-          <span class="text-xs text-gray-400 shrink-0">{{ c.updated_at|timesince }} ago</span>
+          <span class="text-xs text-gray-400 shrink-0">{% blocktrans with t=c.updated_at|timesince %}{{ t }} ago{% endblocktrans %}</span>
         </div>
       </a>
     </li>
@@ -36,9 +37,9 @@
   </ul>
   {% else %}
   <div class="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-10 text-center">
-    <p class="text-gray-600 mb-2">No conversations yet.</p>
-    <p class="text-sm text-gray-500">Open a listing and use <strong>Message landlord</strong> to start.</p>
-    <a href="{% url 'search' %}" class="inline-flex mt-4 px-5 py-2.5 rounded-xl bg-primary-700 text-white text-sm font-semibold hover:bg-primary-800">Browse listings</a>
+    <p class="text-gray-600 mb-2">{% trans "No conversations yet." %}</p>
+    <p class="text-sm text-gray-500">{% blocktrans trimmed %}Open a listing and use <strong>Message landlord</strong> to start.{% endblocktrans %}</p>
+    <a href="{% url 'search' %}" class="inline-flex mt-4 px-5 py-2.5 rounded-xl bg-primary-700 text-white text-sm font-semibold hover:bg-primary-800">{% trans "Browse listings" %}</a>
   </div>
   {% endif %}
 </div>

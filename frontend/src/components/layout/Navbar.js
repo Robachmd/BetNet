@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiMenu, FiX, FiHome, FiSearch, FiUser, FiLogOut, FiSettings, FiCalendar, FiChevronDown } from 'react-icons/fi';
 import SearchBar from '../common/SearchBar';
 import LanguageSwitcher from '../common/LanguageSwitcher';
@@ -8,9 +9,7 @@ export default function Navbar({
   user = null,
   notifications = [],
   unreadCount = 0,
-  currentLang = 'en',
   onSearch = () => {},
-  onLanguageChange = () => {},
   onNotificationClick = () => {},
   onMarkAllRead = () => {},
   onLogin = () => {},
@@ -18,6 +17,7 @@ export default function Navbar({
   onLogout = () => {},
   onNavigate = () => {},
 }) {
+  const { t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -42,11 +42,14 @@ export default function Navbar({
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
-  const navLinks = [
-    { label: 'Home', icon: FiHome, key: 'home' },
-    { label: 'Search', icon: FiSearch, key: 'search' },
-    { label: 'Hall Rentals', icon: FiCalendar, key: 'halls' },
-  ];
+  const navLinks = useMemo(
+    () => [
+      { label: t('nav.home'), icon: FiHome, key: 'home' },
+      { label: t('nav.search'), icon: FiSearch, key: 'search' },
+      { label: t('nav.halls'), icon: FiCalendar, key: 'halls' },
+    ],
+    [t],
+  );
 
   return (
     <header
@@ -66,9 +69,8 @@ export default function Navbar({
             <div className="w-8 h-8 bg-gradient-to-br from-green-700 to-green-500 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">B</span>
             </div>
-            <span className="text-xl font-bold">
-              <span className="text-green-800">Bet</span>
-              <span className="text-green-600">Rent</span>
+            <span className="text-xl font-bold text-green-800">
+              {t('app.name')}
             </span>
           </button>
 
@@ -93,7 +95,7 @@ export default function Navbar({
 
           {/* Desktop right section */}
           <div className="hidden md:flex items-center gap-1">
-            <LanguageSwitcher currentLang={currentLang} onChange={onLanguageChange} />
+            <LanguageSwitcher />
 
             {user ? (
               <>
@@ -130,20 +132,20 @@ export default function Navbar({
                         onClick={() => { onNavigate('profile'); setProfileOpen(false); }}
                         className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50"
                       >
-                        <FiUser className="w-4 h-4" /> My Profile
+                        <FiUser className="w-4 h-4" /> {t('profile.title')}
                       </button>
                       <button
                         onClick={() => { onNavigate('settings'); setProfileOpen(false); }}
                         className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50"
                       >
-                        <FiSettings className="w-4 h-4" /> Settings
+                        <FiSettings className="w-4 h-4" /> {t('dashboard.settings')}
                       </button>
                       <div className="border-t border-gray-100 mt-1 pt-1">
                         <button
                           onClick={() => { onLogout(); setProfileOpen(false); }}
                           className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50"
                         >
-                          <FiLogOut className="w-4 h-4" /> Sign Out
+                          <FiLogOut className="w-4 h-4" /> {t('nav.logout')}
                         </button>
                       </div>
                     </div>
@@ -156,13 +158,13 @@ export default function Navbar({
                   onClick={onLogin}
                   className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-green-700 transition-colors"
                 >
-                  Log In
+                  {t('nav.login')}
                 </button>
                 <button
                   onClick={onRegister}
                   className="px-4 py-2 text-sm font-medium text-white bg-green-700 rounded-lg hover:bg-green-800 transition-colors shadow-sm"
                 >
-                  Register
+                  {t('nav.register')}
                 </button>
               </div>
             )}
@@ -203,8 +205,8 @@ export default function Navbar({
 
             <div className="border-t border-gray-100 px-4 py-4">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-medium text-gray-500">Language</span>
-                <LanguageSwitcher currentLang={currentLang} onChange={onLanguageChange} />
+                <span className="text-sm font-medium text-gray-500">{t('nav.language')}</span>
+                <LanguageSwitcher />
               </div>
 
               {user ? (
@@ -226,7 +228,7 @@ export default function Navbar({
                     onClick={() => { onLogout(); setMobileOpen(false); }}
                     className="w-full py-2.5 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
                   >
-                    Sign Out
+                    {t('nav.logout')}
                   </button>
                 </>
               ) : (
@@ -235,13 +237,13 @@ export default function Navbar({
                     onClick={() => { onLogin(); setMobileOpen(false); }}
                     className="w-full py-2.5 text-sm font-medium text-green-700 border border-green-200 rounded-lg hover:bg-green-50 transition-colors"
                   >
-                    Log In
+                    {t('nav.login')}
                   </button>
                   <button
                     onClick={() => { onRegister(); setMobileOpen(false); }}
                     className="w-full py-2.5 text-sm font-medium text-white bg-green-700 rounded-lg hover:bg-green-800 transition-colors"
                   >
-                    Register
+                    {t('nav.register')}
                   </button>
                 </div>
               )}

@@ -1,0 +1,107 @@
+# Oromo translations for BetRent Django templates.
+# Copyright (C) 2026 BetRent
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: BetRent\n"
+"Language: om\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "BetRent — Ethiopia's trusted rental marketplace. Find verified homes, apartments, villas, and event halls."
+msgstr "BetRent, gabaa amantaa qabeenya kireeffannaa Itoophiyaa. Mana mirkanaa'e, apartamaa fi mana taphaataa argadhu."
+
+msgid "BetRent — Ethiopia's Trusted Rental Marketplace"
+msgstr "BetRent, Gabaa Amantaa Qabeenya Kireeffannaa Itoophiyaa"
+
+msgid "Browse Listings"
+msgstr "Tarreeffannoo ilaali"
+
+msgid "Event Halls"
+msgstr "Mana taphaataa"
+
+msgid "Add Property"
+msgstr "Qabeenya dabaluu"
+
+msgid "Dashboard"
+msgstr "Gabatee"
+
+msgid "Messages"
+msgstr "Ergaawwan"
+
+msgid "My Profile"
+msgstr "Seenaa koo"
+
+msgid "My Favorites"
+msgstr "Filannoo koo"
+
+msgid "Logout"
+msgstr "Ba'i"
+
+msgid "Login"
+msgstr "Seeni"
+
+msgid "Sign Up"
+msgstr "Galmaa'i"
+
+msgid "Toggle menu"
+msgstr "Menyuu jijjiiri"
+
+msgid "Dismiss"
+msgstr "Cufi"
+
+msgid "Ethiopia's trusted rental marketplace. Find verified homes, apartments, and event halls — with transparent pricing and no hidden fees from the platform."
+msgstr "Gabaa amantaa qabeenya kireeffannaa Itoophiyaa. Mana mirkanaa'e, apartamaa fi mana taphaataa gatii ifa ta'eetiin argadhu, kaffaltiin dhokataa hin qabu."
+
+msgid "Facebook"
+msgstr "Facebook"
+
+msgid "Telegram"
+msgstr "Telegram"
+
+msgid "Instagram"
+msgstr "Instagram"
+
+msgid "Platform"
+msgstr "Gabatee"
+
+msgid "For Landlords"
+msgstr "Qabeenya qabatanii"
+
+msgid "Price Insights"
+msgstr "Hubannoo gatii"
+
+msgid "Neighborhoods"
+msgstr "Naannoolee"
+
+msgid "List Your Property"
+msgstr "Qabeenya kee galchi"
+
+msgid "Pricing Plans"
+msgstr "Karoora gatii"
+
+msgid "Verification"
+msgstr "Mirkaneessuu"
+
+msgid "Landlord Guide"
+msgstr "Qajeelfama qabeenya qabatanii"
+
+msgid "Company"
+msgstr "Dhaabbata"
+
+msgid "About Us"
+msgstr "Waa'ee keenya"
+
+msgid "Contact"
+msgstr "Quunnama"
+
+msgid "Privacy Policy"
+msgstr "Seera iccitii dhuunfaa"
+
+msgid "Terms of Service"
+msgstr "Haala tajaajilaa"
+
+msgid "© 2026 BetRent. All rights reserved."
+msgstr "© 2026 BetRent. Mirgi seeraan kan eegame."

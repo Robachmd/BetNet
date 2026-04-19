@@ -45,6 +45,7 @@ DJANGO_APPS = [
 
 THIRD_PARTY_APPS = [
     'rest_framework',
+    'drf_spectacular',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
@@ -93,6 +94,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'django.template.context_processors.i18n',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -159,6 +161,9 @@ LANGUAGES = [
 
 LOCALE_PATHS = [BASE_DIR / 'locale']
 
+# Persist language across browser sessions (reload and return visits)
+LANGUAGE_COOKIE_AGE = 60 * 60 * 24 * 365
+
 # ---------------------------------------------------------------------------
 # Static & Media files
 # ---------------------------------------------------------------------------
@@ -219,6 +224,7 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
     'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S%z',
 }
@@ -227,6 +233,28 @@ if DEBUG:
     REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] += (
         'rest_framework.renderers.BrowsableAPIRenderer',
     )
+
+# ---------------------------------------------------------------------------
+# OpenAPI / Swagger (drf-spectacular)
+# ---------------------------------------------------------------------------
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'BetRent API',
+    'DESCRIPTION': "Ethiopia's Trusted Rental Marketplace",
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SECURITY': [{'bearerAuth': []}],
+    'APPEND_COMPONENTS': {
+        'securitySchemes': {
+            'bearerAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT',
+            },
+        },
+    },
+}
 
 # ---------------------------------------------------------------------------
 # Simple JWT

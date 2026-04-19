@@ -1,5 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiGlobe, FiCheck } from 'react-icons/fi';
+import i18n from '../../i18n';
 
 const languages = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
@@ -7,14 +9,27 @@ const languages = [
   { code: 'om', label: 'Afaan Oromoo', flag: '🇪🇹' },
 ];
 
+function resolveActiveCode(raw) {
+  if (!raw) return 'en';
+  const base = raw.split('-')[0];
+  if (languages.some((l) => l.code === raw)) return raw;
+  if (languages.some((l) => l.code === base)) return base;
+  return 'en';
+}
+
 export default function LanguageSwitcher({
-  currentLang = 'en',
   onChange = () => {},
   compact = false,
   className = '',
 }) {
+  const { i18n: i18nInstance } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef(null);
+
+  const currentLang = useMemo(
+    () => resolveActiveCode(i18nInstance.language),
+    [i18nInstance.language],
+  );
 
   const current = languages.find((l) => l.code === currentLang) || languages[0];
 
@@ -42,7 +57,11 @@ export default function LanguageSwitcher({
           {languages.map((lang) => (
             <button
               key={lang.code}
-              onClick={() => { onChange(lang.code); setIsOpen(false); }}
+              onClick={() => {
+                void i18n.changeLanguage(lang.code);
+                onChange(lang.code);
+                setIsOpen(false);
+              }}
               className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors ${
                 currentLang === lang.code
                   ? 'bg-green-50 text-green-700'

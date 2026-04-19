@@ -315,8 +315,6 @@ class BetRentApi {
         'kebele': '',
         'specific_location': specificLocation,
         'maps_url': '',
-        'latitude': null,
-        'longitude': null,
       },
       'amenities': {
         'water_availability': 'SOMETIMES',

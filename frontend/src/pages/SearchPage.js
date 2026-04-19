@@ -157,7 +157,7 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Search Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-30">
+      <div className="bg-white border-b border-gray-100 sticky top-16 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
             <SearchBar

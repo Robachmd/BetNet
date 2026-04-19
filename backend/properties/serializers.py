@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.db import transaction
 
 from .models import (
+    City,
     Location,
     Amenities,
     Property,
@@ -13,12 +14,25 @@ from .models import (
 )
 
 
+class CitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = City
+        fields = ["id", "name", "region", "slug", "sort_order"]
+
+
 class LocationSerializer(serializers.ModelSerializer):
+    city_ref = serializers.PrimaryKeyRelatedField(
+        queryset=City.objects.filter(is_active=True),
+        required=False,
+        allow_null=True,
+    )
+
     class Meta:
         model = Location
         fields = [
             "id",
             "city",
+            "city_ref",
             "sub_city",
             "woreda",
             "kebele",

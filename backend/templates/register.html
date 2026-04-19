@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
-{% block title %}Create Account — BetRent{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Create Account — BetRent" %}{% endblock %}
 
 {% block content %}
 <div class="min-h-[calc(100vh-68px)] flex">
@@ -23,10 +24,10 @@
         </svg>
       </div>
       <h1 class="text-4xl font-extrabold text-white mb-3">
-        Join <span class="text-secondary-400">BetRent</span> Today
+        {% trans "Join" %} <span class="text-secondary-400">BetRent</span> {% trans "Today" %}
       </h1>
       <p class="text-primary-200 text-lg max-w-md leading-relaxed">
-        Whether you're looking for a home or listing a property, BetRent connects you with Ethiopia's rental community.
+        {% trans "Whether you're looking for a home or listing a property, BetRent connects you with Ethiopia's rental community." %}
       </p>
 
       <div class="mt-10 space-y-4 max-w-sm w-full text-left">
@@ -35,8 +36,8 @@
             <svg class="w-5 h-5 text-secondary-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
           <div>
-            <h3 class="text-white font-semibold text-sm">Verified Properties</h3>
-            <p class="text-primary-200 text-xs mt-0.5">Every listing is verified by our team for authenticity</p>
+            <h3 class="text-white font-semibold text-sm">{% trans "Verified Properties" %}</h3>
+            <p class="text-primary-200 text-xs mt-0.5">{% trans "Every listing is verified by our team for authenticity" %}</p>
           </div>
         </div>
         <div class="flex items-start gap-4 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
@@ -44,8 +45,8 @@
             <svg class="w-5 h-5 text-secondary-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
           <div>
-            <h3 class="text-white font-semibold text-sm">No Hidden Fees</h3>
-            <p class="text-primary-200 text-xs mt-0.5">Transparent pricing — no hidden fees from the platform</p>
+            <h3 class="text-white font-semibold text-sm">{% trans "No Hidden Fees" %}</h3>
+            <p class="text-primary-200 text-xs mt-0.5">{% trans "Transparent pricing — no hidden fees from the platform" %}</p>
           </div>
         </div>
         <div class="flex items-start gap-4 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
@@ -53,8 +54,8 @@
             <svg class="w-5 h-5 text-secondary-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/></svg>
           </div>
           <div>
-            <h3 class="text-white font-semibold text-sm">Direct Communication</h3>
-            <p class="text-primary-200 text-xs mt-0.5">Message landlords directly through the platform</p>
+            <h3 class="text-white font-semibold text-sm">{% trans "Direct Communication" %}</h3>
+            <p class="text-primary-200 text-xs mt-0.5">{% trans "Message landlords directly through the platform" %}</p>
           </div>
         </div>
       </div>
@@ -78,15 +79,15 @@
       </div>
 
       <div class="text-center mb-6">
-        <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900">Create your account</h2>
-        <p class="mt-2 text-gray-500">Start your journey with BetRent</p>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900">{% trans "Create your account" %}</h2>
+        <p class="mt-2 text-gray-500">{% trans "Start your journey with BetRent" %}</p>
       </div>
 
       {% if form.errors %}
         <div class="mb-5 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
           <div class="flex items-center gap-2 mb-1">
             <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M15 9l-6 6M9 9l6 6"/></svg>
-            <p class="text-sm font-semibold text-red-800">Please fix the following errors:</p>
+            <p class="text-sm font-semibold text-red-800">{% trans "Please fix the following errors:" %}</p>
           </div>
           <ul class="list-disc list-inside text-sm text-red-700 space-y-0.5 ml-6">
             {% for field in form %}
@@ -126,24 +127,24 @@
         <!-- Name Fields -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label for="first_name" class="block text-sm font-semibold text-gray-700 mb-1.5">First Name</label>
+            <label for="first_name" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "First Name" %}</label>
             <input
               type="text"
               id="first_name"
               name="first_name"
-              placeholder="Abebe"
+              placeholder="{% trans 'Abebe' %}"
               required
               value="{{ form.first_name.value|default:'' }}"
               class="block w-full rounded-xl border border-gray-300 px-4 py-3 text-sm placeholder-gray-400 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-colors"
             />
           </div>
           <div>
-            <label for="last_name" class="block text-sm font-semibold text-gray-700 mb-1.5">Last Name</label>
+            <label for="last_name" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Last Name" %}</label>
             <input
               type="text"
               id="last_name"
               name="last_name"
-              placeholder="Kebede"
+              placeholder="{% trans 'Kebede' %}"
               required
               value="{{ form.last_name.value|default:'' }}"
               class="block w-full rounded-xl border border-gray-300 px-4 py-3 text-sm placeholder-gray-400 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-colors"
@@ -153,12 +154,12 @@
 
         <!-- Email -->
         <div>
-          <label for="email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
+          <label for="email" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Email Address" %}</label>
           <input
             type="email"
             id="email"
             name="email"
-            placeholder="you@example.com"
+            placeholder="{% trans 'you@example.com' %}"
             required
             value="{{ form_data.email|default:'' }}"
             class="block w-full rounded-xl border border-gray-300 px-4 py-3 text-sm placeholder-gray-400 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-colors"
@@ -167,7 +168,7 @@
 
         <!-- Phone Number (optional) -->
         <div>
-          <label for="phone" class="block text-sm font-semibold text-gray-700 mb-1.5">Phone Number <span class="text-gray-400 font-normal">(optional)</span></label>
+          <label for="phone" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Phone Number" %} <span class="text-gray-400 font-normal">({% trans "optional" %})</span></label>
           <div class="flex">
             <span class="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-gray-300 bg-gray-50 text-sm font-medium text-gray-600">
               +251
@@ -181,23 +182,23 @@
               id="phone"
               name="phone"
               placeholder="911234567"
-              title="Digits only — 9 digits after +251"
+              title="{% trans 'Digits only — 9 digits after +251' %}"
               value="{{ form_data.phone|default:'' }}"
               class="flex-1 block w-full rounded-r-xl border border-gray-300 px-4 py-3 text-sm placeholder-gray-400 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-colors"
             />
           </div>
-          <p class="text-xs text-gray-500 mt-1.5">Numbers only (no letters). Example: <span class="font-mono">911234567</span> — nine digits after +251.</p>
+          <p class="text-xs text-gray-500 mt-1.5">{% trans "Numbers only (no letters). Example:" %} <span class="font-mono">911234567</span> {% trans "— nine digits after +251." %}</p>
         </div>
 
         <!-- Password -->
         <div>
-          <label for="password" class="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+          <label for="password" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Password" %}</label>
           <div class="relative">
             <input
               :type="showPass ? 'text' : 'password'"
               id="password"
               name="password"
-              placeholder="Create a strong password"
+              placeholder="{% trans 'Create a strong password' %}"
               required
               x-model="password"
               @input="calcStrength()"
@@ -221,23 +222,23 @@
             <div class="h-1.5 flex-1 rounded-full transition-colors" :class="strength >= 4 ? 'bg-primary-600' : 'bg-gray-200'"></div>
           </div>
           <p class="mt-1 text-xs text-gray-400" x-show="password.length > 0" x-transition>
-            <span x-show="strength <= 1" class="text-red-500">Weak</span>
-            <span x-show="strength === 2" class="text-yellow-600">Fair</span>
-            <span x-show="strength === 3" class="text-primary-600">Good</span>
-            <span x-show="strength === 4" class="text-primary-700 font-semibold">Strong</span>
-            — Use 8+ chars, uppercase, numbers &amp; symbols
+            <span x-show="strength <= 1" class="text-red-500">{% trans "Weak" %}</span>
+            <span x-show="strength === 2" class="text-yellow-600">{% trans "Fair" %}</span>
+            <span x-show="strength === 3" class="text-primary-600">{% trans "Good" %}</span>
+            <span x-show="strength === 4" class="text-primary-700 font-semibold">{% trans "Strong" %}</span>
+            {% trans "— Use 8+ chars, uppercase, numbers & symbols" %}
           </p>
         </div>
 
         <!-- Confirm Password -->
         <div>
-          <label for="password_confirm" class="block text-sm font-semibold text-gray-700 mb-1.5">Confirm Password</label>
+          <label for="password_confirm" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Confirm Password" %}</label>
           <div class="relative">
             <input
               :type="showConfirm ? 'text' : 'password'"
               id="password_confirm"
               name="password_confirm"
-              placeholder="Re-enter your password"
+              placeholder="{% trans 'Re-enter your password' %}"
               required
               class="block w-full rounded-xl border border-gray-300 px-4 py-3 pr-12 text-sm placeholder-gray-400 focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-colors"
             />
@@ -255,7 +256,7 @@
 
         <!-- Role Selection -->
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-3">I want to...</label>
+          <label class="block text-sm font-semibold text-gray-700 mb-3">{% trans "I want to..." %}</label>
           <input type="hidden" name="role" :value="role" />
           <div class="grid grid-cols-2 gap-3">
             <!-- Renter Card -->
@@ -280,8 +281,8 @@
                 </svg>
               </div>
               <div>
-                <p class="text-sm font-bold" :class="role === 'RENTER' ? 'text-primary-700' : 'text-gray-700'">Find a Home</p>
-                <p class="text-xs mt-0.5" :class="role === 'RENTER' ? 'text-primary-600' : 'text-gray-400'">I'm looking for a rental</p>
+                <p class="text-sm font-bold" :class="role === 'RENTER' ? 'text-primary-700' : 'text-gray-700'">{% trans "Find a Home" %}</p>
+                <p class="text-xs mt-0.5" :class="role === 'RENTER' ? 'text-primary-600' : 'text-gray-400'">{% trans "I'm looking for a rental" %}</p>
               </div>
               <div
                 x-show="role === 'RENTER'"
@@ -314,8 +315,8 @@
                 </svg>
               </div>
               <div>
-                <p class="text-sm font-bold" :class="role === 'LANDLORD' ? 'text-primary-700' : 'text-gray-700'">List Property</p>
-                <p class="text-xs mt-0.5" :class="role === 'LANDLORD' ? 'text-primary-600' : 'text-gray-400'">I want to rent out</p>
+                <p class="text-sm font-bold" :class="role === 'LANDLORD' ? 'text-primary-700' : 'text-gray-700'">{% trans "List Property" %}</p>
+                <p class="text-xs mt-0.5" :class="role === 'LANDLORD' ? 'text-primary-600' : 'text-gray-400'">{% trans "I want to rent out" %}</p>
               </div>
               <div
                 x-show="role === 'LANDLORD'"
@@ -338,10 +339,10 @@
             class="w-4 h-4 mt-0.5 rounded border-gray-300 text-primary-700 focus:ring-primary-500/30"
           />
           <label for="terms" class="text-sm text-gray-600 leading-relaxed">
-            I agree to BetRent's
-            <a href="#" class="font-medium text-primary-700 hover:text-primary-800 underline underline-offset-2">Terms of Service</a>
-            and
-            <a href="#" class="font-medium text-primary-700 hover:text-primary-800 underline underline-offset-2">Privacy Policy</a>
+            {% trans "I agree to BetRent's" %}
+            <a href="#" class="font-medium text-primary-700 hover:text-primary-800 underline underline-offset-2">{% trans "Terms of Service" %}</a>
+            {% trans "and" %}
+            <a href="#" class="font-medium text-primary-700 hover:text-primary-800 underline underline-offset-2">{% trans "Privacy Policy" %}</a>
           </label>
         </div>
 
@@ -350,7 +351,7 @@
           type="submit"
           class="w-full py-3 rounded-xl text-sm font-bold bg-primary-700 text-white hover:bg-primary-800 hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:ring-offset-2"
         >
-          Create Account
+          {% trans "Create Account" %}
         </button>
 
         <!-- Divider -->
@@ -359,16 +360,16 @@
             <div class="w-full border-t border-gray-200"></div>
           </div>
           <div class="relative flex justify-center text-sm">
-            <span class="px-4 bg-white text-gray-400 font-medium">OR</span>
+            <span class="px-4 bg-white text-gray-400 font-medium">{% trans "OR" %}</span>
           </div>
         </div>
 
         <!-- Login Link -->
         <div class="text-center">
           <p class="text-sm text-gray-500">
-            Already have an account?
+            {% trans "Already have an account?" %}
             <a href="{% url 'login' %}" class="font-semibold text-primary-700 hover:text-primary-800 transition-colors">
-              Login
+              {% trans "Login" %}
             </a>
           </p>
         </div>

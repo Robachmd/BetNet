@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
+import PublicLayout from './components/layout/PublicLayout';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
@@ -73,16 +74,16 @@ export default function App() {
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/search" element={<SearchPage />} />
-        <Route path="/property/:slug" element={<PropertyDetailPage />} />
-        <Route path="/halls" element={<HallRentalPage />} />
-
-        {/* Guest-only routes */}
-        <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
-        <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
-        <Route path="/verify-otp" element={<OTPVerificationPage />} />
+        {/* Public shell: Navbar, Footer, language switcher */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/property/:slug" element={<PropertyDetailPage />} />
+          <Route path="/halls" element={<HallRentalPage />} />
+          <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+          <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+          <Route path="/verify-otp" element={<OTPVerificationPage />} />
+        </Route>
 
         {/* Protected routes */}
         <Route

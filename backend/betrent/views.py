@@ -1,6 +1,5 @@
 import re
 from datetime import date, datetime
-from decimal import Decimal, InvalidOperation
 from typing import Optional, Tuple
 
 import phonenumbers
@@ -15,15 +14,19 @@ from django.core.paginator import Paginator
 from django.db.models import Avg, Count, F, Max, Min, Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import check_for_language, gettext as _
 from django.views.decorators.http import require_POST
 
 from accounts.models import User
 from bookings.models import Booking, HallBooking
 from chat.models import Conversation, Message
 from payments.models import Payment
+from properties.city_utils import resolve_city_from_post
 from properties.models import (
     Amenities,
+    City,
     FavoriteProperty,
     HallDetail,
     Location,
@@ -35,6 +38,30 @@ from reviews.models import Review
 
 MAX_LISTING_PROPERTY_VIDEOS = 5
 MAX_PROPERTY_VIDEO_BYTES = 75 * 1024 * 1024
+
+# Map User.preferred_language (EN/AM/OM) to Django locale codes (en/am/om)
+_USER_LANG_TO_DJANGO = {"EN": "en", "AM": "am", "OM": "om"}
+
+
+def _apply_language_cookie(response, lang_code: str):
+    """Same semantics as django.views.i18n.set_language cookie."""
+    if lang_code and check_for_language(lang_code):
+        response.set_cookie(
+            settings.LANGUAGE_COOKIE_NAME,
+            lang_code,
+            max_age=settings.LANGUAGE_COOKIE_AGE,
+            path=settings.LANGUAGE_COOKIE_PATH,
+            domain=settings.LANGUAGE_COOKIE_DOMAIN,
+            secure=settings.LANGUAGE_COOKIE_SECURE,
+            httponly=settings.LANGUAGE_COOKIE_HTTPONLY,
+            samesite=settings.LANGUAGE_COOKIE_SAMESITE,
+        )
+
+
+def _language_cookie_code_for_user(user):
+    return _USER_LANG_TO_DJANGO.get(
+        (getattr(user, "preferred_language", None) or "").upper(), ""
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -50,11 +77,14 @@ def _attach_property_videos(property_obj, uploaded_files, existing_count: int = 
     slot = max(0, MAX_LISTING_PROPERTY_VIDEOS - int(existing_count))
     if slot <= 0:
         raise ValueError(
-            f"You can upload at most {MAX_LISTING_PROPERTY_VIDEOS} videos per listing."
+            _("You can upload at most %(max)d videos per listing.")
+            % {"max": MAX_LISTING_PROPERTY_VIDEOS}
         )
     for f in files[:slot]:
         if f.size > MAX_PROPERTY_VIDEO_BYTES:
-            raise ValueError(f"Video «{f.name}» is too large (maximum 75 MB).")
+            raise ValueError(
+                _("Video «%(name)s» is too large (maximum 75 MB).") % {"name": f.name}
+            )
         pv = PropertyVideo(property=property_obj, video=f, video_url="")
         pv.full_clean()
         pv.save()
@@ -90,46 +120,35 @@ def _validate_register_phone(raw: str) -> Tuple[Optional[str], Optional[str]]:
         cleaned = cleaned[1:]
 
     if not cleaned.isdigit():
-        return None, (
+        return None, _(
             "Phone number must contain only numbers (no letters). "
             "Use the box after +251, e.g. 91 123 4567."
         )
 
     if len(cleaned) != 9:
-        return None, "Enter exactly 9 digits after +251 (Ethiopian mobile format)."
+        return None, _("Enter exactly 9 digits after +251 (Ethiopian mobile format).")
 
     if not cleaned.startswith("9"):
-        return None, "Ethiopian mobile numbers start with 9 (e.g. 91, 92, 97…)."
+        return None, _("Ethiopian mobile numbers start with 9 (e.g. 91, 92, 97…).")
 
     phone_number = "+251" + cleaned
     try:
         parsed = phonenumbers.parse(phone_number, None)
         if not phonenumbers.is_valid_number(parsed):
-            return None, "That phone number is not valid. Check the digits and try again."
+            return None, _(
+                "That phone number is not valid. Check the digits and try again."
+            )
     except NumberParseException:
-        return None, "Invalid phone number format."
+        return None, _("Invalid phone number format.")
     return phone_number, None
 
 
 def _parse_location_coords_and_maps(request):
-    """Map link and/or coordinates; coordinates must be both set or both empty."""
+    """Optional maps share link; latitude/longitude are no longer collected from forms."""
     maps_url = (request.POST.get("maps_url") or "").strip()
     if maps_url and not maps_url.startswith(("http://", "https://")):
         maps_url = "https://" + maps_url
-    lat_s = (request.POST.get("latitude") or "").strip()
-    lon_s = (request.POST.get("longitude") or "").strip()
-    lat = lon = None
-    if lat_s or lon_s:
-        if not lat_s or not lon_s:
-            raise ValueError(
-                "Enter both latitude and longitude, or leave both empty and use a map link instead."
-            )
-        try:
-            lat = Decimal(lat_s)
-            lon = Decimal(lon_s)
-        except InvalidOperation as exc:
-            raise ValueError("Invalid latitude or longitude.") from exc
-    return lat, lon, maps_url
+    return None, None, maps_url
 
 
 def _bedroom_filter_value(raw: str) -> str:
@@ -172,9 +191,9 @@ def _floor_number_from_post(post, property_type: str):
     try:
         n = int(raw)
     except ValueError as exc:
-        raise ValueError("Floor number must be a whole number.") from exc
+        raise ValueError(_("Floor number must be a whole number.")) from exc
     if n < 0 or n > 200:
-        raise ValueError("Floor number must be between 0 and 200.")
+        raise ValueError(_("Floor number must be between 0 and 200."))
     return n
 
 
@@ -182,7 +201,7 @@ def _residential_bedrooms_bathrooms_from_post(post):
     """Bedroom/bathroom fields for non–business-shop listings."""
     bedrooms_val = post.get("bedrooms", "")
     if not bedrooms_val:
-        raise ValueError("Please select the number of bedrooms.")
+        raise ValueError(_("Please select the number of bedrooms."))
     bathrooms_raw = (post.get("bathrooms") or "").strip()
     if bathrooms_raw == "":
         bathrooms_val = 1
@@ -190,9 +209,9 @@ def _residential_bedrooms_bathrooms_from_post(post):
         try:
             bathrooms_val = int(bathrooms_raw)
         except (TypeError, ValueError) as exc:
-            raise ValueError("Bathrooms must be a whole number.") from exc
+            raise ValueError(_("Bathrooms must be a whole number.")) from exc
     if bathrooms_val < 0 or bathrooms_val > 10:
-        raise ValueError("Bathrooms must be between 0 and 10.")
+        raise ValueError(_("Bathrooms must be between 0 and 10."))
     return bedrooms_val, bathrooms_val
 
 
@@ -207,13 +226,13 @@ def _business_shop_class_count_from_post(post):
     """Number of classes (rooms/sections) for BUSINESS_SHOP."""
     raw = (post.get("shop_class_count") or "").strip()
     if not raw:
-        raise ValueError("Enter the number of classes for this business shop.")
+        raise ValueError(_("Enter the number of classes for this business shop."))
     try:
         n = int(raw)
     except ValueError as exc:
-        raise ValueError("Number of classes must be a whole number.") from exc
+        raise ValueError(_("Number of classes must be a whole number.")) from exc
     if n < 1 or n > 99:
-        raise ValueError("Number of classes must be between 1 and 99.")
+        raise ValueError(_("Number of classes must be between 1 and 99."))
     return n
 
 
@@ -283,11 +302,17 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
-            messages.success(request, f"Welcome back, {user.first_name or 'there'}!")
+            messages.success(
+                request,
+                _("Welcome back, %(name)s!")
+                % {"name": user.first_name or _("there")},
+            )
             next_url = request.GET.get("next") or request.POST.get("next", "")
-            return redirect(next_url or "home")
+            resp = redirect(next_url or "home")
+            _apply_language_cookie(resp, _language_cookie_code_for_user(user))
+            return resp
 
-        messages.error(request, "Invalid phone number / email or password.")
+        messages.error(request, _("Invalid phone number / email or password."))
 
     return render(request, "login.html")
 
@@ -317,7 +342,7 @@ def register_view(request):
 
         errors = []
         if not email:
-            errors.append("Email is required.")
+            errors.append(_("Email is required."))
 
         phone_number = ""
         if raw_phone:
@@ -330,17 +355,17 @@ def register_view(request):
             phone_number = f"+251900{User.objects.count():06d}"
 
         if not password:
-            errors.append("Password is required.")
+            errors.append(_("Password is required."))
         if password != confirm_password:
-            errors.append("Passwords do not match.")
+            errors.append(_("Passwords do not match."))
         if len(password) < 6:
-            errors.append("Password must be at least 6 characters.")
+            errors.append(_("Password must be at least 6 characters."))
         if role not in (User.Role.RENTER, User.Role.LANDLORD):
-            errors.append("Invalid role selected.")
+            errors.append(_("Invalid role selected."))
         if phone_number and User.objects.filter(phone_number=phone_number).exists():
-            errors.append("An account with this phone number already exists.")
+            errors.append(_("An account with this phone number already exists."))
         if email and User.objects.filter(email__iexact=email).exists():
-            errors.append("An account with this email already exists.")
+            errors.append(_("An account with this email already exists."))
 
         if errors:
             for err in errors:
@@ -358,8 +383,10 @@ def register_view(request):
             email=email,
         )
         login(request, user)
-        messages.success(request, "Account created successfully! Welcome to BetRent.")
-        return redirect("home")
+        messages.success(request, _("Account created successfully! Welcome to BetRent."))
+        resp = redirect("home")
+        _apply_language_cookie(resp, _language_cookie_code_for_user(user))
+        return resp
 
     return render(request, "register.html")
 
@@ -370,7 +397,7 @@ def register_view(request):
 
 def logout_view(request):
     logout(request)
-    messages.info(request, "You have been logged out.")
+    messages.info(request, _("You have been logged out."))
     return redirect("home")
 
 
@@ -571,12 +598,17 @@ def search_view(request):
         .order_by("sub_city")
     )
 
+    ethiopian_cities = City.objects.filter(is_active=True).order_by(
+        "sort_order", "name"
+    )
+
     return render(request, "search.html", {
         "properties": page,
         "query": q,
         "property_types": Property.PropertyType.choices,
         "bedroom_choices": Property.BedroomCount.choices,
         "cities": cities,
+        "ethiopian_cities": ethiopian_cities,
         "sub_cities": sub_cities,
         "selected_type": property_type,
         "selected_bedrooms": bedrooms,
@@ -617,7 +649,7 @@ def property_detail(request, slug):
         prop.owner == request.user or request.user.role == User.Role.ADMIN
     )
     if not prop.is_published and not is_owner:
-        messages.warning(request, "This listing is not yet published.")
+        messages.warning(request, _("This listing is not yet published."))
         return redirect("home")
 
     Property.objects.filter(pk=prop.pk).update(total_views=F("total_views") + 1)
@@ -713,7 +745,7 @@ def property_detail(request, slug):
 @login_required
 def add_property(request):
     if request.user.role not in (User.Role.LANDLORD, User.Role.ADMIN):
-        messages.error(request, "Only landlords can list properties.")
+        messages.error(request, _("Only landlords can list properties."))
         return redirect("dashboard")
 
     if request.method == "POST":
@@ -722,8 +754,13 @@ def add_property(request):
             ptype = request.POST.get("property_type", "")
             floor_n = _floor_number_from_post(request.POST, ptype)
 
+            city_obj, city_name = resolve_city_from_post(request.POST)
+            if not (city_name or "").strip():
+                raise ValueError(_("Please select a city."))
+
             location = Location.objects.create(
-                city=request.POST.get("city", ""),
+                city=city_name,
+                city_ref=city_obj,
                 sub_city=request.POST.get("sub_city", ""),
                 woreda=request.POST.get("woreda", ""),
                 kebele=request.POST.get("kebele", ""),
@@ -805,14 +842,20 @@ def add_property(request):
 
             video_files = [f for f in request.FILES.getlist("videos") if f]
             _attach_property_videos(prop, video_files)
-            msg = "Your listing is saved! Complete payment to publish it."
+            msg = _("Your listing is saved! Complete payment to publish it.")
             if video_files:
-                msg += f" {len(video_files)} short video(s) uploaded."
+                msg += " " + _("%(count)d short video(s) uploaded.") % {
+                    "count": len(video_files)
+                }
             messages.info(request, msg)
             return redirect("publish_payment", slug=prop.slug)
 
         except (ValueError, TypeError, ValidationError) as exc:
-            messages.error(request, f"Please correct the errors: {exc}")
+            messages.error(
+                request,
+                _("Please correct the errors: %(errors)s") % {"errors": exc},
+            )
+            err_city_obj, err_city_label = resolve_city_from_post(request.POST)
             return render(request, "add_property.html", {
                 "form_data": request.POST,
                 "property_types": Property.PropertyType.choices,
@@ -821,6 +864,9 @@ def add_property(request):
                 "water_choices": Amenities.WaterAvailability.choices,
                 "electricity_choices": Amenities.ElectricityStability.choices,
                 "listing_fee_etb": settings.LISTING_FEE_ETB,
+                "cities_api_url": reverse("api:cities"),
+                "initial_city_id": str(err_city_obj.pk) if err_city_obj else "",
+                "initial_city_label": (err_city_label or "").strip(),
             })
 
     return render(request, "add_property.html", {
@@ -830,6 +876,9 @@ def add_property(request):
         "water_choices": Amenities.WaterAvailability.choices,
         "electricity_choices": Amenities.ElectricityStability.choices,
         "listing_fee_etb": settings.LISTING_FEE_ETB,
+        "cities_api_url": reverse("api:cities"),
+        "initial_city_id": "",
+        "initial_city_label": "",
     })
 
 
@@ -846,7 +895,7 @@ def edit_property(request, slug):
     )
 
     if prop.owner != request.user and request.user.role != User.Role.ADMIN:
-        messages.error(request, "You do not have permission to edit this property.")
+        messages.error(request, _("You do not have permission to edit this property."))
         return redirect("property_detail", slug=slug)
 
     if request.method == "POST":
@@ -855,8 +904,13 @@ def edit_property(request, slug):
             ptype = request.POST.get("property_type", prop.property_type)
             floor_n = _floor_number_from_post(request.POST, ptype)
 
+            city_obj, city_name = resolve_city_from_post(request.POST)
+            if not (city_name or "").strip():
+                raise ValueError(_("Please select a city."))
+
             loc = prop.location
-            loc.city = request.POST.get("city", loc.city)
+            loc.city_ref = city_obj
+            loc.city = city_name
             loc.sub_city = request.POST.get("sub_city", loc.sub_city)
             loc.woreda = request.POST.get("woreda", loc.woreda)
             loc.kebele = request.POST.get("kebele", loc.kebele)
@@ -948,28 +1002,41 @@ def edit_property(request, slug):
                 new_video_files,
                 existing_count=prop.videos.count(),
             )
-            msg = "Property updated successfully!"
+            msg = _("Property updated successfully!")
             if new_video_files:
-                msg += f" {len(new_video_files)} new video(s) added."
+                msg += " " + _("%(count)d new video(s) added.") % {
+                    "count": len(new_video_files)
+                }
             messages.success(request, msg)
             return redirect("property_detail", slug=prop.slug)
 
         except (ValueError, TypeError, ValidationError) as exc:
-            messages.error(request, f"Please correct the errors: {exc}")
+            messages.error(
+                request,
+                _("Please correct the errors: %(errors)s") % {"errors": exc},
+            )
 
     try:
         hall_detail = prop.hall_detail
     except ObjectDoesNotExist:
         hall_detail = None
 
+    loc = prop.location
+    location_city_select_id = loc.city_ref_id or City.objects.filter(
+        name__iexact=(loc.city or "").strip(),
+        is_active=True,
+    ).values_list("pk", flat=True).first()
+
     return render(request, "edit_property.html", {
         "property": prop,
         "hall_detail": hall_detail,
+        "location_city_select_id": location_city_select_id,
         "property_types": Property.PropertyType.choices,
         "bedroom_choices": Property.BedroomCount.choices,
         "hall_types": HallDetail.HallType.choices,
         "water_choices": Amenities.WaterAvailability.choices,
         "electricity_choices": Amenities.ElectricityStability.choices,
+        "cities_api_url": reverse("api:cities"),
     })
 
 
@@ -987,9 +1054,9 @@ def toggle_favorite(request, property_id):
     )
     if not created:
         fav.delete()
-        messages.info(request, "Removed from your favorites.")
+        messages.info(request, _("Removed from your favorites."))
     else:
-        messages.success(request, "Saved to favorites.")
+        messages.success(request, _("Saved to favorites."))
     return _safe_redirect_path(request, next_path, "property_detail", slug=prop.slug)
 
 
@@ -1008,13 +1075,13 @@ def book_visit(request, slug):
     message_text = request.POST.get("message", "")
 
     if not visit_date_str or not visit_time_str:
-        messages.error(request, "Visit date and time are required.")
+        messages.error(request, _("Visit date and time are required."))
         return redirect("property_detail", slug=slug)
 
     try:
         visit_date = date.fromisoformat(visit_date_str)
     except ValueError:
-        messages.error(request, "Invalid date format.")
+        messages.error(request, _("Invalid date format."))
         return redirect("property_detail", slug=slug)
 
     visit_time_str = visit_time_str.strip()
@@ -1024,15 +1091,18 @@ def book_visit(request, slug):
         try:
             visit_time = datetime.strptime(visit_time_str, "%H:%M:%S").time()
         except ValueError:
-            messages.error(request, "Invalid time format. Use hours and minutes (e.g. 14:30).")
+            messages.error(
+                request,
+                _("Invalid time format. Use hours and minutes (e.g. 14:30)."),
+            )
             return redirect("property_detail", slug=slug)
 
     if visit_date < timezone.now().date():
-        messages.error(request, "Visit date cannot be in the past.")
+        messages.error(request, _("Visit date cannot be in the past."))
         return redirect("property_detail", slug=slug)
 
     if prop.owner == request.user:
-        messages.error(request, "You cannot book your own property.")
+        messages.error(request, _("You cannot book your own property."))
         return redirect("property_detail", slug=slug)
 
     existing = Booking.objects.filter(
@@ -1041,7 +1111,10 @@ def book_visit(request, slug):
         status__in=[Booking.Status.PENDING, Booking.Status.CONFIRMED],
     ).exists()
     if existing:
-        messages.warning(request, "You already have an active booking for this property.")
+        messages.warning(
+            request,
+            _("You already have an active booking for this property."),
+        )
         return redirect("property_detail", slug=slug)
 
     Booking.objects.create(
@@ -1052,7 +1125,10 @@ def book_visit(request, slug):
         visit_time=visit_time,
         message=message_text,
     )
-    messages.success(request, "Your visit has been booked! The landlord will confirm soon.")
+    messages.success(
+        request,
+        _("Your visit has been booked! The landlord will confirm soon."),
+    )
     return redirect("property_detail", slug=slug)
 
 
@@ -1088,19 +1164,26 @@ def manage_booking(request, booking_id):
     }
 
     if action not in status_map:
-        messages.error(request, "Invalid action.")
+        messages.error(request, _("Invalid action."))
         return redirect("dashboard")
 
     new_status, has_permission = status_map[action]
 
     if not has_permission:
-        messages.error(request, "You do not have permission to perform this action.")
+        messages.error(
+            request,
+            _("You do not have permission to perform this action."),
+        )
         return redirect("dashboard")
 
     if not booking.can_transition_to(new_status):
         messages.error(
             request,
-            f"Cannot {action.lower()} a booking that is currently {booking.get_status_display()}.",
+            _("Cannot %(action)s a booking that is currently %(status)s.")
+            % {
+                "action": action.lower(),
+                "status": booking.get_status_display(),
+            },
         )
         return redirect("dashboard")
 
@@ -1110,7 +1193,11 @@ def manage_booking(request, booking_id):
         booking.landlord_response = response_text
     booking.save(update_fields=["status", "landlord_response", "updated_at"])
 
-    messages.success(request, f"Booking has been {new_status.lower()}.")
+    messages.success(
+        request,
+        _("Booking status is now: %(status)s.")
+        % {"status": booking.get_status_display()},
+    )
     return redirect("dashboard")
 
 
@@ -1153,9 +1240,14 @@ def halls_view(request):
     paginator = Paginator(qs, 12)
     page = paginator.get_page(request.GET.get("page"))
 
+    ethiopian_cities = City.objects.filter(is_active=True).order_by(
+        "sort_order", "name"
+    )
+
     return render(request, "halls.html", {
         "halls": page,
         "hall_types": HallDetail.HallType.choices,
+        "ethiopian_cities": ethiopian_cities,
         "selected_hall_type": hall_type,
         "selected_city": city,
         "min_capacity": min_capacity,
@@ -1195,10 +1287,15 @@ def start_property_message(request, slug):
     is_admin = request.user.role == User.Role.ADMIN
     is_owner = prop.owner == request.user
     if not prop.is_published and not is_owner and not is_admin:
-        messages.warning(request, "This listing is not available.")
+        messages.warning(request, _("This listing is not available."))
         return redirect("home")
     if is_owner:
-        messages.info(request, "Renters will message you here. Open Messages in the menu to reply.")
+        messages.info(
+            request,
+            _(
+                "Renters will message you here. Open Messages in the menu to reply."
+            ),
+        )
         return redirect("messages_inbox")
 
     landlord = prop.owner
@@ -1231,9 +1328,9 @@ def conversation_thread(request, conversation_id):
                 message_type=Message.MessageType.TEXT,
             )
             conv.save(update_fields=["updated_at"])
-            messages.success(request, "Message sent.")
+            messages.success(request, _("Message sent."))
         else:
-            messages.error(request, "Please enter a message.")
+            messages.error(request, _("Please enter a message."))
         return redirect("conversation_thread", conversation_id=conv.pk)
 
     msgs = conv.messages.select_related("sender").order_by("created_at")
@@ -1268,8 +1365,10 @@ def profile_view(request):
             user.profile_image = request.FILES["profile_image"]
 
         user.save()
-        messages.success(request, "Profile updated successfully!")
-        return redirect("profile")
+        messages.success(request, _("Profile updated successfully!"))
+        resp = redirect("profile")
+        _apply_language_cookie(resp, _language_cookie_code_for_user(user))
+        return resp
 
     reviews_received = (
         Review.objects
@@ -1296,7 +1395,7 @@ def publish_payment(request, slug):
     prop = get_object_or_404(Property, slug=slug, owner=request.user)
 
     if prop.is_published:
-        messages.info(request, "This listing is already published.")
+        messages.info(request, _("This listing is already published."))
         return redirect("property_detail", slug=slug)
 
     return render(request, "publish_payment.html", {
@@ -1311,7 +1410,7 @@ def process_publish_payment(request, slug):
     prop = get_object_or_404(Property, slug=slug, owner=request.user)
 
     if prop.is_published:
-        messages.info(request, "This listing is already published.")
+        messages.info(request, _("This listing is already published."))
         return redirect("property_detail", slug=slug)
 
     payment_method = request.POST.get("payment_method", "CHAPA")
@@ -1336,5 +1435,8 @@ def process_publish_payment(request, slug):
     prop.is_published = True
     prop.save(update_fields=["is_published", "updated_at"])
 
-    messages.success(request, "Payment successful! Your listing is now live.")
+    messages.success(
+        request,
+        _("Payment successful! Your listing is now live."),
+    )
     return redirect("property_detail", slug=prop.slug)

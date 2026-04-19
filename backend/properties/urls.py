@@ -8,6 +8,7 @@ router.register(r"properties", views.PropertyViewSet, basename="property")
 router.register(r"favorites", views.FavoriteViewSet, basename="favorite")
 
 urlpatterns = [
+    path("cities/", views.CitySearchView.as_view(), name="cities"),
     path("", include(router.urls)),
     path(
         "properties/<slug:property_slug>/images/",

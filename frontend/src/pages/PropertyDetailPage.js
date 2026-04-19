@@ -8,7 +8,6 @@ import {
 import PropertyImageGallery from '../components/property/PropertyImageGallery';
 import AmenitiesList from '../components/property/AmenitiesList';
 import PriceInsight from '../components/property/PriceInsight';
-import PropertyMap from '../components/property/PropertyMap';
 import BookingForm from '../components/booking/BookingForm';
 import BookingCalendar from '../components/booking/BookingCalendar';
 import RatingSummary from '../components/review/RatingSummary';
@@ -373,21 +372,6 @@ export default function PropertyDetailPage() {
                 maxPrice={priceInsight.maxPrice}
                 areaName={location.subCity || locationStr}
               />
-            )}
-
-            {/* Map */}
-            {(location.lat || location.coordinates) && (
-              <div className="bg-white rounded-2xl shadow-sm p-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Location</h2>
-                <PropertyMap
-                  singleProperty={{
-                    ...property,
-                    lat: location.lat || location.coordinates?.[1],
-                    lng: location.lng || location.coordinates?.[0],
-                  }}
-                  height="350px"
-                />
-              </div>
             )}
 
             {/* Hall Availability Calendar */}

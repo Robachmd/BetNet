@@ -1,0 +1,107 @@
+# Amharic translations for BetRent Django templates.
+# Copyright (C) 2026 BetRent
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: BetRent\n"
+"Language: am\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "BetRent — Ethiopia's trusted rental marketplace. Find verified homes, apartments, villas, and event halls."
+msgstr "ቤትሪንት፣ ኢትዮጵያ የታመነ የኪራይ ገበያ። የተረጋገጡ ቤቶች፣ አፓርታማዎች እና የዝግጅት አዳራሾች ያግኙ።"
+
+msgid "BetRent — Ethiopia's Trusted Rental Marketplace"
+msgstr "ቤትሪንት፣ ኢትዮጵያ የታመነ የኪራይ ገበያ"
+
+msgid "Browse Listings"
+msgstr "ዝርዝሮችን ይፈልጉ"
+
+msgid "Event Halls"
+msgstr "የዝግጅት አዳራሾች"
+
+msgid "Add Property"
+msgstr "ንብረት ያክሉ"
+
+msgid "Dashboard"
+msgstr "ዳሽቦርድ"
+
+msgid "Messages"
+msgstr "መልዕክቶች"
+
+msgid "My Profile"
+msgstr "መገለጫዬ"
+
+msgid "My Favorites"
+msgstr "የእኔ ተወዳጆች"
+
+msgid "Logout"
+msgstr "ውጣ"
+
+msgid "Login"
+msgstr "ግባ"
+
+msgid "Sign Up"
+msgstr "ይመዝገቡ"
+
+msgid "Toggle menu"
+msgstr "ምናሌ ይቀይሩ"
+
+msgid "Dismiss"
+msgstr "ዝጋ"
+
+msgid "Ethiopia's trusted rental marketplace. Find verified homes, apartments, and event halls — with transparent pricing and no hidden fees from the platform."
+msgstr "የኢትዮጵያ የታመነ የኪራይ ገበያ። የተረጋገጡ ቤቶች፣ አፓርታማዎች እና የዝግጅት አዳራሾች በግልጽ ዋጋ እና ያለተደበቀ ክፍያ ያግኙ።"
+
+msgid "Facebook"
+msgstr "ፌስቡክ"
+
+msgid "Telegram"
+msgstr "ቴሌግራም"
+
+msgid "Instagram"
+msgstr "ኢንስታግራም"
+
+msgid "Platform"
+msgstr "መድረክ"
+
+msgid "For Landlords"
+msgstr "ለቤት ባለቤቶች"
+
+msgid "Price Insights"
+msgstr "የዋጋ ግንዛቤ"
+
+msgid "Neighborhoods"
+msgstr "አካባቢዎች"
+
+msgid "List Your Property"
+msgstr "ንብረትዎን ያስፈርሙ"
+
+msgid "Pricing Plans"
+msgstr "የዋጋ እቅዶች"
+
+msgid "Verification"
+msgstr "ማረጋገጫ"
+
+msgid "Landlord Guide"
+msgstr "የቤት ባለቤት መመሪያ"
+
+msgid "Company"
+msgstr "ኩባንያ"
+
+msgid "About Us"
+msgstr "ስለ እኛ"
+
+msgid "Contact"
+msgstr "ያግኙን"
+
+msgid "Privacy Policy"
+msgstr "የግላዊነት ፖሊሲ"
+
+msgid "Terms of Service"
+msgstr "የአገልግሎት ደንቦች"
+
+msgid "© 2026 BetRent. All rights reserved."
+msgstr "© 2026 ቤትሪንት። መብቱ በህግ የተጠበቀ ነው።"

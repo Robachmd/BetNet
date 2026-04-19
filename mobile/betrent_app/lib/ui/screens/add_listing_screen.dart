@@ -7,6 +7,9 @@ import '../../services/betrent_api.dart';
 import '../../utils/external_checkout.dart';
 import 'filters_screen.dart';
 
+/// Same cap as web landlord flow (`MAX_IMAGES_PER_PROPERTY`).
+const int kMaxListingPhotos = 10;
+
 class AddListingScreen extends ConsumerStatefulWidget {
   const AddListingScreen({super.key});
 
@@ -66,7 +69,8 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
       if (url == null || url.isEmpty) {
         messenger.showSnackBar(
           const SnackBar(
-            content: Text('No checkout link returned. Complete payment on the website if needed.'),
+            content: Text(
+                'No checkout link returned. Complete payment on the website if needed.'),
           ),
         );
         return;
@@ -84,7 +88,8 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
       } else {
         messenger.showSnackBar(
           const SnackBar(
-            content: Text('Could not open the payment page. Try again or use the website.'),
+            content: Text(
+                'Could not open the payment page. Try again or use the website.'),
           ),
         );
       }
@@ -106,7 +111,7 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
       barrierDismissible: true,
       builder: (ctx) => AlertDialog(
         title: const Text('Publish listing'),
-        content: Text(
+        content: const Text(
           'Pay $fee ETB listing fee to publish. Choose a method — you will leave the app '
           'so Chapa or Telebirr can open your bank or wallet app.',
         ),
@@ -147,7 +152,9 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
     final list = await picker.pickMultiImage(imageQuality: 75);
     setState(() {
       for (final x in list) {
-        if (_imagePaths.length < 8) _imagePaths.add(x.path);
+        if (_imagePaths.length < kMaxListingPhotos) {
+          _imagePaths.add(x.path);
+        }
       }
     });
   }
@@ -205,7 +212,8 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -221,7 +229,8 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
         body: const Center(
           child: Padding(
             padding: EdgeInsets.all(24),
-            child: Text('Only landlord accounts can publish homes. Register as a landlord or update your role in Django admin.'),
+            child: Text(
+                'Only landlord accounts can publish homes. Register as a landlord or update your role in Django admin.'),
           ),
         ),
       );
@@ -258,7 +267,7 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _city,
+              initialValue: _city,
               decoration: const InputDecoration(labelText: 'City'),
               items: kEthiopianCities
                   .map((c) => DropdownMenuItem(value: c, child: Text(c)))
@@ -282,25 +291,28 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _ptype,
+              initialValue: _ptype,
               decoration: const InputDecoration(labelText: 'Property type'),
               items: const [
                 DropdownMenuItem(value: 'APARTMENT', child: Text('Apartment')),
                 DropdownMenuItem(value: 'VILLA', child: Text('Villa')),
-                DropdownMenuItem(value: 'CONDOMINIUM', child: Text('Condominium')),
-                DropdownMenuItem(value: 'SERVICE_HOUSE', child: Text('Service house')),
+                DropdownMenuItem(
+                    value: 'CONDOMINIUM', child: Text('Condominium')),
+                DropdownMenuItem(
+                    value: 'SERVICE_HOUSE', child: Text('Service house')),
               ],
               onChanged: (v) => setState(() => _ptype = v ?? _ptype),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _bedrooms,
+              initialValue: _bedrooms,
               decoration: const InputDecoration(labelText: 'Bedrooms'),
               items: const [
                 DropdownMenuItem(value: 'STUDIO', child: Text('Studio')),
                 DropdownMenuItem(value: 'ONE', child: Text('1 bedroom')),
                 DropdownMenuItem(value: 'TWO', child: Text('2 bedrooms')),
-                DropdownMenuItem(value: 'THREE_PLUS', child: Text('3+ bedrooms')),
+                DropdownMenuItem(
+                    value: 'THREE_PLUS', child: Text('3+ bedrooms')),
               ],
               onChanged: (v) => setState(() => _bedrooms = v ?? _bedrooms),
             ),
@@ -308,7 +320,8 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
             OutlinedButton.icon(
               onPressed: _pickImages,
               icon: const Icon(Icons.photo_library_outlined),
-              label: Text('Photos (${_imagePaths.length}) — up to 8, compressed picker'),
+              label: Text(
+                  'Photos (${_imagePaths.length}) — add multiple, up to $kMaxListingPhotos'),
             ),
             const SizedBox(height: 24),
             FilledButton(

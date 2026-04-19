@@ -1,17 +1,21 @@
 {% extends 'base.html' %}
-{% load humanize %}
+{% load i18n humanize %}
 
-{% block title %}Search Properties — BetRent{% endblock %}
+{% block title %}{% trans "Search Properties — BetRent" %}{% endblock %}
 
 {% block content %}
 <section class="bg-gradient-to-br from-primary-800 via-primary-700 to-primary-600 py-12 sm:py-16">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-    <h1 class="text-3xl sm:text-4xl font-extrabold text-white mb-2">Browse verified listings</h1>
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-white mb-2">{% trans "Browse verified listings" %}</h1>
     <p class="text-primary-200 text-lg max-w-2xl mx-auto">
       {% if properties.paginator.count %}
-        <span class="font-semibold text-secondary-400">{{ properties.paginator.count }}</span> listings found — transparent pricing, wherever life takes you.
+        {% blocktrans count counter=properties.paginator.count trimmed %}
+        <span class="font-semibold text-secondary-400">{{ counter }}</span> listing found — transparent pricing, wherever life takes you.
+        {% plural %}
+        <span class="font-semibold text-secondary-400">{{ counter }}</span> listings found — transparent pricing, wherever life takes you.
+        {% endblocktrans %}
       {% else %}
-        Verified rental listings with transparent pricing — wherever life takes you.
+        {% trans "Verified rental listings with transparent pricing — wherever life takes you." %}
       {% endif %}
     </p>
   </div>
@@ -28,7 +32,7 @@
         class="w-full lg:hidden flex items-center justify-between px-5 py-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
         <span class="flex items-center gap-2">
           <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-          Filters & Search
+          {% trans "Filters & Search" %}
         </span>
         <svg class="w-5 h-5 transition-transform duration-200" :class="{ 'rotate-180': filtersOpen }" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M19 9l-7 7-7-7"/></svg>
       </button>
@@ -39,35 +43,35 @@
           <!-- Row 1: Search + Type + Bedrooms -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="lg:col-span-2">
-              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Search</label>
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Search" %}</label>
               <div class="relative">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                <input type="text" name="q" value="{{ query }}" placeholder="Search by title, location, or keyword..."
+                <input type="text" name="q" value="{{ query }}" placeholder="{% trans 'Search by title, location, or keyword...' %}"
                   class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
               </div>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Property Type</label>
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Property Type" %}</label>
               <select name="property_type" class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
-                <option value="">All Types</option>
-                <option value="APARTMENT" {% if selected_type == 'APARTMENT' %}selected{% endif %}>Apartment</option>
-                <option value="VILLA" {% if selected_type == 'VILLA' %}selected{% endif %}>Villa</option>
-                <option value="CONDOMINIUM" {% if selected_type == 'CONDOMINIUM' %}selected{% endif %}>Condominium</option>
-                <option value="SERVICE_HOUSE" {% if selected_type == 'SERVICE_HOUSE' %}selected{% endif %}>Service House</option>
-                <option value="REAL_ESTATE" {% if selected_type == 'REAL_ESTATE' %}selected{% endif %}>Real Estate</option>
-                <option value="BUSINESS_SHOP" {% if selected_type == 'BUSINESS_SHOP' %}selected{% endif %}>Business Shop</option>
-                <option value="HALL_RENTAL" {% if selected_type == 'HALL_RENTAL' %}selected{% endif %}>Hall Rental</option>
+                <option value="">{% trans "All Types" %}</option>
+                <option value="APARTMENT" {% if selected_type == 'APARTMENT' %}selected{% endif %}>{% trans "Apartment" %}</option>
+                <option value="VILLA" {% if selected_type == 'VILLA' %}selected{% endif %}>{% trans "Villa" %}</option>
+                <option value="CONDOMINIUM" {% if selected_type == 'CONDOMINIUM' %}selected{% endif %}>{% trans "Condominium" %}</option>
+                <option value="SERVICE_HOUSE" {% if selected_type == 'SERVICE_HOUSE' %}selected{% endif %}>{% trans "Service House" %}</option>
+                <option value="REAL_ESTATE" {% if selected_type == 'REAL_ESTATE' %}selected{% endif %}>{% trans "Real Estate" %}</option>
+                <option value="BUSINESS_SHOP" {% if selected_type == 'BUSINESS_SHOP' %}selected{% endif %}>{% trans "Business Shop" %}</option>
+                <option value="HALL_RENTAL" {% if selected_type == 'HALL_RENTAL' %}selected{% endif %}>{% trans "Hall Rental" %}</option>
               </select>
             </div>
             {% if selected_type != 'BUSINESS_SHOP' %}
             <div>
-              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Bedrooms</label>
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Bedrooms" %}</label>
               <select name="bedrooms" class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
-                <option value="">Any</option>
-                <option value="STUDIO" {% if selected_bedrooms == 'STUDIO' or selected_bedrooms == '0' %}selected{% endif %}>Studio</option>
-                <option value="ONE" {% if selected_bedrooms == 'ONE' or selected_bedrooms == '1' %}selected{% endif %}>1 Bed</option>
-                <option value="TWO" {% if selected_bedrooms == 'TWO' or selected_bedrooms == '2' %}selected{% endif %}>2 Bed</option>
-                <option value="THREE_PLUS" {% if selected_bedrooms == 'THREE_PLUS' or selected_bedrooms == '3' %}selected{% endif %}>3+ Bed</option>
+                <option value="">{% trans "Any" %}</option>
+                <option value="STUDIO" {% if selected_bedrooms == 'STUDIO' or selected_bedrooms == '0' %}selected{% endif %}>{% trans "Studio" %}</option>
+                <option value="ONE" {% if selected_bedrooms == 'ONE' or selected_bedrooms == '1' %}selected{% endif %}>{% trans "1 Bed" %}</option>
+                <option value="TWO" {% if selected_bedrooms == 'TWO' or selected_bedrooms == '2' %}selected{% endif %}>{% trans "2 Bed" %}</option>
+                <option value="THREE_PLUS" {% if selected_bedrooms == 'THREE_PLUS' or selected_bedrooms == '3' %}selected{% endif %}>{% trans "3+ Bed" %}</option>
               </select>
             </div>
             {% endif %}
@@ -76,43 +80,43 @@
           <!-- Row 2: Price Range + City + Sort -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Min Price (ETB)</label>
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Min Price (ETB)" %}</label>
               <input type="number" name="min_price" value="{{ min_price }}" placeholder="0" min="0"
                 class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
             </div>
             <div>
-              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Max Price (ETB)</label>
-              <input type="number" name="max_price" value="{{ max_price }}" placeholder="Any" min="0"
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Max Price (ETB)" %}</label>
+              <input type="number" name="max_price" value="{{ max_price }}" placeholder="{% trans 'Any' %}" min="0"
                 class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
             </div>
             <div>
-              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">City</label>
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "City" %}</label>
               <select name="city" class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
-                <option value="">All Cities</option>
-                <option value="Addis Ababa" {% if selected_city == 'Addis Ababa' %}selected{% endif %}>Addis Ababa</option>
-                <option value="Hawassa" {% if selected_city == 'Hawassa' %}selected{% endif %}>Hawassa</option>
-                <option value="Bahir Dar" {% if selected_city == 'Bahir Dar' %}selected{% endif %}>Bahir Dar</option>
-                <option value="Dire Dawa" {% if selected_city == 'Dire Dawa' %}selected{% endif %}>Dire Dawa</option>
-                <option value="Adama" {% if selected_city == 'Adama' %}selected{% endif %}>Adama</option>
-                <option value="Mekelle" {% if selected_city == 'Mekelle' %}selected{% endif %}>Mekelle</option>
-                <option value="Jimma" {% if selected_city == 'Jimma' %}selected{% endif %}>Jimma</option>
-                <option value="Gondar" {% if selected_city == 'Gondar' %}selected{% endif %}>Gondar</option>
+                <option value="">{% trans "All Cities" %}</option>
+                <option value="Addis Ababa" {% if selected_city == 'Addis Ababa' %}selected{% endif %}>{% trans "Addis Ababa" %}</option>
+                <option value="Hawassa" {% if selected_city == 'Hawassa' %}selected{% endif %}>{% trans "Hawassa" %}</option>
+                <option value="Bahir Dar" {% if selected_city == 'Bahir Dar' %}selected{% endif %}>{% trans "Bahir Dar" %}</option>
+                <option value="Dire Dawa" {% if selected_city == 'Dire Dawa' %}selected{% endif %}>{% trans "Dire Dawa" %}</option>
+                <option value="Adama" {% if selected_city == 'Adama' %}selected{% endif %}>{% trans "Adama" %}</option>
+                <option value="Mekelle" {% if selected_city == 'Mekelle' %}selected{% endif %}>{% trans "Mekelle" %}</option>
+                <option value="Jimma" {% if selected_city == 'Jimma' %}selected{% endif %}>{% trans "Jimma" %}</option>
+                <option value="Gondar" {% if selected_city == 'Gondar' %}selected{% endif %}>{% trans "Gondar" %}</option>
               </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Sort By</label>
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Sort By" %}</label>
               <select name="sort" class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
-                <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest</option>
-                <option value="price_low" {% if selected_sort == 'price_low' %}selected{% endif %}>Price: Low → High</option>
-                <option value="price_high" {% if selected_sort == 'price_high' %}selected{% endif %}>Price: High → Low</option>
-                <option value="most_viewed" {% if selected_sort == 'most_viewed' %}selected{% endif %}>Most Viewed</option>
+                <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>{% trans "Newest" %}</option>
+                <option value="price_low" {% if selected_sort == 'price_low' %}selected{% endif %}>{% trans "Price: Low → High" %}</option>
+                <option value="price_high" {% if selected_sort == 'price_high' %}selected{% endif %}>{% trans "Price: High → Low" %}</option>
+                <option value="most_viewed" {% if selected_sort == 'most_viewed' %}selected{% endif %}>{% trans "Most Viewed" %}</option>
               </select>
             </div>
             <div class="flex items-end">
               <label class="flex items-center gap-2 py-3 cursor-pointer select-none">
                 <input type="checkbox" name="is_verified" value="true" {% if is_verified_only %}checked{% endif %}
                   class="w-5 h-5 rounded-md border-gray-300 text-primary-600 focus:ring-primary-500/30" />
-                <span class="text-sm font-medium text-gray-700">Verified Only</span>
+                <span class="text-sm font-medium text-gray-700">{% trans "Verified Only" %}</span>
                 <svg class="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
               </label>
             </div>
@@ -123,12 +127,12 @@
             <button type="submit"
               class="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              Search
+              {% trans "Search" %}
             </button>
             <a href="{% url 'search' %}"
               class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-medium border-2 border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-              Clear Filters
+              {% trans "Clear Filters" %}
             </a>
           </div>
 
@@ -172,13 +176,13 @@
           {% if property.is_verified %}
           <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-primary-500 text-white shadow-sm">
             <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-            Verified
+            {% trans "Verified" %}
           </span>
           {% endif %}
           {% if property.is_featured %}
           <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-secondary-500 text-gray-900 shadow-sm">
             <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-            Featured
+            {% trans "Featured" %}
           </span>
           {% endif %}
         </div>
@@ -188,7 +192,7 @@
         <form method="POST" action="{% url 'toggle_favorite' property.id %}" class="absolute top-3 right-3">
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-          <button type="submit" class="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center hover:bg-red-50 hover:scale-110 transition-all duration-200" title="Toggle favorites">
+          <button type="submit" class="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center hover:bg-red-50 hover:scale-110 transition-all duration-200" title="{% trans 'Toggle favorites' %}">
             <svg class="w-5 h-5 text-gray-400 hover:text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
           </button>
         </form>
@@ -204,7 +208,7 @@
         </a>
 
         <p class="text-2xl font-extrabold text-primary-700 mb-2">
-          ETB {{ property.price_monthly|floatformat:0|intcomma }}{% if property.listing_type == 'sale' %}<span class="text-sm font-medium text-gray-500"> Total price</span>{% elif property.listing_type == 'short_term' %}<span class="text-sm font-medium text-gray-500">/mo (short-term)</span>{% else %}<span class="text-sm font-medium text-gray-500">/mo</span>{% endif %}
+          ETB {{ property.price_monthly|floatformat:0|intcomma }}{% if property.listing_type == 'sale' %}<span class="text-sm font-medium text-gray-500"> {% trans "Total price" %}</span>{% elif property.listing_type == 'short_term' %}<span class="text-sm font-medium text-gray-500">{% trans "/mo (short-term)" %}</span>{% else %}<span class="text-sm font-medium text-gray-500">{% trans "/mo" %}</span>{% endif %}
         </p>
 
         <div class="flex items-center gap-1.5 text-sm text-gray-500 mb-3">
@@ -218,7 +222,7 @@
             <span class="flex items-center gap-1">
               <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M3.75 21h16.5M4.5 3h15M5 3v18m10-18v18M9 9h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15"/></svg>
               <strong>{{ property.shop_class_count }}</strong>
-              {% if property.shop_class_count == 1 %}class{% else %}classes{% endif %}
+              {% blocktrans count counter=property.shop_class_count %}{{ counter }} class{% plural %}{{ counter }} classes{% endblocktrans %}
             </span>
             {% endif %}
           {% elif property.bedrooms %}
@@ -228,14 +232,14 @@
           </span>
           <span class="flex items-center gap-1">
             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-            {{ property.bathrooms }} bath{{ property.bathrooms|pluralize }}
+            {% blocktrans count count=property.bathrooms %}{{ count }} bath{% plural %}{{ count }} baths{% endblocktrans %}
           </span>
           {% endif %}
         </div>
 
         <a href="{% url 'property_detail' property.slug %}"
           class="block w-full text-center py-2.5 rounded-xl text-sm font-semibold border-2 border-primary-700 text-primary-700 hover:bg-primary-700 hover:text-white transition-all duration-200">
-          View Details
+          {% trans "View Details" %}
         </a>
       </div>
     </article>
@@ -244,12 +248,12 @@
 
   <!-- Pagination -->
   {% if properties.paginator.num_pages > 1 %}
-  <nav class="mt-10 flex items-center justify-center gap-2" aria-label="Pagination">
+  <nav class="mt-10 flex items-center justify-center gap-2" aria-label="{% trans 'Pagination' %}">
     {% if properties.has_previous %}
     <a href="?page={{ properties.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_type %}&property_type={{ selected_type }}{% endif %}{% if selected_bedrooms %}&bedrooms={{ selected_bedrooms }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if is_verified_only %}&is_verified=true{% endif %}"
       class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
-      Previous
+      {% trans "Previous" %}
     </a>
     {% endif %}
 
@@ -265,13 +269,13 @@
     </div>
 
     <span class="sm:hidden text-sm font-medium text-gray-500">
-      Page {{ properties.number }} of {{ properties.paginator.num_pages }}
+      {% blocktrans with num=properties.number total=properties.paginator.num_pages %}Page {{ num }} of {{ total }}{% endblocktrans %}
     </span>
 
     {% if properties.has_next %}
     <a href="?page={{ properties.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_type %}&property_type={{ selected_type }}{% endif %}{% if selected_bedrooms %}&bedrooms={{ selected_bedrooms }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if is_verified_only %}&is_verified=true{% endif %}"
       class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all">
-      Next
+      {% trans "Next" %}
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>
     </a>
     {% endif %}
@@ -284,12 +288,12 @@
     <div class="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-6">
       <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
     </div>
-    <h3 class="text-xl font-bold text-gray-900 mb-2">No properties found</h3>
-    <p class="text-gray-500 mb-6 max-w-md mx-auto">Try adjusting your filters or search terms to find more results.</p>
+    <h3 class="text-xl font-bold text-gray-900 mb-2">{% trans "No properties found" %}</h3>
+    <p class="text-gray-500 mb-6 max-w-md mx-auto">{% trans "Try adjusting your filters or search terms to find more results." %}</p>
     <a href="{% url 'search' %}"
       class="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-primary-700 text-white hover:bg-primary-800 hover:shadow-lg transition-all duration-200">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-      Clear All Filters
+      {% trans "Clear All Filters" %}
     </a>
   </div>
   {% endif %}

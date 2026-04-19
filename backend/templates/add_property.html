@@ -1,8 +1,13 @@
 {% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
 
-{% block title %}List Your Property — BetRent{% endblock %}
+{% block title %}{% trans "List Your Property" %} — {% trans "BetRent" %}{% endblock %}
 
 {% block content %}
+{% trans "Total price (ETB)" as price_label_sale %}
+{% trans "Monthly rate — short-term (ETB)" as price_label_short %}
+{% trans "Monthly rent (ETB)" as price_label_rent %}
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
   x-data="{
     propertyType: '',
@@ -10,6 +15,13 @@
     imageFiles: [],
     imagePreviews: [],
     videoCount: 0,
+    priceLabelSale: '{{ price_label_sale|escapejs }}',
+    priceLabelShort: '{{ price_label_short|escapejs }}',
+    priceLabelRent: '{{ price_label_rent|escapejs }}',
+    imgSelOne: '{% filter escapejs %}{% trans "image selected" %}{% endfilter %}',
+    imgSelMany: '{% filter escapejs %}{% trans "images selected" %}{% endfilter %}',
+    vidSelOne: '{% filter escapejs %}{% trans "video selected. It will upload when you publish the listing." %}{% endfilter %}',
+    vidSelMany: '{% filter escapejs %}{% trans "videos selected. They will upload when you publish the listing." %}{% endfilter %}',
     handleVideoChange(event) {
       const files = event.target.files;
       this.videoCount = files ? files.length : 0;
@@ -33,18 +45,18 @@
   <div class="text-center mb-10">
     <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-100 text-primary-700 text-xs font-bold uppercase tracking-wider mb-4">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 4v16m8-8H4"/></svg>
-      New Listing
+      {% trans "New Listing" %}
     </div>
-    <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">List Your Property</h1>
-    <p class="text-gray-500 text-lg max-w-lg mx-auto">Reach thousands of verified renters across Ethiopia. Fill out the details below and publish your listing.</p>
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">{% trans "List Your Property" %}</h1>
+    <p class="text-gray-500 text-lg max-w-lg mx-auto">{% trans "Reach thousands of verified renters across Ethiopia. Fill out the details below and publish your listing." %}</p>
     {% if listing_fee_etb %}
     <div class="mt-5 max-w-xl mx-auto rounded-xl border border-primary-200 bg-primary-50/80 px-4 py-3 text-sm text-primary-900">
-      <strong>Listing fee:</strong> ETB {{ listing_fee_etb|floatformat:0 }} one-time payment is required after you submit — your listing goes live only after payment.
+      {% blocktrans trimmed with fee=listing_fee_etb|floatformat:0 %}<strong>Listing fee:</strong> ETB {{ fee }} one-time payment is required after you submit — your listing goes live only after payment.{% endblocktrans %}
     </div>
     {% endif %}
   </div>
 
-  <form method="POST" action="{% url 'add_property' %}" enctype="multipart/form-data" class="space-y-8">
+  <form method="POST" action="{% url 'add_property' %}" enctype="multipart/form-data" class="space-y-8 property-city-form">
     {% csrf_token %}
 
     <!-- Section 1: Basic Info -->
@@ -52,81 +64,81 @@
       <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-primary-700 text-white flex items-center justify-center text-sm font-bold">1</div>
-          <h2 class="text-lg font-bold text-gray-900">Basic Information</h2>
+          <h2 class="text-lg font-bold text-gray-900">{% trans "Basic Information" %}</h2>
         </div>
       </div>
       <div class="p-6 space-y-5">
         <div>
-          <label for="title" class="block text-sm font-semibold text-gray-700 mb-1.5">Property Title <span class="text-red-500">*</span></label>
-          <input type="text" id="title" name="title" required placeholder="e.g. Spacious 2-Bedroom Apartment in Bole"
+          <label for="title" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Property Title" %} <span class="text-red-500">*</span></label>
+          <input type="text" id="title" name="title" required placeholder="{% trans 'e.g. Spacious 2-Bedroom Apartment in Bole' %}"
             class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
         </div>
 
         <div>
-          <label for="description" class="block text-sm font-semibold text-gray-700 mb-1.5">Description <span class="text-red-500">*</span></label>
-          <textarea id="description" name="description" rows="5" required placeholder="Describe your property in detail — features, nearby landmarks, who it's ideal for..."
+          <label for="description" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Description" %} <span class="text-red-500">*</span></label>
+          <textarea id="description" name="description" rows="5" required placeholder="{% trans 'Describe your property in detail — features, nearby landmarks, who it is ideal for...' %}"
             class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all resize-y"></textarea>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label for="property_type" class="block text-sm font-semibold text-gray-700 mb-1.5">Property Type <span class="text-red-500">*</span></label>
+            <label for="property_type" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Property Type" %} <span class="text-red-500">*</span></label>
             <select id="property_type" name="property_type" required x-model="propertyType"
               class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
-              <option value="">Select type</option>
-              <option value="APARTMENT">Apartment</option>
-              <option value="VILLA">Villa</option>
-              <option value="CONDOMINIUM">Condominium</option>
-              <option value="SERVICE_HOUSE">Service House</option>
-              <option value="REAL_ESTATE">Real Estate</option>
-              <option value="BUSINESS_SHOP">Business Shop</option>
-              <option value="HALL_RENTAL">Hall Rental</option>
+              <option value="">{% trans "Select type" %}</option>
+              <option value="APARTMENT">{% trans "Apartment" %}</option>
+              <option value="VILLA">{% trans "Villa" %}</option>
+              <option value="CONDOMINIUM">{% trans "Condominium" %}</option>
+              <option value="SERVICE_HOUSE">{% trans "Service House" %}</option>
+              <option value="REAL_ESTATE">{% trans "Real Estate" %}</option>
+              <option value="BUSINESS_SHOP">{% trans "Business Shop" %}</option>
+              <option value="HALL_RENTAL">{% trans "Hall Rental" %}</option>
             </select>
           </div>
           <div>
-            <label for="listing_type" class="block text-sm font-semibold text-gray-700 mb-1.5">Rent or sell <span class="text-red-500">*</span></label>
+            <label for="listing_type" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Rent or sell" %} <span class="text-red-500">*</span></label>
             <select id="listing_type" name="listing_type" required x-model="listingType"
               class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
-              <option value="rent">For rent</option>
-              <option value="sale">For sale</option>
-              <option value="short_term">Short-term rental</option>
+              <option value="rent">{% trans "For rent" %}</option>
+              <option value="sale">{% trans "For sale" %}</option>
+              <option value="short_term">{% trans "Short-term rental" %}</option>
             </select>
-            <p class="text-xs text-gray-500 mt-1">Choose how you want to offer this property.</p>
+            <p class="text-xs text-gray-500 mt-1">{% trans "Choose how you want to offer this property." %}</p>
           </div>
           <div x-show="propertyType !== 'BUSINESS_SHOP' && propertyType !== 'HALL_RENTAL'" x-cloak>
-            <label for="bedrooms" class="block text-sm font-semibold text-gray-700 mb-1.5">Bedrooms <span class="text-red-500">*</span></label>
+            <label for="bedrooms" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Bedrooms" %} <span class="text-red-500">*</span></label>
             <select id="bedrooms" name="bedrooms"
               class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
-              <option value="">Select</option>
-              <option value="STUDIO">Studio</option>
-              <option value="ONE">1 Bedroom</option>
-              <option value="TWO">2 Bedrooms</option>
-              <option value="THREE_PLUS">3+ Bedrooms</option>
+              <option value="">{% trans "Select" %}</option>
+              <option value="STUDIO">{% trans "Studio" %}</option>
+              <option value="ONE">{% trans "1 Bedroom" %}</option>
+              <option value="TWO">{% trans "2 Bedrooms" %}</option>
+              <option value="THREE_PLUS">{% trans "3+ Bedrooms" %}</option>
             </select>
           </div>
           <div x-show="propertyType !== 'BUSINESS_SHOP' && propertyType !== 'HALL_RENTAL'" x-cloak>
-            <label for="bathrooms" class="block text-sm font-semibold text-gray-700 mb-1.5">Bathrooms <span class="text-red-500">*</span></label>
-            <input type="number" id="bathrooms" name="bathrooms" min="0" max="10" placeholder="1"
+            <label for="bathrooms" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Bathrooms" %} <span class="text-red-500">*</span></label>
+            <input type="number" id="bathrooms" name="bathrooms" min="0" max="10" placeholder="{% trans '1' %}"
               class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
           </div>
           <div x-show="propertyType === 'BUSINESS_SHOP'" x-cloak class="sm:col-span-2">
-            <label for="shop_class_count" class="block text-sm font-semibold text-gray-700 mb-1.5">Number of classes <span class="text-red-500">*</span></label>
-            <input type="number" id="shop_class_count" name="shop_class_count" min="1" max="99" placeholder="e.g. 3"
+            <label for="shop_class_count" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Number of classes" %} <span class="text-red-500">*</span></label>
+            <input type="number" id="shop_class_count" name="shop_class_count" min="1" max="99" placeholder="{% trans 'e.g. 3' %}"
               class="w-full max-w-xs py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
-            <p class="text-xs text-gray-500 mt-1">How many separate rooms, counters, or areas the shop has (not bedrooms).</p>
+            <p class="text-xs text-gray-500 mt-1">{% trans "How many separate rooms, counters, or areas the shop has (not bedrooms)." %}</p>
           </div>
         </div>
 
         <div x-show="['APARTMENT','CONDOMINIUM','REAL_ESTATE','BUSINESS_SHOP'].includes(propertyType)" x-cloak class="sm:max-w-xs">
-          <label for="floor_number" class="block text-sm font-semibold text-gray-700 mb-1.5">Floor number</label>
-          <input type="number" id="floor_number" name="floor_number" min="0" max="200" placeholder="e.g. 3 (ground = 0)"
+          <label for="floor_number" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Floor number" %}</label>
+          <input type="number" id="floor_number" name="floor_number" min="0" max="200" placeholder="{% trans 'e.g. 3 (ground = 0)' %}"
             class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
-          <p class="text-xs text-gray-400 mt-1">Shown for apartment, condominium, real estate, and business shop (e.g. mall floor).</p>
+          <p class="text-xs text-gray-400 mt-1">{% trans "Shown for apartment, condominium, real estate, and business shop (e.g. mall floor)." %}</p>
         </div>
 
         <div>
-          <label for="area" class="block text-sm font-semibold text-gray-700 mb-1.5">Area (m²)</label>
-          <input type="number" id="area" name="area" min="0" placeholder="e.g. 85"
+          <label for="area" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Area (m²)" %}</label>
+          <input type="number" id="area" name="area" min="0" placeholder="{% trans 'e.g. 85' %}"
             class="w-full sm:w-1/3 py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
         </div>
       </div>
@@ -137,57 +149,43 @@
       <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-primary-700 text-white flex items-center justify-center text-sm font-bold">2</div>
-          <h2 class="text-lg font-bold text-gray-900">Location</h2>
+          <h2 class="text-lg font-bold text-gray-900">{% trans "Location" %}</h2>
         </div>
       </div>
       <div class="p-6 space-y-5">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label for="city" class="block text-sm font-semibold text-gray-700 mb-1.5">City <span class="text-red-500">*</span></label>
-            <select id="city" name="city" required
-              class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
-              <option value="">Select city</option>
-              <option value="Addis Ababa">Addis Ababa</option>
-              <option value="Hawassa">Hawassa</option>
-              <option value="Bahir Dar">Bahir Dar</option>
-              <option value="Dire Dawa">Dire Dawa</option>
-              <option value="Adama">Adama</option>
-              <option value="Mekelle">Mekelle</option>
-              <option value="Jimma">Jimma</option>
-              <option value="Gondar">Gondar</option>
+          <div class="property-city-field">
+            <label for="property_city_select" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "City" %} <span class="text-red-500">*</span></label>
+            <select id="property_city_select" name="city_id" required
+              class="property-city-search-select w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all"
+              data-cities-url="{{ cities_api_url }}"
+              data-placeholder="{% trans 'Search or type a city…' %}"
+              data-initial-id="{{ initial_city_id|default:'' }}"
+              data-initial-label="{{ initial_city_label|default:'' }}"
+              autocomplete="off">
             </select>
+            <input type="hidden" name="city" value="" data-city-manual />
+            <p class="text-xs text-gray-500 mt-1.5">
+              {% trans "All major Ethiopian cities are listed. Type to search, or enter any city name if yours is not in the list." %}
+            </p>
           </div>
           <div>
-            <label for="sub_city" class="block text-sm font-semibold text-gray-700 mb-1.5">Sub-city / Area <span class="text-red-500">*</span></label>
-            <input type="text" id="sub_city" name="sub_city" required placeholder="e.g. Bole, Kirkos, Yeka"
+            <label for="sub_city" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Sub-city / Area" %} <span class="text-red-500">*</span></label>
+            <input type="text" id="sub_city" name="sub_city" required placeholder="{% trans 'e.g. Bole, Kirkos, Yeka' %}"
               class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
           </div>
         </div>
         <div>
-          <label for="specific_location" class="block text-sm font-semibold text-gray-700 mb-1.5">Specific Location / Landmark</label>
-          <input type="text" id="specific_location" name="specific_location" placeholder="e.g. Near Edna Mall, Behind Bole Medhanialem"
+          <label for="specific_location" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Specific Location / Landmark" %}</label>
+          <input type="text" id="specific_location" name="specific_location" placeholder="{% trans 'e.g. Near Edna Mall, Behind Bole Medhanialem' %}"
             class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
         </div>
         <div>
-          <label for="maps_url" class="block text-sm font-semibold text-gray-700 mb-1.5">Map link <span class="text-xs font-normal text-gray-400">(recommended)</span></label>
-          <input type="url" id="maps_url" name="maps_url" placeholder="Paste Google Maps or Apple Maps share link"
+          <label for="maps_url" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Map link" %} <span class="text-xs font-normal text-gray-400">{% trans "(optional)" %}</span></label>
+          <input type="url" id="maps_url" name="maps_url" placeholder="{% trans 'Paste Google Maps or Apple Maps share link' %}"
             class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
-          <p class="text-xs text-gray-400 mt-1">Renters tap “Open in Maps” on your listing. You can use this instead of coordinates.</p>
+          <p class="text-xs text-gray-400 mt-1">{% trans "Renters can open this link from your listing." %}</p>
         </div>
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Or precise coordinates (optional)</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label for="latitude" class="block text-sm font-semibold text-gray-700 mb-1.5">Latitude</label>
-            <input type="number" id="latitude" name="latitude" step="any" placeholder="e.g. 9.0192"
-              class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
-          </div>
-          <div>
-            <label for="longitude" class="block text-sm font-semibold text-gray-700 mb-1.5">Longitude</label>
-            <input type="number" id="longitude" name="longitude" step="any" placeholder="e.g. 38.7525"
-              class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
-          </div>
-        </div>
-        <p class="text-xs text-gray-400">If you enter one coordinate, enter both. Leave both empty if you only use a map link.</p>
       </div>
     </div>
 
@@ -196,75 +194,75 @@
       <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-primary-700 text-white flex items-center justify-center text-sm font-bold">3</div>
-          <h2 class="text-lg font-bold text-gray-900">Amenities & Features</h2>
+          <h2 class="text-lg font-bold text-gray-900">{% trans "Amenities & Features" %}</h2>
         </div>
       </div>
       <div class="p-6 space-y-5">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label for="water_availability" class="block text-sm font-semibold text-gray-700 mb-1.5">Water Availability</label>
+            <label for="water_availability" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Water Availability" %}</label>
             <select id="water_availability" name="water_availability"
               class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
-              <option value="ALWAYS">Always Available</option>
-              <option value="MOSTLY">Mostly Available</option>
-              <option value="SOMETIMES">Sometimes Available</option>
-              <option value="RARELY">Rarely Available</option>
+              <option value="ALWAYS">{% trans "Always Available" %}</option>
+              <option value="MOSTLY">{% trans "Mostly Available" %}</option>
+              <option value="SOMETIMES">{% trans "Sometimes Available" %}</option>
+              <option value="RARELY">{% trans "Rarely Available" %}</option>
             </select>
           </div>
           <div>
-            <label for="electricity_stability" class="block text-sm font-semibold text-gray-700 mb-1.5">Electricity Stability</label>
+            <label for="electricity_stability" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Electricity Stability" %}</label>
             <select id="electricity_stability" name="electricity_stability"
               class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
-              <option value="STABLE">Stable</option>
-              <option value="MOSTLY_STABLE">Mostly Stable</option>
-              <option value="FREQUENT_OUTAGES">Frequent Outages</option>
-              <option value="UNRELIABLE">Unreliable</option>
+              <option value="STABLE">{% trans "Stable" %}</option>
+              <option value="MOSTLY_STABLE">{% trans "Mostly Stable" %}</option>
+              <option value="FREQUENT_OUTAGES">{% trans "Frequent Outages" %}</option>
+              <option value="UNRELIABLE">{% trans "Unreliable" %}</option>
             </select>
           </div>
         </div>
 
         <div>
-          <p class="text-sm font-semibold text-gray-700 mb-3">Features</p>
+          <p class="text-sm font-semibold text-gray-700 mb-3">{% trans "Features" %}</p>
           <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="has_parking" value="true" class="w-5 h-5 rounded-md border-gray-300 text-primary-600 focus:ring-primary-500/30" />
-              <span class="text-sm font-medium text-gray-700">Parking</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "Parking" %}</span>
             </label>
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="has_wifi" value="true" class="w-5 h-5 rounded-md border-gray-300 text-primary-600 focus:ring-primary-500/30" />
-              <span class="text-sm font-medium text-gray-700">WiFi</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "WiFi" %}</span>
             </label>
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="has_security" value="true" class="w-5 h-5 rounded-md border-gray-300 text-primary-600 focus:ring-primary-500/30" />
-              <span class="text-sm font-medium text-gray-700">Security Guard</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "Security Guard" %}</span>
             </label>
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="has_generator" value="true" class="w-5 h-5 rounded-md border-gray-300 text-primary-600 focus:ring-primary-500/30" />
-              <span class="text-sm font-medium text-gray-700">Generator</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "Generator" %}</span>
             </label>
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="is_furnished" value="true" class="w-5 h-5 rounded-md border-gray-300 text-primary-600 focus:ring-primary-500/30" />
-              <span class="text-sm font-medium text-gray-700">Furnished</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "Furnished" %}</span>
             </label>
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="has_elevator" value="true" class="w-5 h-5 rounded-md border-gray-300 text-primary-600 focus:ring-primary-500/30" />
-              <span class="text-sm font-medium text-gray-700">Elevator</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "Elevator" %}</span>
             </label>
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="has_balcony" value="true" class="w-5 h-5 rounded-md border-gray-300 text-primary-600 focus:ring-primary-500/30" />
-              <span class="text-sm font-medium text-gray-700">Balcony</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "Balcony" %}</span>
             </label>
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="has_garden" value="true" class="w-5 h-5 rounded-md border-gray-300 text-primary-600 focus:ring-primary-500/30" />
-              <span class="text-sm font-medium text-gray-700">Garden</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "Garden" %}</span>
             </label>
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="has_cctv" value="true" class="w-5 h-5 rounded-md border-gray-300 text-primary-600 focus:ring-primary-500/30" />
-              <span class="text-sm font-medium text-gray-700">CCTV</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "CCTV" %}</span>
             </label>
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="pets_allowed" value="true" class="w-5 h-5 rounded-md border-gray-300 text-primary-600 focus:ring-primary-500/30" />
-              <span class="text-sm font-medium text-gray-700">Pets Allowed</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "Pets Allowed" %}</span>
             </label>
           </div>
         </div>
@@ -276,17 +274,17 @@
       <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-primary-700 text-white flex items-center justify-center text-sm font-bold">4</div>
-          <h2 class="text-lg font-bold text-gray-900">Pricing</h2>
+          <h2 class="text-lg font-bold text-gray-900">{% trans "Pricing" %}</h2>
         </div>
       </div>
       <div class="p-6 space-y-5">
         <div>
           <label for="price_monthly" class="block text-sm font-semibold text-gray-700 mb-1.5">
-            <span x-text="listingType === 'sale' ? 'Total price (ETB)' : (listingType === 'short_term' ? 'Monthly rate — short-term (ETB)' : 'Monthly rent (ETB)')"></span> <span class="text-red-500">*</span>
+            <span x-text="listingType === 'sale' ? priceLabelSale : (listingType === 'short_term' ? priceLabelShort : priceLabelRent)"></span> <span class="text-red-500">*</span>
           </label>
           <div class="relative w-full sm:w-1/2">
-            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">ETB</span>
-            <input type="number" id="price_monthly" name="price_monthly" required min="0" step="100" placeholder="15000"
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">{% trans "ETB" %}</span>
+            <input type="number" id="price_monthly" name="price_monthly" required min="0" step="100" placeholder="{% trans '15000' %}"
               class="w-full py-3 pl-14 pr-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all" />
           </div>
         </div>
@@ -295,60 +293,60 @@
         <div x-show="propertyType === 'HALL_RENTAL'" x-cloak x-transition class="space-y-5 pt-4 border-t border-gray-100">
           <div class="flex items-center gap-2 mb-2">
             <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-            <h3 class="text-base font-bold text-gray-900">Hall Details</h3>
+            <h3 class="text-base font-bold text-gray-900">{% trans "Hall Details" %}</h3>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label for="capacity" class="block text-sm font-semibold text-gray-700 mb-1.5">Max Capacity</label>
-              <input type="number" id="capacity" name="capacity" min="1" placeholder="200"
+              <label for="capacity" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Max Capacity" %}</label>
+              <input type="number" id="capacity" name="capacity" min="1" placeholder="{% trans '200' %}"
                 class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 transition-all" />
             </div>
             <div>
-              <label for="price_per_hour" class="block text-sm font-semibold text-gray-700 mb-1.5">Price Per Hour (ETB)</label>
-              <input type="number" id="price_per_hour" name="price_per_hour" min="0" step="100" placeholder="5000"
+              <label for="price_per_hour" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Price Per Hour (ETB)" %}</label>
+              <input type="number" id="price_per_hour" name="price_per_hour" min="0" step="100" placeholder="{% trans '5000' %}"
                 class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 transition-all" />
             </div>
             <div>
-              <label for="price_per_day" class="block text-sm font-semibold text-gray-700 mb-1.5">Price Per Day (ETB)</label>
-              <input type="number" id="price_per_day" name="price_per_day" min="0" step="100" placeholder="30000"
+              <label for="price_per_day" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Price Per Day (ETB)" %}</label>
+              <input type="number" id="price_per_day" name="price_per_day" min="0" step="100" placeholder="{% trans '30000' %}"
                 class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 transition-all" />
             </div>
           </div>
 
           <div>
-            <label for="hall_type" class="block text-sm font-semibold text-gray-700 mb-1.5">Hall Type</label>
+            <label for="hall_type" class="block text-sm font-semibold text-gray-700 mb-1.5">{% trans "Hall Type" %}</label>
             <select id="hall_type" name="hall_type"
               class="w-full sm:w-1/2 py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 transition-all">
-              <option value="">Select type</option>
-              <option value="WEDDING">Wedding Hall</option>
-              <option value="MEETING">Meeting Room</option>
-              <option value="CONFERENCE">Conference Hall</option>
-              <option value="PARTY">Party Venue</option>
-              <option value="OUTDOOR">Outdoor Venue</option>
+              <option value="">{% trans "Select type" %}</option>
+              <option value="WEDDING">{% trans "Wedding Hall" %}</option>
+              <option value="MEETING">{% trans "Meeting Room" %}</option>
+              <option value="CONFERENCE">{% trans "Conference Hall" %}</option>
+              <option value="PARTY">{% trans "Party Venue" %}</option>
+              <option value="OUTDOOR">{% trans "Outdoor Venue" %}</option>
             </select>
           </div>
 
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-purple-300 hover:bg-purple-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="has_sound_system" value="true" class="w-5 h-5 rounded-md border-gray-300 text-purple-600 focus:ring-purple-500/30" />
-              <span class="text-sm font-medium text-gray-700">Sound System</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "Sound System" %}</span>
             </label>
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-purple-300 hover:bg-purple-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="has_stage" value="true" class="w-5 h-5 rounded-md border-gray-300 text-purple-600 focus:ring-purple-500/30" />
-              <span class="text-sm font-medium text-gray-700">Stage</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "Stage" %}</span>
             </label>
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-purple-300 hover:bg-purple-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="decoration_allowed" value="true" class="w-5 h-5 rounded-md border-gray-300 text-purple-600 focus:ring-purple-500/30" />
-              <span class="text-sm font-medium text-gray-700">Decoration Allowed</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "Decoration Allowed" %}</span>
             </label>
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-purple-300 hover:bg-purple-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="catering_available" value="true" class="w-5 h-5 rounded-md border-gray-300 text-purple-600 focus:ring-purple-500/30" />
-              <span class="text-sm font-medium text-gray-700">Catering Available</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "Catering Available" %}</span>
             </label>
             <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-purple-300 hover:bg-purple-50/50 cursor-pointer transition-all">
               <input type="checkbox" name="is_indoor" value="true" class="w-5 h-5 rounded-md border-gray-300 text-purple-600 focus:ring-purple-500/30" checked />
-              <span class="text-sm font-medium text-gray-700">Indoor</span>
+              <span class="text-sm font-medium text-gray-700">{% trans "Indoor" %}</span>
             </label>
           </div>
         </div>
@@ -360,7 +358,7 @@
       <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-primary-700 text-white flex items-center justify-center text-sm font-bold">5</div>
-          <h2 class="text-lg font-bold text-gray-900">Images</h2>
+          <h2 class="text-lg font-bold text-gray-900">{% trans "Images" %}</h2>
         </div>
       </div>
       <div class="p-6">
@@ -369,12 +367,12 @@
             :class="{ 'border-primary-400 bg-primary-50/30': imagePreviews.length > 0 }">
             <div x-show="imagePreviews.length === 0">
               <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21zM8.25 8.25h.008v.008H8.25V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
-              <p class="text-sm font-semibold text-gray-700 mb-1">Click to upload images</p>
-              <p class="text-xs text-gray-500">PNG, JPG up to 5MB each. Select multiple files.</p>
+              <p class="text-sm font-semibold text-gray-700 mb-1">{% trans "Click to upload images" %}</p>
+              <p class="text-xs text-gray-500">{% trans "PNG, JPG up to 5MB each. Select multiple files." %}</p>
             </div>
             <div x-show="imagePreviews.length > 0" x-cloak>
-              <p class="text-sm font-semibold text-primary-700 mb-1" x-text="imagePreviews.length + ' image(s) selected'"></p>
-              <p class="text-xs text-gray-500">Click to add more or replace images</p>
+              <p class="text-sm font-semibold text-primary-700 mb-1" x-text="imagePreviews.length ? (imagePreviews.length + ' ' + (imagePreviews.length === 1 ? imgSelOne : imgSelMany)) : ''"></p>
+              <p class="text-xs text-gray-500">{% trans "Click to add more or replace images" %}</p>
             </div>
           </div>
           <input type="file" name="images" accept="image/*" multiple class="hidden" @change="handleFiles($event)" />
@@ -401,8 +399,8 @@
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-primary-700 text-white flex items-center justify-center text-sm font-bold">6</div>
           <div>
-            <h2 class="text-lg font-bold text-gray-900">Short videos <span class="text-sm font-normal text-gray-500">(optional)</span></h2>
-            <p class="text-xs text-gray-500 mt-0.5">Quick walkthrough clips help renters trust your listing. Up to 5 files, 75 MB each. MP4, WebM, or MOV.</p>
+            <h2 class="text-lg font-bold text-gray-900">{% trans "Short videos" %} <span class="text-sm font-normal text-gray-500">{% trans "(optional)" %}</span></h2>
+            <p class="text-xs text-gray-500 mt-0.5">{% trans "Quick walkthrough clips help renters trust your listing. Up to 5 files, 75 MB each. MP4, WebM, or MOV." %}</p>
           </div>
         </div>
       </div>
@@ -410,9 +408,9 @@
         <label class="block cursor-pointer">
           <div class="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-primary-400 hover:bg-primary-50/30 transition-all duration-200">
             <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/></svg>
-            <p class="text-sm font-semibold text-gray-700 mb-1">Add property videos</p>
-            <p class="text-xs text-gray-500">Tap to choose one or more short clips (vertical or horizontal).</p>
-            <p x-show="videoCount > 0" x-cloak class="text-sm font-semibold text-primary-700 mt-2" x-text="videoCount + ' video(s) selected — they will upload when you publish the listing.'"></p>
+            <p class="text-sm font-semibold text-gray-700 mb-1">{% trans "Add property videos" %}</p>
+            <p class="text-xs text-gray-500">{% trans "Tap to choose one or more short clips (vertical or horizontal)." %}</p>
+            <p x-show="videoCount > 0" x-cloak class="text-sm font-semibold text-primary-700 mt-2" x-text="videoCount ? (videoCount + ' ' + (videoCount === 1 ? vidSelOne : vidSelMany)) : ''"></p>
           </div>
           <input type="file" name="videos" accept="video/*,video/mp4,video/webm,video/quicktime,.mkv,.m4v,.3gp" multiple class="hidden" @change="handleVideoChange($event)" />
         </label>
@@ -423,15 +421,43 @@
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
       <p class="text-sm text-gray-500">
         <svg class="w-4 h-4 inline text-gray-400 mr-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        Your listing will be reviewed before going live.
+        {% trans "Your listing will be reviewed before going live." %}
       </p>
       <button type="submit"
         class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-10 py-3.5 rounded-xl text-base font-bold bg-primary-700 text-white hover:bg-primary-800 hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 4v16m8-8H4"/></svg>
-        Publish Listing
+        {% trans "Publish Listing" %}
       </button>
     </div>
 
   </form>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" crossorigin="anonymous">
+<style>
+  .property-city-field .ts-wrapper .ts-control {
+    min-height: 2.875rem;
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-color: rgb(229 231 235);
+    background-color: rgb(249 250 251);
+  }
+  .property-city-field .ts-wrapper .ts-control.focus {
+    box-shadow: 0 0 0 2px rgba(42, 67, 144, 0.15);
+    border-color: rgb(96 127 204);
+  }
+  .property-city-field .ts-wrapper .dropdown-content {
+    border-radius: 0.75rem;
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window._citySelectMsg = { required: "{% filter escapejs %}{% trans 'Please select or enter a city.' %}{% endfilter %}" };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js" crossorigin="anonymous"></script>
+<script src="{% static 'js/property_city_select.js' %}"></script>
 {% endblock %}

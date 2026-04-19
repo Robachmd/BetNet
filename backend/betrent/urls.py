@@ -7,10 +7,34 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
+from django.views.generic import RedirectView
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
+from rest_framework.permissions import AllowAny
 
 from . import views
 
+_docs_permission = {'permission_classes': [AllowAny], 'authentication_classes': []}
+
 api_urlpatterns = [
+    path(
+        'schema/',
+        SpectacularAPIView.as_view(**_docs_permission),
+        name='schema',
+    ),
+    path(
+        'schema/swagger-ui/',
+        SpectacularSwaggerView.as_view(url_name='api:schema', **_docs_permission),
+        name='swagger-ui',
+    ),
+    path(
+        'schema/redoc/',
+        SpectacularRedocView.as_view(url_name='api:schema', **_docs_permission),
+        name='redoc',
+    ),
     path('accounts/', include('accounts.urls')),
     path('properties/', include('properties.urls')),
     path('bookings/', include('bookings.urls')),
@@ -27,6 +51,12 @@ def api_root(request):
         'name': 'BetRent API',
         'version': '1.0.0',
         'description': "Ethiopia's Trusted Rental Marketplace",
+        'documentation': {
+            'docs': '/docs/',
+            'openapi_schema': '/api/schema/',
+            'swagger_ui': '/api/schema/swagger-ui/',
+            'redoc': '/api/schema/redoc/',
+        },
         'endpoints': {
             'accounts': '/api/accounts/',
             'token_refresh': '/api/accounts/token/refresh/',
@@ -43,6 +73,7 @@ def api_root(request):
 
 
 urlpatterns = [
+    path('i18n/', include('django.conf.urls.i18n')),
     # Pages
     path('', views.home, name='home'),
     path('login/', views.login_view, name='login'),
@@ -68,6 +99,14 @@ urlpatterns = [
 
     # Admin & API
     path('admin/', admin.site.urls),
+    path(
+        'docs/',
+        RedirectView.as_view(
+            url='/api/schema/swagger-ui/',
+            permanent=False,
+        ),
+        name='api-docs',
+    ),
     path('api/', api_root, name='api-root'),
     path('api/', include((api_urlpatterns, 'api'))),
 ]

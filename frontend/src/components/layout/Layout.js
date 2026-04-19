@@ -7,9 +7,7 @@ export default function Layout({
   user = null,
   notifications = [],
   unreadCount = 0,
-  currentLang = 'en',
   onSearch = () => {},
-  onLanguageChange = () => {},
   onNotificationClick = () => {},
   onMarkAllRead = () => {},
   onLogin = () => {},
@@ -27,9 +25,7 @@ export default function Layout({
           user={user}
           notifications={notifications}
           unreadCount={unreadCount}
-          currentLang={currentLang}
           onSearch={onSearch}
-          onLanguageChange={onLanguageChange}
           onNotificationClick={onNotificationClick}
           onMarkAllRead={onMarkAllRead}
           onLogin={onLogin}

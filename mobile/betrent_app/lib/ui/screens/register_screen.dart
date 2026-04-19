@@ -85,7 +85,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _role,
+                initialValue: _role,
                 decoration: const InputDecoration(labelText: 'I am a'),
                 items: const [
                   DropdownMenuItem(value: 'RENTER', child: Text('Renter')),
@@ -97,17 +97,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextField(
                 controller: _pass,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password (8+ chars)'),
+                decoration:
+                    const InputDecoration(labelText: 'Password (8+ chars)'),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _pass2,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'Confirm password'),
+                decoration:
+                    const InputDecoration(labelText: 'Confirm password'),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
-                Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                Text(_error!,
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error)),
               ],
               const SizedBox(height: 24),
               SizedBox(
