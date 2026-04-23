@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load i18n %}
-{% block title %}{% trans "Create Account — BetRent" %}{% endblock %}
+{% block title %}{% trans "Create Account — BetNet" %}{% endblock %}
 
 {% block content %}
 <div class="min-h-[calc(100vh-68px)] flex">
@@ -24,10 +24,10 @@
         </svg>
       </div>
       <h1 class="text-4xl font-extrabold text-white mb-3">
-        {% trans "Join" %} <span class="text-secondary-400">BetRent</span> {% trans "Today" %}
+        {% trans "Join" %} <span class="text-secondary-400">BetNet</span> {% trans "Today" %}
       </h1>
       <p class="text-primary-200 text-lg max-w-md leading-relaxed">
-        {% trans "Whether you're looking for a home or listing a property, BetRent connects you with Ethiopia's rental community." %}
+        {% trans "Whether you're looking to rent, buy, sell, or list a property, BetNet connects you with Ethiopia's property community." %}
       </p>
 
       <div class="mt-10 space-y-4 max-w-sm w-full text-left">
@@ -80,7 +80,7 @@
 
       <div class="text-center mb-6">
         <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900">{% trans "Create your account" %}</h2>
-        <p class="mt-2 text-gray-500">{% trans "Start your journey with BetRent" %}</p>
+        <p class="mt-2 text-gray-500">{% trans "Start your journey with BetNet" %}</p>
       </div>
 
       {% if form.errors %}
@@ -339,7 +339,7 @@
             class="w-4 h-4 mt-0.5 rounded border-gray-300 text-primary-700 focus:ring-primary-500/30"
           />
           <label for="terms" class="text-sm text-gray-600 leading-relaxed">
-            {% trans "I agree to BetRent's" %}
+            {% trans "I agree to BetNet's" %}
             <a href="#" class="font-medium text-primary-700 hover:text-primary-800 underline underline-offset-2">{% trans "Terms of Service" %}</a>
             {% trans "and" %}
             <a href="#" class="font-medium text-primary-700 hover:text-primary-800 underline underline-offset-2">{% trans "Privacy Policy" %}</a>

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n humanize %}
 
-{% block title %}{% trans "Search Properties — BetRent" %}{% endblock %}
+{% block title %}{% trans "Search Properties — BetNet" %}{% endblock %}
 
 {% block content %}
 <section class="bg-gradient-to-br from-primary-800 via-primary-700 to-primary-600 py-12 sm:py-16">
@@ -15,7 +15,7 @@
         <span class="font-semibold text-secondary-400">{{ counter }}</span> listings found — transparent pricing, wherever life takes you.
         {% endblocktrans %}
       {% else %}
-        {% trans "Verified rental listings with transparent pricing — wherever life takes you." %}
+        {% trans "Verified property listings with transparent pricing — wherever life takes you." %}
       {% endif %}
     </p>
   </div>
@@ -40,8 +40,8 @@
       <div class="lg:block" :class="{ 'hidden': !filtersOpen }" x-cloak>
         <div class="p-5 space-y-4">
 
-          <!-- Row 1: Search + Type + Bedrooms -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Row 1: Search + Type + Listing type + Bedrooms -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div class="lg:col-span-2">
               <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Search" %}</label>
               <div class="relative">
@@ -61,6 +61,15 @@
                 <option value="REAL_ESTATE" {% if selected_type == 'REAL_ESTATE' %}selected{% endif %}>{% trans "Real Estate" %}</option>
                 <option value="BUSINESS_SHOP" {% if selected_type == 'BUSINESS_SHOP' %}selected{% endif %}>{% trans "Business Shop" %}</option>
                 <option value="HALL_RENTAL" {% if selected_type == 'HALL_RENTAL' %}selected{% endif %}>{% trans "Hall Rental" %}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">{% trans "Listing Type" %}</label>
+              <select name="listing_type" class="w-full py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 transition-all">
+                <option value="">{% trans "Any" %}</option>
+                <option value="rent" {% if selected_listing_type == 'rent' %}selected{% endif %}>{% trans "For Rent" %}</option>
+                <option value="sale" {% if selected_listing_type == 'sale' %}selected{% endif %}>{% trans "For Sale" %}</option>
+                <option value="short_term" {% if selected_listing_type == 'short_term' %}selected{% endif %}>{% trans "Short-term" %}</option>
               </select>
             </div>
             {% if selected_type != 'BUSINESS_SHOP' %}
@@ -170,6 +179,18 @@
 
         <!-- Badges -->
         <div class="absolute top-3 left-3 flex flex-col gap-1.5">
+          <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm
+            {% if property.listing_type == 'sale' %}bg-amber-100 text-amber-900
+            {% elif property.listing_type == 'short_term' %}bg-sky-100 text-sky-800
+            {% else %}bg-emerald-100 text-emerald-800{% endif %}">
+            {% if property.listing_type == 'sale' %}
+              {% trans "For Sale" %}
+            {% elif property.listing_type == 'short_term' %}
+              {% trans "Short-term" %}
+            {% else %}
+              {% trans "For Rent" %}
+            {% endif %}
+          </span>
           <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-white/90 backdrop-blur-sm text-gray-700 shadow-sm">
             {{ property.get_property_type_display }}
           </span>
@@ -250,7 +271,7 @@
   {% if properties.paginator.num_pages > 1 %}
   <nav class="mt-10 flex items-center justify-center gap-2" aria-label="{% trans 'Pagination' %}">
     {% if properties.has_previous %}
-    <a href="?page={{ properties.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_type %}&property_type={{ selected_type }}{% endif %}{% if selected_bedrooms %}&bedrooms={{ selected_bedrooms }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if is_verified_only %}&is_verified=true{% endif %}"
+    <a href="?page={{ properties.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_type %}&property_type={{ selected_type }}{% endif %}{% if selected_listing_type %}&listing_type={{ selected_listing_type }}{% endif %}{% if selected_bedrooms %}&bedrooms={{ selected_bedrooms }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if is_verified_only %}&is_verified=true{% endif %}"
       class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
       {% trans "Previous" %}
@@ -262,7 +283,7 @@
         {% if page_num == properties.number %}
           <span class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold bg-primary-700 text-white shadow-sm">{{ page_num }}</span>
         {% elif page_num > properties.number|add:"-3" and page_num < properties.number|add:"3" %}
-          <a href="?page={{ page_num }}{% if query %}&q={{ query }}{% endif %}{% if selected_type %}&property_type={{ selected_type }}{% endif %}{% if selected_bedrooms %}&bedrooms={{ selected_bedrooms }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if is_verified_only %}&is_verified=true{% endif %}"
+          <a href="?page={{ page_num }}{% if query %}&q={{ query }}{% endif %}{% if selected_type %}&property_type={{ selected_type }}{% endif %}{% if selected_listing_type %}&listing_type={{ selected_listing_type }}{% endif %}{% if selected_bedrooms %}&bedrooms={{ selected_bedrooms }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if is_verified_only %}&is_verified=true{% endif %}"
             class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all">{{ page_num }}</a>
         {% endif %}
       {% endfor %}
@@ -273,7 +294,7 @@
     </span>
 
     {% if properties.has_next %}
-    <a href="?page={{ properties.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_type %}&property_type={{ selected_type }}{% endif %}{% if selected_bedrooms %}&bedrooms={{ selected_bedrooms }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if is_verified_only %}&is_verified=true{% endif %}"
+    <a href="?page={{ properties.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_type %}&property_type={{ selected_type }}{% endif %}{% if selected_listing_type %}&listing_type={{ selected_listing_type }}{% endif %}{% if selected_bedrooms %}&bedrooms={{ selected_bedrooms }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}{% if selected_city %}&city={{ selected_city }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}{% if is_verified_only %}&is_verified=true{% endif %}"
       class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all">
       {% trans "Next" %}
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M9 5l7 7-7 7"/></svg>

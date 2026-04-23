@@ -1,7 +1,8 @@
 <p align="center">
-  <h1 align="center">BetRent &mdash; Ethiopia's Trusted Rental Marketplace</h1>
+  <img src="frontend/public/betnet-logo.svg" alt="BetNet logo" width="360" />
+  <h1 align="center">BetNet &mdash; Ethiopia's Trusted Property Marketplace</h1>
   <p align="center">
-    A full-stack platform connecting landlords and renters across Ethiopia with verified listings, real-time chat, price insights, and integrated payments.
+    A full-stack platform connecting renters, buyers, sellers, and property owners across Ethiopia with verified listings, real-time chat, price insights, and integrated payments.
   </p>
 </p>
 
@@ -19,7 +20,7 @@
 
 ## Overview
 
-**BetRent** (from Amharic "ቤት" meaning "house") is a modern rental marketplace purpose-built for the Ethiopian housing market. It tackles the pain points of property hunting in Ethiopia — fake listings, opaque pricing, language barriers, and fragmented communication — by providing a verified, multi-language platform with built-in scam protection, real-time messaging, and local payment integration (Chapa, Telebirr, Stripe).
+**BetNet** is a modern property marketplace purpose-built for the Ethiopian housing market. It tackles the pain points of property hunting in Ethiopia — fake listings, opaque pricing, language barriers, and fragmented communication — by providing a verified, multi-language platform with built-in scam protection, real-time messaging, and local payment integration (Chapa, Telebirr, Stripe).
 
 The platform supports residential rentals (apartments, villas, condominiums, service houses) as well as **event space / hall rentals** with availability calendars. Landlords manage listings through a dedicated dashboard, while renters discover properties via smart search with map-based exploration. An admin panel provides full analytics, user management, and listing moderation.
 
@@ -114,7 +115,7 @@ The platform supports residential rentals (apartments, villas, condominiums, ser
 ## Project Structure
 
 ```
-betrent/
+betnet/
 ├── docker-compose.yml              # Orchestration (DB, Redis, backend, Celery, Nginx)
 ├── README.md
 ├── .gitignore
@@ -125,7 +126,7 @@ betrent/
 │   ├── requirements.txt
 │   ├── .env.example
 │   │
-│   ├── betrent/                    # Django project config
+│   ├── betnet/                     # Django project config
 │   │   ├── settings.py
 │   │   ├── urls.py
 │   │   ├── asgi.py / wsgi.py
@@ -141,6 +142,9 @@ betrent/
 │   ├── payments/                   # Chapa, Telebirr, Stripe, subscriptions
 │   ├── notifications/              # In-app alerts, preferences, WebSocket push
 │   └── analytics/                  # Property views, search logs, admin dashboards
+│
+├── betnet_rent/                    # Additional Flutter project (optional)
+├── mobile/betnet_app/              # BetNet mobile app (Flutter + Riverpod)
 │
 └── frontend/
     ├── package.json
@@ -192,8 +196,8 @@ betrent/
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/betrent.git
-cd betrent/backend
+git clone https://github.com/your-username/betnet.git
+cd betnet/backend
 
 # Create virtual environment
 python -m venv venv
@@ -220,7 +224,7 @@ python manage.py runserver
 ### Frontend Setup
 
 ```bash
-cd betrent/frontend
+cd betnet/frontend
 
 # Install dependencies
 npm install
@@ -237,7 +241,7 @@ npm start
 ### Docker Setup (Recommended)
 
 ```bash
-cd betrent
+cd betnet
 
 # Copy and configure environment
 cp backend/.env.example backend/.env
@@ -270,7 +274,7 @@ Services will be available at:
 |---|---|---|
 | `SECRET_KEY` | Django secret key | `your-secret-key` |
 | `DEBUG` | Debug mode | `True` |
-| `DATABASE_URL` | PostgreSQL connection | `postgres://user:pass@localhost:5432/betrent` |
+| `DATABASE_URL` | PostgreSQL connection | `postgres://user:pass@localhost:5432/betnet` |
 | `REDIS_URL` | Redis connection | `redis://localhost:6379/0` |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | `my-cloud` |
 | `CLOUDINARY_API_KEY` | Cloudinary API key | `123456789` |

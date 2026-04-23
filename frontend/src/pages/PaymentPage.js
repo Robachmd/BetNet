@@ -137,7 +137,7 @@ export default function PaymentPage() {
               <FiShield className="w-5 h-5" />
               <span className="text-sm font-medium text-green-100">Secure Payment</span>
             </div>
-            <h1 className="text-xl font-bold">BetRent Payment</h1>
+            <h1 className="text-xl font-bold">BetNet Payment</h1>
           </div>
 
           <div className="p-6">

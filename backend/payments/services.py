@@ -124,7 +124,7 @@ class TelebirrService:
         tx_ref: str,
         notify_url: str = "",
         return_url: str = "",
-        subject: str = "BetRent Payment",
+        subject: str = "BetNet Payment",
     ) -> PaymentResult:
         payload = {
             "appId": self.app_id,
@@ -133,7 +133,7 @@ class TelebirrService:
             "outTradeNo": tx_ref,
             "subject": subject,
             "totalAmount": str(amount),
-            "receiveName": "BetRent",
+            "receiveName": "BetNet",
             "notifyUrl": notify_url,
             "returnUrl": return_url,
             "timeoutExpress": "30",
@@ -215,7 +215,7 @@ class StripeService:
                             "currency": currency.lower(),
                             "unit_amount": amount,
                             "product_data": {
-                                "name": metadata.get("description", "BetRent Payment"),
+                                "name": metadata.get("description", "BetNet Payment"),
                             },
                         },
                         "quantity": 1,

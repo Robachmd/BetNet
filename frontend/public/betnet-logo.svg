@@ -1,0 +1,18 @@
+<svg width="640" height="180" viewBox="0 0 640 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="16" y="16" width="148" height="148" rx="36" fill="#166534"/>
+  <path d="M54 93L90 62L126 93" stroke="#FACC15" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M66 88V120C66 124.418 69.5817 128 74 128H106C110.418 128 114 124.418 114 120V88" stroke="white" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M90 56V42" stroke="#FACC15" stroke-width="8" stroke-linecap="round"/>
+  <path d="M90 42L116 54" stroke="#86EFAC" stroke-width="6" stroke-linecap="round"/>
+  <path d="M90 42L64 54" stroke="#86EFAC" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="90" cy="42" r="9" fill="#FACC15"/>
+  <circle cx="64" cy="54" r="7" fill="#BBF7D0"/>
+  <circle cx="116" cy="54" r="7" fill="#BBF7D0"/>
+  <path d="M82 128V108C82 103.582 85.5817 100 90 100C94.4183 100 98 103.582 98 108V128" stroke="#FACC15" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M202 76H224.5C230.299 76 235 71.299 235 65.5C235 59.701 230.299 55 224.5 55H202V76ZM202 125V95H226.5C234.508 95 241 101.492 241 109.5C241 117.508 234.508 124 226.5 124H202V125Z" fill="#111827"/>
+  <path d="M260 125V55H307V73H281V84H304V102H281V125H260Z" fill="#111827"/>
+  <path d="M323 125V55H344V125H323Z" fill="#111827"/>
+  <path d="M365 125V55H386L422 96V55H443V125H423L386 83V125H365Z" fill="#111827"/>
+  <path d="M464 125V55H485V96L519 55H545L506 99L548 125H515L485 106V125H464Z" fill="#111827"/>
+  <text x="202" y="148" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="600" fill="#4B5563" letter-spacing="0.5">Ethiopia's modern property marketplace</text>
+</svg>

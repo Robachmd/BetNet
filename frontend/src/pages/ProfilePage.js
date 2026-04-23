@@ -19,7 +19,7 @@ const NOTIFICATION_PREFS = [
   { key: 'bookingUpdates', label: 'Booking updates', description: 'Confirmations, cancellations, and reminders' },
   { key: 'messages', label: 'Chat messages', description: 'When a landlord or renter sends you a message' },
   { key: 'priceDrops', label: 'Price drops', description: 'When a favorited property lowers its price' },
-  { key: 'promotions', label: 'Promotions & tips', description: 'Offers, rental tips, and BetRent news' },
+  { key: 'promotions', label: 'Promotions & tips', description: 'Offers, property tips, and BetNet news' },
 ];
 
 export default function ProfilePage() {

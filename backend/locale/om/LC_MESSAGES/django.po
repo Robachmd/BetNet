@@ -1,20 +1,20 @@
-# Oromo translations for BetRent Django templates.
-# Copyright (C) 2026 BetRent
+# Oromo translations for BetNet Django templates.
+# Copyright (C) 2026 BetNet
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: BetRent\n"
+"Project-Id-Version: BetNet\n"
 "Language: om\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgid "BetRent — Ethiopia's trusted rental marketplace. Find verified homes, apartments, villas, and event halls."
-msgstr "BetRent, gabaa amantaa qabeenya kireeffannaa Itoophiyaa. Mana mirkanaa'e, apartamaa fi mana taphaataa argadhu."
+msgid "BetNet — Ethiopia's trusted rental marketplace. Find verified homes, apartments, villas, and event halls."
+msgstr "BetNet, gabaa amantaa qabeenya kireeffannaa Itoophiyaa. Mana mirkanaa'e, apartamaa fi mana taphaataa argadhu."
 
-msgid "BetRent — Ethiopia's Trusted Rental Marketplace"
-msgstr "BetRent, Gabaa Amantaa Qabeenya Kireeffannaa Itoophiyaa"
+msgid "BetNet — Ethiopia's Trusted Rental Marketplace"
+msgstr "BetNet, Gabaa Amantaa Qabeenya Kireeffannaa Itoophiyaa"
 
 msgid "Browse Listings"
 msgstr "Tarreeffannoo ilaali"
@@ -103,5 +103,5 @@ msgstr "Seera iccitii dhuunfaa"
 msgid "Terms of Service"
 msgstr "Haala tajaajilaa"
 
-msgid "© 2026 BetRent. All rights reserved."
-msgstr "© 2026 BetRent. Mirgi seeraan kan eegame."
+msgid "© 2026 BetNet. All rights reserved."
+msgstr "© 2026 BetNet. Mirgi seeraan kan eegame."

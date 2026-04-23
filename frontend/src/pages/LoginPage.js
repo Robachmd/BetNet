@@ -78,10 +78,10 @@ export default function LoginPage() {
             {APP_NAME}
           </Link>
           <p className="text-green-100/80 text-lg mb-8 max-w-md leading-relaxed">
-            Ethiopia's trusted rental marketplace. Find verified apartments, villas, and event halls across the country.
+            Ethiopia's trusted property marketplace. Find verified homes, commercial spaces, and event halls to rent or buy across the country.
           </p>
           <div className="space-y-4">
-            {['Verified listings you can trust', 'Price insights for fair rentals', 'Direct contact with landlords'].map((item) => (
+            {['Verified listings you can trust', 'Price insights for smarter property decisions', 'Direct contact with owners'].map((item) => (
               <div key={item} className="flex items-center gap-3 text-green-200">
                 <div className="w-6 h-6 rounded-full bg-green-500/30 flex items-center justify-center flex-shrink-0">
                   <FiArrowRight className="w-3 h-3" />

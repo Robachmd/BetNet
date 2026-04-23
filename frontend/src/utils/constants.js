@@ -1,4 +1,4 @@
-export const APP_NAME = 'BetRent';
+export const APP_NAME = 'BetNet';
 export const APP_TAGLINE = 'Your Home Away From Home';
 export const DEFAULT_CURRENCY = 'ETB';
 export const DEFAULT_LOCALE = 'en';

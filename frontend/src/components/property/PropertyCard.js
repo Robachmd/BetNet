@@ -91,6 +91,11 @@ export default function PropertyCard({
 
         {/* Top badges */}
         <div className="absolute top-3 left-3 flex items-center gap-2 flex-wrap">
+          {lt === 'rent' && (
+            <Badge variant="neutral" size="sm" className="bg-emerald-100 text-emerald-800 border-emerald-200">
+              For rent
+            </Badge>
+          )}
           {lt === 'sale' && (
             <Badge variant="pending" size="sm" className="bg-amber-100 text-amber-900 border-amber-200">
               For sale

@@ -137,7 +137,7 @@ export default function RenterDashboard() {
     loadReviews();
     loadNotifications();
     try {
-      const stored = JSON.parse(localStorage.getItem('betrent_recent_searches') || '[]');
+      const stored = JSON.parse(localStorage.getItem('betnet_recent_searches') || '[]');
       setRecentSearches(stored.slice(0, 5));
     } catch { /* ignore */ }
   }, [loadBookings, loadFavorites, loadRecommended, loadReviews, loadNotifications]);
@@ -145,7 +145,7 @@ export default function RenterDashboard() {
   const handleSearch = (query) => {
     const updated = [query, ...recentSearches.filter((s) => s !== query)].slice(0, 5);
     setRecentSearches(updated);
-    localStorage.setItem('betrent_recent_searches', JSON.stringify(updated));
+    localStorage.setItem('betnet_recent_searches', JSON.stringify(updated));
     navigate(`/search?q=${encodeURIComponent(query)}`);
   };
 

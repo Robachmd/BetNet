@@ -71,8 +71,8 @@ export default function Footer({ onNavigate = () => {} }) {
               {t('footer.trustedBlurb')}
             </p>
             <div className="space-y-2.5">
-              <a href="mailto:info@betrent.et" className="flex items-center gap-2 text-sm text-gray-400 hover:text-green-400 transition-colors">
-                <FiMail className="w-4 h-4" /> info@betrent.et
+              <a href="mailto:info@betnet.et" className="flex items-center gap-2 text-sm text-gray-400 hover:text-green-400 transition-colors">
+                <FiMail className="w-4 h-4" /> info@betnet.et
               </a>
               <a href="tel:+251911000000" className="flex items-center gap-2 text-sm text-gray-400 hover:text-green-400 transition-colors">
                 <FiPhone className="w-4 h-4" /> +251 911 000 000

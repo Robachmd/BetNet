@@ -8,13 +8,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: betrent
-      POSTGRES_USER: betrent
-      POSTGRES_PASSWORD: betrent
+      POSTGRES_DB: betnet
+      POSTGRES_USER: betnet
+      POSTGRES_PASSWORD: betnet
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U betrent"]
+      test: ["CMD-SHELL", "pg_isready -U betnet"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,7 +40,7 @@ services:
     command: >
       sh -c "python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput &&
-             gunicorn betrent.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120"
+             gunicorn betnet.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120"
     volumes:
       - ./backend:/app
       - static_volume:/app/staticfiles
@@ -61,7 +61,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
-    command: celery -A betrent worker -l info --concurrency=4
+    command: celery -A betnet worker -l info --concurrency=4
     volumes:
       - ./backend:/app
     env_file:
@@ -78,7 +78,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
-    command: celery -A betrent beat -l info
+    command: celery -A betnet beat -l info
     volumes:
       - ./backend:/app
     env_file:
@@ -95,7 +95,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
-    command: daphne -b 0.0.0.0 -p 8001 betrent.asgi:application
+    command: daphne -b 0.0.0.0 -p 8001 betnet.asgi:application
     volumes:
       - ./backend:/app
     ports:

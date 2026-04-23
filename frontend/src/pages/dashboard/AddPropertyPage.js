@@ -186,7 +186,7 @@ export default function AddPropertyPage() {
     setSavingDraft(true);
     try {
       const data = getValues();
-      localStorage.setItem('betrent_property_draft', JSON.stringify(data));
+      localStorage.setItem('betnet_property_draft', JSON.stringify(data));
       toast.success('Draft saved locally');
     } catch {
       toast.error('Failed to save draft');
@@ -230,7 +230,7 @@ export default function AddPropertyPage() {
         await propertyService.uploadPropertyImages(propertySlug, images);
       }
 
-      localStorage.removeItem('betrent_property_draft');
+      localStorage.removeItem('betnet_property_draft');
       toast.success('Property created successfully!');
       navigate('/dashboard/landlord');
     } catch (err) {

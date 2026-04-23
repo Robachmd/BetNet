@@ -1,4 +1,5 @@
 from datetime import timedelta
+from decimal import Decimal
 
 from django.utils import timezone
 from rest_framework import serializers
@@ -51,7 +52,9 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 class PaymentCreateSerializer(serializers.Serializer):
     payment_type = serializers.ChoiceField(choices=Payment.PaymentType.choices)
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=1)
+    amount = serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=Decimal("1")
+    )
     currency = serializers.CharField(max_length=3, default="ETB")
     payment_method = serializers.ChoiceField(choices=Payment.PaymentMethod.choices)
     property_id = serializers.IntegerField(required=False, allow_null=True)
@@ -75,7 +78,9 @@ class PaymentCreateSerializer(serializers.Serializer):
 
 
 class ChapaPaymentInitSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=1)
+    amount = serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=Decimal("1")
+    )
     email = serializers.EmailField()
     first_name = serializers.CharField(max_length=100, required=False, default="")
     last_name = serializers.CharField(max_length=100, required=False, default="")
@@ -85,7 +90,9 @@ class ChapaPaymentInitSerializer(serializers.Serializer):
 
 
 class TelebirrPaymentInitSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=1)
+    amount = serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=Decimal("1")
+    )
     phone = serializers.CharField(max_length=20)
     notify_url = serializers.URLField(required=False, default="")
     return_url = serializers.URLField(required=False, default="")
@@ -96,7 +103,7 @@ class StripePaymentInitSerializer(serializers.Serializer):
     currency = serializers.CharField(max_length=3, default="usd")
     success_url = serializers.URLField()
     cancel_url = serializers.URLField()
-    description = serializers.CharField(max_length=255, required=False, default="BetRent Payment")
+    description = serializers.CharField(max_length=255, required=False, default="BetNet Payment")
 
 
 class PaymentVerifySerializer(serializers.Serializer):

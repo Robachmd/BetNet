@@ -203,7 +203,7 @@ export default function AdminDashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-500 mt-1">Overview of the BetRent platform</p>
+              <p className="text-gray-500 mt-1">Overview of the BetNet platform</p>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="verified" size="sm" icon>Admin</Badge>

@@ -1,20 +1,20 @@
-# Amharic translations for BetRent Django templates.
-# Copyright (C) 2026 BetRent
+# Amharic translations for BetNet Django templates.
+# Copyright (C) 2026 BetNet
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: BetRent\n"
+"Project-Id-Version: BetNet\n"
 "Language: am\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-msgid "BetRent — Ethiopia's trusted rental marketplace. Find verified homes, apartments, villas, and event halls."
-msgstr "ቤትሪንት፣ ኢትዮጵያ የታመነ የኪራይ ገበያ። የተረጋገጡ ቤቶች፣ አፓርታማዎች እና የዝግጅት አዳራሾች ያግኙ።"
+msgid "BetNet — Ethiopia's trusted rental marketplace. Find verified homes, apartments, villas, and event halls."
+msgstr "ቤትኔት፣ ኢትዮጵያ የታመነ የኪራይ ገበያ። የተረጋገጡ ቤቶች፣ አፓርታማዎች እና የዝግጅት አዳራሾች ያግኙ።"
 
-msgid "BetRent — Ethiopia's Trusted Rental Marketplace"
-msgstr "ቤትሪንት፣ ኢትዮጵያ የታመነ የኪራይ ገበያ"
+msgid "BetNet — Ethiopia's Trusted Rental Marketplace"
+msgstr "ቤትኔት፣ ኢትዮጵያ የታመነ የኪራይ ገበያ"
 
 msgid "Browse Listings"
 msgstr "ዝርዝሮችን ይፈልጉ"
@@ -103,5 +103,5 @@ msgstr "የግላዊነት ፖሊሲ"
 msgid "Terms of Service"
 msgstr "የአገልግሎት ደንቦች"
 
-msgid "© 2026 BetRent. All rights reserved."
-msgstr "© 2026 ቤትሪንት። መብቱ በህግ የተጠበቀ ነው።"
+msgid "© 2026 BetNet. All rights reserved."
+msgstr "© 2026 ቤትኔት። መብቱ በህግ የተጠበቀ ነው።"

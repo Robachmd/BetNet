@@ -120,7 +120,7 @@ export default function RegisterPage() {
             {APP_NAME}
           </Link>
           <p className="text-green-100/80 text-lg mb-10 max-w-md leading-relaxed">
-            Join thousands of Ethiopians finding their perfect rental homes and event venues.
+            Join thousands of Ethiopians finding homes, commercial spaces, and event venues to rent or buy.
           </p>
 
           {/* Steps Preview */}
@@ -172,7 +172,7 @@ export default function RegisterPage() {
           </div>
 
           <h1 className="text-2xl font-bold text-gray-900 mb-1">
-            {step === 0 ? 'Create your account' : step === 1 ? 'Tell us about yourself' : 'How will you use BetRent?'}
+            {step === 0 ? 'Create your account' : step === 1 ? 'Tell us about yourself' : 'How will you use BetNet?'}
           </h1>
           <p className="text-gray-500 mb-8 text-sm">
             Step {step + 1} of {STEPS.length} — {STEPS[step].title}

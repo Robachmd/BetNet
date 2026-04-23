@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load i18n %}
 
-{% block title %}{% trans "BetRent — Ethiopia's Trusted Rental Marketplace" %}{% endblock %}
+{% block title %}{% trans "BetNet — Ethiopia's Trusted Property Marketplace" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -28,7 +28,7 @@
         {% blocktrans trimmed %}Find the right space{% endblocktrans %}<br/><span class="text-secondary-400">{% trans "in Ethiopia" %}</span>
       </h1>
       <p class="text-lg text-white/75 mb-8 max-w-xl mx-auto lg:mx-0">
-        {% blocktrans trimmed %}Verified rental listings with transparent pricing — wherever life takes you.{% endblocktrans %}
+        {% blocktrans trimmed %}Verified homes, commercial spaces, and venues to rent or buy across Ethiopia.{% endblocktrans %}
       </p>
       <form action="{% url 'search' %}" method="GET" class="bg-white rounded-2xl p-2 shadow-2xl flex flex-col sm:flex-row gap-2 max-w-xl mx-auto lg:mx-0">
         <input type="text" name="q" placeholder="{% trans 'Search by city, neighborhood, or landmark...' %}" class="flex-1 px-5 py-4 rounded-xl outline-none text-gray-900 placeholder-gray-400" />
@@ -39,7 +39,7 @@
       </form>
       <div class="flex gap-8 sm:gap-12 mt-10 justify-center lg:justify-start">
         <div class="text-center"><div class="text-2xl font-black text-secondary-400">2,500+</div><div class="text-xs text-white/60">{% trans "Verified Listings" %}</div></div>
-        <div class="text-center"><div class="text-2xl font-black text-secondary-400">15,000+</div><div class="text-xs text-white/60">{% trans "Happy Renters" %}</div></div>
+        <div class="text-center"><div class="text-2xl font-black text-secondary-400">15,000+</div><div class="text-xs text-white/60">{% trans "Happy Clients" %}</div></div>
         <div class="text-center"><div class="text-2xl font-black text-secondary-400">50+</div><div class="text-xs text-white/60">{% trans "Neighborhoods" %}</div></div>
       </div>
     </div>
@@ -48,6 +48,14 @@
       <a href="{% url 'property_detail' p.slug %}" class="hero-card bg-white rounded-2xl overflow-hidden shadow-lg transition">
         <div class="h-28 {% cycle 'bg-gradient-to-br from-green-200 to-green-300' 'bg-gradient-to-br from-yellow-200 to-yellow-300' 'bg-gradient-to-br from-blue-200 to-blue-300' 'bg-gradient-to-br from-red-200 to-red-300' %} relative">
           {% if p.is_verified %}<span class="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">{% trans "✓ Verified" %}</span>{% endif %}
+          <span class="absolute bottom-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm
+            {% if p.listing_type == 'sale' %}bg-amber-100 text-amber-900
+            {% elif p.listing_type == 'short_term' %}bg-sky-100 text-sky-800
+            {% else %}bg-emerald-100 text-emerald-800{% endif %}">
+            {% if p.listing_type == 'sale' %}{% trans "For Sale" %}
+            {% elif p.listing_type == 'short_term' %}{% trans "Short-term" %}
+            {% else %}{% trans "For Rent" %}{% endif %}
+          </span>
           {% if p.is_featured %}<span class="absolute top-2 right-2 bg-yellow-500 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-md">{% trans "★ Featured" %}</span>{% endif %}
         </div>
         <div class="p-3">
@@ -128,8 +136,8 @@
   <div class="max-w-7xl mx-auto">
     <div class="text-center mb-14 fade-up">
       <span class="inline-block bg-yellow-100 text-yellow-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-3">{% trans "Simple Process" %}</span>
-      <h2 class="text-3xl font-extrabold text-gray-900 mb-3">{% trans "How BetRent Works" %}</h2>
-      <p class="text-gray-500 text-lg">{% trans "Three simple steps to find your perfect rental home." %}</p>
+      <h2 class="text-3xl font-extrabold text-gray-900 mb-3">{% trans "How BetNet Works" %}</h2>
+      <p class="text-gray-500 text-lg">{% trans "Three simple steps to rent or buy your next property." %}</p>
     </div>
     <div class="grid md:grid-cols-3 gap-10 fade-up">
       <div class="text-center">
@@ -139,13 +147,13 @@
       </div>
       <div class="text-center">
         <div class="w-14 h-14 rounded-full bg-primary-700 text-white text-xl font-black flex items-center justify-center mx-auto mb-5">2</div>
-        <h3 class="text-lg font-bold mb-2">{% trans "Book a Visit" %}</h3>
-        <p class="text-gray-500">{% blocktrans trimmed %}Schedule a house visit directly with the landlord — clear terms, no hidden fees from the platform.{% endblocktrans %}</p>
+        <h3 class="text-lg font-bold mb-2">{% trans "Connect & Visit" %}</h3>
+        <p class="text-gray-500">{% blocktrans trimmed %}Chat with the owner, compare options, and schedule a visit when needed.{% endblocktrans %}</p>
       </div>
       <div class="text-center">
         <div class="w-14 h-14 rounded-full bg-primary-700 text-white text-xl font-black flex items-center justify-center mx-auto mb-5">3</div>
-        <h3 class="text-lg font-bold mb-2">{% trans "Move In" %}</h3>
-        <p class="text-gray-500">{% trans "Pay via Chapa, Telebirr, or bank transfer and move into your new home." %}</p>
+        <h3 class="text-lg font-bold mb-2">{% trans "Rent or Buy" %}</h3>
+        <p class="text-gray-500">{% trans "Finalize the deal with confidence and move forward with the property that fits you best." %}</p>
       </div>
     </div>
   </div>
@@ -155,9 +163,9 @@
 <section class="py-20 px-6" id="features">
   <div class="max-w-7xl mx-auto">
     <div class="text-center mb-14 fade-up">
-      <span class="inline-block bg-green-100 text-primary-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-3">{% trans "Why BetRent" %}</span>
-      <h2 class="text-3xl font-extrabold text-gray-900 mb-3">{% trans "Built for Ethiopia's Rental Market" %}</h2>
-      <p class="text-gray-500 text-lg">{% trans "We solve real problems renters and landlords face every day." %}</p>
+      <span class="inline-block bg-green-100 text-primary-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-3">{% trans "Why BetNet" %}</span>
+      <h2 class="text-3xl font-extrabold text-gray-900 mb-3">{% trans "Built for Ethiopia's Property Market" %}</h2>
+      <p class="text-gray-500 text-lg">{% trans "We solve real problems renters, buyers, sellers, and landlords face every day." %}</p>
     </div>
     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 fade-up">
       <div class="feature-card bg-white border border-gray-200 rounded-2xl p-8 transition">
@@ -168,7 +176,7 @@
       <div class="feature-card bg-white border border-gray-200 rounded-2xl p-8 transition">
         <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center text-xl mb-4">&#128200;</div>
         <h3 class="font-bold text-lg mb-2">{% trans "Price Insight System" %}</h3>
-        <p class="text-gray-500 text-sm leading-relaxed">{% trans "See average rent prices in any neighborhood. Instantly know if a listing is fairly priced." %}</p>
+        <p class="text-gray-500 text-sm leading-relaxed">{% trans "Compare neighborhood pricing and judge listing value faster before you contact an owner." %}</p>
       </div>
       <div class="feature-card bg-white border border-gray-200 rounded-2xl p-8 transition">
         <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-xl mb-4">&#128172;</div>
@@ -188,7 +196,7 @@
       <div class="feature-card bg-white border border-gray-200 rounded-2xl p-8 transition">
         <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-xl mb-4">&#11088;</div>
         <h3 class="font-bold text-lg mb-2">{% trans "Reviews & Ratings" %}</h3>
-        <p class="text-gray-500 text-sm leading-relaxed">{% trans "Tenants review landlords. Landlords review tenants. Transparent reputation scores." %}</p>
+        <p class="text-gray-500 text-sm leading-relaxed">{% trans "Users review their experience so everyone can make more informed property decisions." %}</p>
       </div>
     </div>
   </div>
@@ -200,7 +208,7 @@
     <div class="text-center mb-14 fade-up">
       <span class="inline-block bg-green-100 text-primary-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-3">{% trans "Popular in Addis Ababa" %}</span>
       <h2 class="text-3xl font-extrabold text-gray-900 mb-3">{% trans "Explore Top Neighborhoods" %}</h2>
-      <p class="text-gray-500 text-lg">{% blocktrans trimmed %}Discover the most sought-after rental areas in Ethiopia's capital.{% endblocktrans %}</p>
+      <p class="text-gray-500 text-lg">{% blocktrans trimmed %}Discover some of the most sought-after areas for renting and buying in Ethiopia's capital.{% endblocktrans %}</p>
     </div>
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 fade-up">
       {% with areas="Bole:from-emerald-800 to-emerald-600,Piassa:from-amber-700 to-amber-500,Kazanchis:from-blue-800 to-blue-500,CMC:from-orange-800 to-orange-500,Sarbet:from-purple-800 to-purple-500,Megenagna:from-cyan-700 to-cyan-500" %}
@@ -243,8 +251,8 @@
 <section class="py-20 px-6 bg-gradient-to-br from-primary-800 to-primary-700 text-white">
   <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center fade-up">
     <div>
-      <h2 class="text-3xl lg:text-4xl font-extrabold mb-5">{% blocktrans trimmed %}Know the Real Price Before You Rent{% endblocktrans %}</h2>
-      <p class="text-white/80 text-lg leading-relaxed mb-8">{% blocktrans trimmed %}Our Price Insight System analyzes listings to show you average rent for any neighborhood. Stop guessing — never overpay again.{% endblocktrans %}</p>
+      <h2 class="text-3xl lg:text-4xl font-extrabold mb-5">{% blocktrans trimmed %}Know the Market Before You Decide{% endblocktrans %}</h2>
+      <p class="text-white/80 text-lg leading-relaxed mb-8">{% blocktrans trimmed %}Our Price Insight System helps you compare listings faster and understand neighborhood price ranges before you contact an owner.{% endblocktrans %}</p>
       <a href="{% url 'search' %}" class="inline-flex items-center gap-2 bg-secondary-500 hover:bg-secondary-400 text-gray-900 font-bold px-8 py-3.5 rounded-xl transition">
         {% trans "Explore Price Insights" %}
         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
@@ -311,6 +319,14 @@
         <div class="h-40 {% cycle 'bg-gradient-to-br from-green-100 to-green-200' 'bg-gradient-to-br from-blue-100 to-blue-200' 'bg-gradient-to-br from-yellow-100 to-yellow-200' 'bg-gradient-to-br from-pink-100 to-pink-200' %} relative">
           {% if p.is_verified %}<span class="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">{% trans "✓ Verified" %}</span>{% endif %}
           <span class="absolute top-2 right-2 bg-white/90 text-gray-700 text-[10px] font-semibold px-2 py-0.5 rounded-md">{{ p.get_property_type_display }}</span>
+          <span class="absolute bottom-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm
+            {% if p.listing_type == 'sale' %}bg-amber-100 text-amber-900
+            {% elif p.listing_type == 'short_term' %}bg-sky-100 text-sky-800
+            {% else %}bg-emerald-100 text-emerald-800{% endif %}">
+            {% if p.listing_type == 'sale' %}{% trans "For Sale" %}
+            {% elif p.listing_type == 'short_term' %}{% trans "Short-term" %}
+            {% else %}{% trans "For Rent" %}{% endif %}
+          </span>
         </div>
         <div class="p-4">
           <h3 class="font-bold text-gray-900 group-hover:text-primary-700 transition truncate">{{ p.title }}</h3>
@@ -340,7 +356,7 @@
   <div class="absolute top-[-100px] right-[-100px] w-96 h-96 rounded-full bg-yellow-500/10"></div>
   <div class="relative z-10 max-w-2xl mx-auto">
     <h2 class="text-3xl md:text-4xl font-black mb-5">{% trans "Ready to Find Your Next Home?" %}</h2>
-    <p class="text-white/75 text-lg mb-10">{% blocktrans trimmed %}Join thousands of Ethiopians who found their perfect rental — without the hassle, without the scams.{% endblocktrans %}</p>
+    <p class="text-white/75 text-lg mb-10">{% blocktrans trimmed %}Join thousands of Ethiopians finding the right property to rent or buy, without the hassle and without the scams.{% endblocktrans %}</p>
     <div class="flex flex-col sm:flex-row gap-4 justify-center">
       {% if user.is_authenticated %}
       <a href="{% url 'dashboard' %}" class="bg-secondary-500 hover:bg-secondary-400 text-gray-900 font-bold px-10 py-4 rounded-xl transition text-lg">{% trans "Go to Dashboard" %}</a>
