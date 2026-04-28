@@ -243,10 +243,18 @@ class Property(models.Model):
     is_verified = models.BooleanField(default=False, db_index=True)
     is_featured = models.BooleanField(default=False, db_index=True)
     is_available = models.BooleanField(default=True, db_index=True)
+    listing_slot_purchase = models.ForeignKey(
+        "payments.ListingPackagePurchase",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="properties",
+        help_text="Purchase record that provided the slot for this published listing.",
+    )
     is_published = models.BooleanField(
         default=False,
         db_index=True,
-        help_text="Set to True after the listing fee is paid.",
+        help_text="Set to True when published using a package slot (or legacy fee flow).",
     )
     verification_date = models.DateTimeField(null=True, blank=True)
 

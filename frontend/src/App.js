@@ -14,6 +14,7 @@ const OTPVerificationPage = lazy(() => import('./pages/OTPVerificationPage'));
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 const RenterDashboard = lazy(() => import('./pages/dashboard/RenterDashboard'));
 const LandlordDashboard = lazy(() => import('./pages/dashboard/LandlordDashboard'));
+const LandlordListingPackagesPage = lazy(() => import('./pages/dashboard/LandlordListingPackagesPage'));
 const AddPropertyPage = lazy(() => import('./pages/dashboard/AddPropertyPage'));
 const EditPropertyPage = lazy(() => import('./pages/dashboard/EditPropertyPage'));
 const AdminDashboard = lazy(() => import('./pages/dashboard/AdminDashboard'));
@@ -37,7 +38,7 @@ function LoadingSpinner() {
 }
 
 function ProtectedRoute({ children, allowedRoles }) {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, canAccessLandlord } = useAuth();
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -47,10 +48,18 @@ function ProtectedRoute({ children, allowedRoles }) {
     return <Navigate to="/login" replace />;
   }
 
-  const roleNorm = (user?.role || '').toLowerCase();
-  const allowedNorm = (allowedRoles || []).map((r) => r.toLowerCase());
-  if (allowedRoles && !allowedNorm.includes(roleNorm)) {
-    return <Navigate to="/dashboard" replace />;
+  if (allowedRoles && allowedRoles.length > 0) {
+    const roleNorm = (user?.role || '').toLowerCase();
+    const allowedNorm = allowedRoles.map((r) => r.toLowerCase());
+    const ok = allowedNorm.some((allowed) => {
+      if (allowed === 'landlord') {
+        return canAccessLandlord;
+      }
+      return roleNorm === allowed;
+    });
+    if (!ok) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return children;
@@ -97,7 +106,7 @@ export default function App() {
         <Route
           path="/dashboard/renter"
           element={
-            <ProtectedRoute allowedRoles={['renter']}>
+            <ProtectedRoute>
               <RenterDashboard />
             </ProtectedRoute>
           }
@@ -115,6 +124,14 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['landlord']}>
               <AddPropertyPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/landlord/listing-packages"
+          element={
+            <ProtectedRoute allowedRoles={['landlord']}>
+              <LandlordListingPackagesPage />
             </ProtectedRoute>
           }
         />

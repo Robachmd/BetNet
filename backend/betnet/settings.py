@@ -10,6 +10,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -320,6 +321,11 @@ CELERY_BEAT_SCHEDULE = {
     'expire-stale-bookings': {
         'task': 'bookings.tasks.expire_stale_bookings',
         'schedule': 3600.0,
+    },
+    # Daily: listing packages with unused credits expiring within 7 days (in-app + email)
+    'listing-package-expiry-warnings': {
+        'task': 'payments.tasks.warn_listing_package_expiry',
+        'schedule': crontab(hour=9, minute=0),
     },
 }
 

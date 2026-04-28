@@ -41,6 +41,11 @@ class ReviewViewSet(viewsets.ModelViewSet):
             "reviewer", "property", "reviewed_user", "response__responder"
         )
 
+        if self.request.query_params.get("mine") == "1":
+            if not self.request.user.is_authenticated:
+                return Review.objects.none()
+            return qs.filter(reviewer=self.request.user)
+
         if self.action == "list":
             qs = qs.filter(is_approved=True)
 

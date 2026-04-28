@@ -6,9 +6,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .models import OwnerProfile
 from .serializers import (
     ChangePasswordSerializer,
     LandlordPublicProfileSerializer,
+    OwnerProfileSerializer,
     OTPRequestSerializer,
     OTPVerifySerializer,
     UserLoginSerializer,
@@ -19,6 +21,14 @@ from .serializers import (
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
+
+
+def _can_use_owner_profile(user) -> bool:
+    if not user or not user.is_authenticated:
+        return False
+    if user.role == User.Role.LANDLORD:
+        return True
+    return bool(getattr(user, "landlord_eligible", False))
 
 
 def _get_tokens_for_user(user) -> dict:
@@ -155,6 +165,55 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
             return UserUpdateSerializer
         return UserProfileSerializer
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        instance.refresh_from_db()
+        return Response(
+            UserProfileSerializer(instance, context={"request": request}).data
+        )
+
+
+# ──────────────────────────────────────────────
+#  Landlord: owner / company profile
+# ──────────────────────────────────────────────
+class OwnerProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = OwnerProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        if not _can_use_owner_profile(request.user):
+            return Response(
+                {"detail": "Only property owners can use the owner profile."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().get(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        if not _can_use_owner_profile(request.user):
+            return Response(
+                {"detail": "Only property owners can use the owner profile."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().put(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        if not _can_use_owner_profile(request.user):
+            return Response(
+                {"detail": "Only property owners can use the owner profile."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().patch(request, *args, **kwargs)
+
+    def get_object(self):
+        profile, _ = OwnerProfile.objects.get_or_create(
+            user=self.request.user, defaults={}
+        )
+        return profile
+
 
 # ──────────────────────────────────────────────
 #  Public Landlord Profile
@@ -165,7 +224,13 @@ class LandlordProfileView(generics.RetrieveAPIView):
     lookup_field = "pk"
 
     def get_queryset(self):
-        return User.objects.filter(role=User.Role.LANDLORD, is_active=True)
+        from django.db.models import Q
+
+        return User.objects.filter(
+            is_active=True,
+        ).filter(
+            Q(role=User.Role.LANDLORD) | Q(landlord_eligible=True)
+        )
 
 
 # ──────────────────────────────────────────────
@@ -183,6 +248,42 @@ class ChangePasswordView(APIView):
         request.user.save(update_fields=["password"])
         return Response(
             {"detail": "Password changed successfully."},
+            status=status.HTTP_200_OK,
+        )
+
+
+# ──────────────────────────────────────────────
+#  Opt-in: renter can become a property owner (one account, switch modes)
+# ──────────────────────────────────────────────
+class EnableLandlordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        if user.landlord_eligible:
+            return Response(
+                {
+                    "detail": "You already have property owner access.",
+                    "user": UserProfileSerializer(user).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        if user.role not in (User.Role.RENTER, User.Role.LANDLORD):
+            return Response(
+                {"detail": "This action is for renter or landlord accounts."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        user.landlord_eligible = True
+        user.active_app_mode = User.AppMode.LANDLORD
+        user.save(update_fields=["landlord_eligible", "active_app_mode"])
+        OwnerProfile.objects.get_or_create(user=user, defaults={})
+        return Response(
+            {
+                "detail": "You can now use owner tools, listing packages, and the owner dashboard. Switch any time in your profile.",
+                "user": UserProfileSerializer(
+                    user, context={"request": request}
+                ).data,
+            },
             status=status.HTTP_200_OK,
         )
 
