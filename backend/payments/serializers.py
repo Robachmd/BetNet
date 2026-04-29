@@ -1,10 +1,15 @@
 from datetime import timedelta
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import Payment, Subscription
+from .models import (
+    ListingPackage,
+    ListingPackagePurchase,
+    Payment,
+    Subscription,
+)
 
 
 class PaymentSerializer(serializers.ModelSerializer):
@@ -34,6 +39,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             "status_display",
             "property",
             "hall_booking",
+            "listing_package",
             "description",
             "payment_data",
             "created_at",
@@ -47,6 +53,69 @@ class PaymentSerializer(serializers.ModelSerializer):
             "payment_data",
             "created_at",
             "updated_at",
+        ]
+
+
+class ListingPackageSerializer(serializers.ModelSerializer):
+    price_per_listing = serializers.SerializerMethodField()
+    savings_percent = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ListingPackage
+        fields = [
+            "id",
+            "code",
+            "name",
+            "listing_quota",
+            "price",
+            "currency",
+            "validity_days",
+            "compare_at_price",
+            "tagline",
+            "badge_label",
+            "sort_order",
+            "price_per_listing",
+            "savings_percent",
+        ]
+
+    def get_price_per_listing(self, obj: ListingPackage):
+        if not obj.listing_quota:
+            return None
+        return (obj.price / obj.listing_quota).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+
+    def get_savings_percent(self, obj: ListingPackage) -> int | None:
+        if not obj.compare_at_price or obj.compare_at_price <= 0:
+            return None
+        saved = obj.compare_at_price - obj.price
+        if saved <= 0:
+            return None
+        ratio = (saved / obj.compare_at_price) * 100
+        return int(ratio.to_integral_value(rounding=ROUND_HALF_UP))
+
+
+class ListingPackagePurchaseSerializer(serializers.ModelSerializer):
+    package = ListingPackageSerializer(read_only=True)
+    status_display = serializers.CharField(
+        source="get_status_display", read_only=True
+    )
+    slots_remaining = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = ListingPackagePurchase
+        fields = [
+            "id",
+            "package",
+            "status",
+            "status_display",
+            "slots_total",
+            "slots_used",
+            "slots_remaining",
+            "payment",
+            "starts_at",
+            "expires_at",
+            "created_at",
         ]
 
 

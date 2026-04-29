@@ -57,6 +57,7 @@ function mapFrontendFilters(f = {}) {
     q.listing_type = lt;
   }
 
+  if (f.sort === 'newest') q.ordering = '-created_at';
   if (f.sort === 'price_asc') q.ordering = 'price_monthly';
   if (f.sort === 'price_desc') q.ordering = '-price_monthly';
   if (f.page) q.page = f.page;
@@ -95,6 +96,12 @@ export const propertyService = {
 
   async createProperty(propertyData) {
     const { data } = await api.post(`${BASE}/properties/`, propertyData);
+    return data;
+  },
+
+  /** Use one package credit (or legacy subscription) to go live. */
+  async publishProperty(slug) {
+    const { data } = await api.post(`${BASE}/properties/${slug}/publish/`);
     return data;
   },
 

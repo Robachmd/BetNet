@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { WS_BASE_URL } from '../config/runtime';
 
-const WS_BASE_URL = process.env.REACT_APP_WS_URL || 'ws://localhost:5000';
 const RECONNECT_DELAY_BASE = 1000;
 const MAX_RECONNECT_DELAY = 30000;
 const MAX_RECONNECT_ATTEMPTS = 10;

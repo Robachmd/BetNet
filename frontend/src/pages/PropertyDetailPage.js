@@ -14,7 +14,7 @@ import RatingSummary from '../components/review/RatingSummary';
 import ReviewCard from '../components/review/ReviewCard';
 import PropertyCard from '../components/property/PropertyCard';
 import Badge from '../components/common/Badge';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { DetailPageSkeleton } from '../components/common/Skeletons';
 import Modal from '../components/common/Modal';
 import useAuth from '../hooks/useAuth';
 import propertyService from '../services/properties';
@@ -23,8 +23,10 @@ import bookingService from '../services/bookings';
 import { REPORT_REASONS } from '../utils/constants';
 import {
   formatPrice, formatRelativeDate, getImageUrl, getAvatarUrl, getErrorMessage,
-  getInitials, listFromApi,
+  getInitials, listFromApi, userDisplayName, apiPropertyTypeSupportsFloor,
 } from '../utils/helpers';
+import { chatService } from '../services/chat';
+import toast from 'react-hot-toast';
 
 export default function PropertyDetailPage() {
   const { slug } = useParams();
@@ -46,6 +48,7 @@ export default function PropertyDetailPage() {
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
   const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [chatOpening, setChatOpening] = useState(false);
 
   const isHall =
     property?.property_type === 'HALL_RENTAL' || property?.propertyType === 'hall';
@@ -177,7 +180,7 @@ export default function PropertyDetailPage() {
     }
   };
 
-  if (loading) return <LoadingSpinner fullScreen text="Loading property details..." />;
+  if (loading) return <DetailPageSkeleton />;
 
   if (error || !property) {
     return (
@@ -197,9 +200,41 @@ export default function PropertyDetailPage() {
     title, description, images = [],
     location = {}, bedrooms, bathrooms, area, propertyType,
     isVerified, isFeatured, status, amenities = [],
-    landlord = {}, createdAt,
+    createdAt,
     hallCapacity, soundSystem, hasStage, hasProjector, hasCatering,
   } = property;
+
+  const propertyOwner = property.owner || property.landlord || {};
+  const ownerUserId =
+    propertyOwner.id
+    ?? property.owner_id
+    ?? property.owner?.id;
+
+  const handleChatWithOwner = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    if (!ownerUserId) {
+      toast.error('Owner contact is unavailable for this listing.');
+      return;
+    }
+    if (user?.id && Number(user.id) === Number(ownerUserId)) {
+      toast.error('You cannot chat with yourself on your own listing.');
+      return;
+    }
+    setChatOpening(true);
+    try {
+      const conv = await chatService.createConversation(ownerUserId, property.id);
+      const cid = conv?.id;
+      if (!cid) throw new Error('No conversation returned');
+      navigate(`/chat/${cid}`);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setChatOpening(false);
+    }
+  };
 
   const price = Number(property.price ?? property.price_monthly ?? 0);
   const priceUnit = listingType === 'sale'
@@ -207,6 +242,9 @@ export default function PropertyDetailPage() {
     : listingType === 'short_term'
       ? '/month (short-term)'
       : '/month';
+
+  const rawPtypeForFloor = property.property_type || property.propertyType;
+  const floorDisplay = property.floor_number ?? property.floorNumber;
 
   const locationStr = [location.subCity, location.city].filter(Boolean).join(', ');
 
@@ -292,6 +330,11 @@ export default function PropertyDetailPage() {
                   <span className="text-sm text-gray-500">{bathrooms} {bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}</span>
                 )}
                 {area && <span className="text-sm text-gray-500">{area} m²</span>}
+                {floorDisplay != null
+                  && floorDisplay !== ''
+                  && apiPropertyTypeSupportsFloor(rawPtypeForFloor) && (
+                  <span className="text-sm text-gray-500">Floor {floorDisplay}</span>
+                )}
               </div>
 
               {createdAt && (
@@ -420,44 +463,52 @@ export default function PropertyDetailPage() {
           {/* Right Sidebar */}
           <aside className="w-full lg:w-96 flex-shrink-0 space-y-6">
             <div className="lg:sticky lg:top-20">
-              {/* Landlord Info */}
+              {/* Property Owner Info */}
               <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Listed by</h3>
                 <div className="flex items-center gap-4 mb-4">
-                  {landlord.avatar ? (
-                    <img src={getAvatarUrl(landlord.avatar)} alt="" className="w-14 h-14 rounded-full object-cover" />
+                  {propertyOwner.profile_image || propertyOwner.avatar ? (
+                    <img
+                      src={getAvatarUrl(propertyOwner.profile_image || propertyOwner.avatar)}
+                      alt=""
+                      className="w-14 h-14 rounded-full object-cover"
+                    />
                   ) : (
                     <div className="w-14 h-14 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-lg font-bold">
-                      {getInitials(landlord.name || 'L')}
+                      {getInitials(userDisplayName(propertyOwner))}
                     </div>
                   )}
                   <div>
-                    <p className="font-semibold text-gray-800">{landlord.name || 'Landlord'}</p>
-                    {landlord.rating > 0 && (
+                    <p className="font-semibold text-gray-800">
+                      {userDisplayName(propertyOwner)}
+                    </p>
+                    {Number(propertyOwner.rating) > 0 && (
                       <div className="flex items-center gap-1 mt-0.5">
                         <FiStar className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm text-gray-600">{landlord.rating?.toFixed(1)}</span>
-                        {landlord.reviewCount > 0 && (
-                          <span className="text-xs text-gray-400">({landlord.reviewCount})</span>
+                        <span className="text-sm text-gray-600">{propertyOwner.rating?.toFixed(1)}</span>
+                        {propertyOwner.reviewCount > 0 && (
+                          <span className="text-xs text-gray-400">({propertyOwner.reviewCount})</span>
                         )}
                       </div>
                     )}
-                    {landlord.responseTime && (
-                      <p className="text-xs text-gray-400 mt-0.5">Usually responds in {landlord.responseTime}</p>
+                    {propertyOwner.responseTime && (
+                      <p className="text-xs text-gray-400 mt-0.5">Usually responds in {propertyOwner.responseTime}</p>
                     )}
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => isAuthenticated ? navigate(`/chat/${landlord.id || landlord._id}`) : navigate('/login')}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-700 text-white text-sm font-medium rounded-xl hover:bg-green-800 transition-colors"
+                    type="button"
+                    disabled={chatOpening || (isAuthenticated && user?.id && Number(user.id) === Number(ownerUserId))}
+                    onClick={handleChatWithOwner}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-700 text-white text-sm font-medium rounded-xl hover:bg-green-800 transition-colors disabled:opacity-60 disabled:pointer-events-none"
                   >
                     <FiMessageSquare className="w-4 h-4" />
-                    Chat
+                    {chatOpening ? 'Opening…' : 'Chat'}
                   </button>
-                  {landlord.phone && (
+                  {propertyOwner.phone && (
                     <a
-                      href={`tel:${landlord.phone}`}
+                      href={`tel:${propertyOwner.phone}`}
                       className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
                     >
                       <FiPhone className="w-4 h-4" />
@@ -495,26 +546,58 @@ export default function PropertyDetailPage() {
       </div>
 
       {/* Mobile Sticky Bottom Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3">
-        <div className="flex-1">
-          <p className="text-lg font-bold text-green-800">{formatPrice(price)}</p>
-          <p className="text-xs text-gray-400">{priceUnit}</p>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 px-3 py-2.5">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <p className="text-lg font-bold text-green-800">{formatPrice(price)}</p>
+            <p className="text-xs text-gray-400">{priceUnit}</p>
+          </div>
+          <button
+            onClick={handleFavorite}
+            className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium border ${
+              isFavorited
+                ? 'border-red-200 text-red-600 bg-red-50'
+                : 'border-gray-200 text-gray-600'
+            }`}
+          >
+            <FiHeart className={`w-4 h-4 ${isFavorited ? 'fill-red-600' : ''}`} />
+            Save
+          </button>
         </div>
-        <button
-          onClick={() => isAuthenticated ? navigate(`/chat/${landlord.id || landlord._id}`) : navigate('/login')}
-          className="px-5 py-2.5 border border-green-700 text-green-700 text-sm font-medium rounded-xl hover:bg-green-50 transition-colors"
-        >
-          Contact
-        </button>
-        <button
-          onClick={() => {
-            const formSection = document.querySelector('form');
-            formSection?.scrollIntoView({ behavior: 'smooth' });
-          }}
-          className="px-5 py-2.5 bg-green-700 text-white text-sm font-medium rounded-xl hover:bg-green-800 transition-colors"
-        >
-          {isHall ? 'Book Hall' : 'Book Visit'}
-        </button>
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            disabled={chatOpening || (isAuthenticated && user?.id && Number(user.id) === Number(ownerUserId))}
+            onClick={handleChatWithOwner}
+            className="px-2 py-2.5 border border-green-700 text-green-700 text-sm font-medium rounded-xl hover:bg-green-50 transition-colors disabled:opacity-50"
+          >
+            {chatOpening ? '…' : 'Chat'}
+          </button>
+          {propertyOwner.phone ? (
+            <a
+              href={`tel:${propertyOwner.phone}`}
+              className="px-2 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl text-center"
+            >
+              Call
+            </a>
+          ) : (
+            <button
+              disabled
+              className="px-2 py-2.5 border border-gray-200 text-gray-400 text-sm font-medium rounded-xl"
+            >
+              Call
+            </button>
+          )}
+          <button
+            onClick={() => {
+              const formSection = document.querySelector('form');
+              formSection?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="px-2 py-2.5 bg-green-700 text-white text-sm font-medium rounded-xl hover:bg-green-800 transition-colors"
+          >
+            {isHall ? 'Book hall' : 'Book'}
+          </button>
+        </div>
       </div>
 
       {/* Report Modal */}

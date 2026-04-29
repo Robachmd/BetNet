@@ -17,9 +17,15 @@ import { bookingService } from '../../services/bookings';
 import { propertyService } from '../../services/properties';
 import { reviewService } from '../../services/reviews';
 import { notificationService } from '../../services/notifications';
+import LocationAlertsPanel from '../../components/location/LocationAlertsPanel';
 import {
-  formatRelativeDate, listFromApi, mapFavoriteRowsToCards, normalizePropertyForCard,
+  formatRelativeDate, listFromApi, mapFavoriteRowsToCards, normalizePropertyForCard, userDisplayName, ensureArray,
 } from '../../utils/helpers';
+import {
+  getNotificationVisualMeta,
+  isNotificationRead,
+  notificationTimestamp,
+} from '../../utils/notificationUi';
 
 function ErrorSection({ title, onRetry }) {
   return (
@@ -108,8 +114,8 @@ export default function RenterDashboard() {
     setLoadingKey('reviews', true);
     setErrorKey('reviews', null);
     try {
-      const data = await reviewService.getMyReviews({ limit: 5 });
-      setReviews(data.reviews || data.data || data || []);
+      const data = await reviewService.getMyReviews({ page_size: 8 });
+      setReviews(listFromApi(data));
     } catch {
       setErrorKey('reviews', true);
     } finally {
@@ -121,8 +127,8 @@ export default function RenterDashboard() {
     setLoadingKey('notifications', true);
     setErrorKey('notifications', null);
     try {
-      const data = await notificationService.getNotifications({ limit: 8 });
-      setNotifications(data.notifications || data.data || data || []);
+      const data = await notificationService.getNotifications({ page_size: 8 });
+      setNotifications(listFromApi(data));
     } catch {
       setErrorKey('notifications', true);
     } finally {
@@ -138,12 +144,13 @@ export default function RenterDashboard() {
     loadNotifications();
     try {
       const stored = JSON.parse(localStorage.getItem('betnet_recent_searches') || '[]');
-      setRecentSearches(stored.slice(0, 5));
+      setRecentSearches(ensureArray(stored).slice(0, 5));
     } catch { /* ignore */ }
   }, [loadBookings, loadFavorites, loadRecommended, loadReviews, loadNotifications]);
 
   const handleSearch = (query) => {
-    const updated = [query, ...recentSearches.filter((s) => s !== query)].slice(0, 5);
+    const safeRecentSearches = ensureArray(recentSearches);
+    const updated = [query, ...safeRecentSearches.filter((s) => s !== query)].slice(0, 5);
     setRecentSearches(updated);
     localStorage.setItem('betnet_recent_searches', JSON.stringify(updated));
     navigate(`/search?q=${encodeURIComponent(query)}`);
@@ -170,19 +177,31 @@ export default function RenterDashboard() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar
-        role="landlord"
+        role="renter"
         activeKey="dashboard"
         user={user}
         onNavigate={handleNavigation}
         onLogout={logout}
       />
 
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0 w-full min-h-screen">
+        {/* Mobile: sidebar is hidden until lg; show title bar so the page is never a blank column */}
+        <div className="lg:hidden sticky top-0 z-20 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+          <span className="font-bold text-green-800">Dashboard</span>
+          <div className="flex gap-2 text-sm">
+            <button type="button" onClick={() => navigate('/search')} className="text-green-700 font-medium">
+              Search
+            </button>
+            <button type="button" onClick={() => navigate('/profile')} className="text-gray-600">
+              Profile
+            </button>
+          </div>
+        </div>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
-              {greeting()}, {user?.name?.split(' ')[0] || 'there'}!
+              {greeting()}, {userDisplayName(user).split(' ')[0] || 'there'}!
             </h1>
             <p className="text-gray-500">Here&apos;s what&apos;s happening with your rentals.</p>
           </div>
@@ -197,13 +216,17 @@ export default function RenterDashboard() {
             />
           </div>
 
+          <div className="mb-8">
+            <LocationAlertsPanel />
+          </div>
+
           {/* Stats Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             {[
               { icon: FiCalendar, label: 'Upcoming Visits', value: bookings.upcoming.length, color: 'text-blue-600 bg-blue-50' },
               { icon: FiHeart, label: 'Saved Properties', value: favorites.length, color: 'text-red-500 bg-red-50' },
               { icon: FiStar, label: 'My Reviews', value: reviews.length, color: 'text-yellow-600 bg-yellow-50' },
-              { icon: FiBell, label: 'Notifications', value: notifications.filter((n) => !n.read).length, color: 'text-green-600 bg-green-50' },
+              { icon: FiBell, label: 'Notifications', value: notifications.filter((n) => !isNotificationRead(n)).length, color: 'text-green-600 bg-green-50' },
             ].map((stat) => (
               <div key={stat.label} className="bg-white rounded-xl p-4 shadow-sm">
                 <div className={`w-10 h-10 rounded-lg ${stat.color} flex items-center justify-center mb-3`}>
@@ -347,20 +370,41 @@ export default function RenterDashboard() {
                   <p className="text-sm text-gray-400 text-center py-4">No notifications</p>
                 ) : (
                   <div className="space-y-3">
-                    {notifications.slice(0, 5).map((notif) => (
-                      <div
-                        key={notif.id}
-                        className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${
-                          notif.read ? 'bg-white' : 'bg-green-50'
-                        }`}
-                      >
-                        <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${notif.read ? 'bg-gray-300' : 'bg-green-500'}`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-700 line-clamp-2">{notif.message || notif.title}</p>
-                          <p className="text-xs text-gray-400 mt-1">{formatRelativeDate(notif.createdAt)}</p>
+                    {notifications.slice(0, 5).map((notif) => {
+                      const read = isNotificationRead(notif);
+                      const { Icon, shortLabel, iconWrapClass } = getNotificationVisualMeta(notif);
+                      return (
+                        <div
+                          key={notif.id}
+                          className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${
+                            read ? 'bg-white' : 'bg-green-50'
+                          }`}
+                        >
+                          <div
+                            className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${iconWrapClass}`}
+                            aria-hidden
+                          >
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                              {shortLabel && (
+                                <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+                                  {shortLabel}
+                                </span>
+                              )}
+                              {!read && (
+                                <span className="text-[10px] font-medium text-green-700">New</span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-700 line-clamp-2">{notif.message || notif.title}</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {formatRelativeDate(notificationTimestamp(notif))}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

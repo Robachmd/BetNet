@@ -2,6 +2,7 @@ import logging
 
 from django.contrib.auth import get_user_model
 from rest_framework import generics, permissions, status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -9,7 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import OwnerProfile
 from .serializers import (
     ChangePasswordSerializer,
-    LandlordPublicProfileSerializer,
+    PropertyOwnerPublicProfileSerializer,
     OwnerProfileSerializer,
     OTPRequestSerializer,
     OTPVerifySerializer,
@@ -156,6 +157,7 @@ class VerifyOTPView(APIView):
 class UserProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_object(self):
         return self.request.user
@@ -178,7 +180,7 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
 
 # ──────────────────────────────────────────────
-#  Landlord: owner / company profile
+#  Property owner: owner / company profile
 # ──────────────────────────────────────────────
 class OwnerProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = OwnerProfileSerializer
@@ -216,10 +218,10 @@ class OwnerProfileView(generics.RetrieveUpdateAPIView):
 
 
 # ──────────────────────────────────────────────
-#  Public Landlord Profile
+#  Public Property Owner Profile
 # ──────────────────────────────────────────────
-class LandlordProfileView(generics.RetrieveAPIView):
-    serializer_class = LandlordPublicProfileSerializer
+class PropertyOwnerProfileView(generics.RetrieveAPIView):
+    serializer_class = PropertyOwnerPublicProfileSerializer
     permission_classes = [permissions.AllowAny]
     lookup_field = "pk"
 
@@ -255,7 +257,7 @@ class ChangePasswordView(APIView):
 # ──────────────────────────────────────────────
 #  Opt-in: renter can become a property owner (one account, switch modes)
 # ──────────────────────────────────────────────
-class EnableLandlordView(APIView):
+class EnablePropertyOwnerView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
@@ -270,7 +272,7 @@ class EnableLandlordView(APIView):
             )
         if user.role not in (User.Role.RENTER, User.Role.LANDLORD):
             return Response(
-                {"detail": "This action is for renter or landlord accounts."},
+                {"detail": "This action is for renter or property owner accounts."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         user.landlord_eligible = True
@@ -286,6 +288,11 @@ class EnableLandlordView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+# Backward-compatible aliases for old symbols and routes.
+LandlordProfileView = PropertyOwnerProfileView
+EnableLandlordView = EnablePropertyOwnerView
 
 
 # ──────────────────────────────────────────────

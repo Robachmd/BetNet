@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiNavigation, FiMaximize2 } from 'react-icons/fi';
+import { SkeletonBlock } from '../common/Skeletons';
 
 export default function PropertyMap({
   properties = [],
@@ -62,8 +63,8 @@ export default function PropertyMap({
 
   if (!MapComponents) {
     return (
-      <div className={`flex items-center justify-center bg-gray-100 rounded-2xl ${className}`} style={{ height }}>
-        <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin" />
+      <div className={`${className}`} style={{ height }}>
+        <SkeletonBlock className="h-full w-full" />
       </div>
     );
   }

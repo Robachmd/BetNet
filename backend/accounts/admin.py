@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import User
+from .models import OwnerProfile, User
 
 
 @admin.register(User)
@@ -51,6 +51,7 @@ class UserAdmin(BaseUserAdmin):
             {
                 "fields": (
                     "role",
+                    "owner_type",
                     "phone_verified",
                     "id_verified",
                     "preferred_language",
@@ -89,3 +90,15 @@ class UserAdmin(BaseUserAdmin):
             },
         ),
     )
+
+
+@admin.register(OwnerProfile)
+class OwnerProfileAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "display_name",
+        "company_legal_name",
+        "verified_badge",
+    )
+    search_fields = ("display_name", "company_legal_name", "trade_license_number", "user__phone_number")
+    raw_id_fields = ("user",)

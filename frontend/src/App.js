@@ -11,10 +11,12 @@ const HallRentalPage = lazy(() => import('./pages/HallRentalPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const OTPVerificationPage = lazy(() => import('./pages/OTPVerificationPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 const RenterDashboard = lazy(() => import('./pages/dashboard/RenterDashboard'));
-const LandlordDashboard = lazy(() => import('./pages/dashboard/LandlordDashboard'));
-const LandlordListingPackagesPage = lazy(() => import('./pages/dashboard/LandlordListingPackagesPage'));
+const PropertyOwnerDashboard = lazy(() => import('./pages/dashboard/LandlordDashboard'));
+const PropertyOwnerListingPackagesPage = lazy(() => import('./pages/dashboard/LandlordListingPackagesPage'));
 const AddPropertyPage = lazy(() => import('./pages/dashboard/AddPropertyPage'));
 const EditPropertyPage = lazy(() => import('./pages/dashboard/EditPropertyPage'));
 const AdminDashboard = lazy(() => import('./pages/dashboard/AdminDashboard'));
@@ -38,7 +40,7 @@ function LoadingSpinner() {
 }
 
 function ProtectedRoute({ children, allowedRoles }) {
-  const { user, isAuthenticated, isLoading, canAccessLandlord } = useAuth();
+  const { user, isAuthenticated, isLoading, canAccessPropertyOwner } = useAuth();
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -52,8 +54,8 @@ function ProtectedRoute({ children, allowedRoles }) {
     const roleNorm = (user?.role || '').toLowerCase();
     const allowedNorm = allowedRoles.map((r) => r.toLowerCase());
     const ok = allowedNorm.some((allowed) => {
-      if (allowed === 'landlord') {
-        return canAccessLandlord;
+      if (allowed === 'landlord' || allowed === 'property_owner') {
+        return canAccessPropertyOwner;
       }
       return roleNorm === allowed;
     });
@@ -92,6 +94,8 @@ export default function App() {
           <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
           <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
           <Route path="/verify-otp" element={<OTPVerificationPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
         </Route>
 
         {/* Protected routes */}
@@ -112,37 +116,42 @@ export default function App() {
           }
         />
         <Route
-          path="/dashboard/landlord"
+          path="/dashboard/property-owner"
           element={
-            <ProtectedRoute allowedRoles={['landlord']}>
-              <LandlordDashboard />
+            <ProtectedRoute allowedRoles={['property_owner']}>
+              <PropertyOwnerDashboard />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/dashboard/landlord/add-property"
+          path="/dashboard/property-owner/add-property"
           element={
-            <ProtectedRoute allowedRoles={['landlord']}>
+            <ProtectedRoute allowedRoles={['property_owner']}>
               <AddPropertyPage />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/dashboard/landlord/listing-packages"
+          path="/dashboard/property-owner/listing-packages"
           element={
-            <ProtectedRoute allowedRoles={['landlord']}>
-              <LandlordListingPackagesPage />
+            <ProtectedRoute allowedRoles={['property_owner']}>
+              <PropertyOwnerListingPackagesPage />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/dashboard/landlord/edit-property/:slug"
+          path="/dashboard/property-owner/edit-property/:slug"
           element={
-            <ProtectedRoute allowedRoles={['landlord']}>
+            <ProtectedRoute allowedRoles={['property_owner']}>
               <EditPropertyPage />
             </ProtectedRoute>
           }
         />
+        {/* Legacy landlord paths retained for backward compatibility */}
+        <Route path="/dashboard/landlord" element={<Navigate to="/dashboard/property-owner" replace />} />
+        <Route path="/dashboard/landlord/add-property" element={<Navigate to="/dashboard/property-owner/add-property" replace />} />
+        <Route path="/dashboard/landlord/listing-packages" element={<Navigate to="/dashboard/property-owner/listing-packages" replace />} />
+        <Route path="/dashboard/landlord/edit-property/:slug" element={<Navigate to="/dashboard/property-owner/edit-property/:slug" replace />} />
         <Route
           path="/dashboard/admin"
           element={

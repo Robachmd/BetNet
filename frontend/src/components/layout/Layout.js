@@ -14,6 +14,7 @@ export default function Layout({
   onRegister = () => {},
   onLogout = () => {},
   onNavigate = () => {},
+  showPropertyOwnerDashboard = false,
   hideNavbar = false,
   hideFooter = false,
   className = '',
@@ -32,6 +33,7 @@ export default function Layout({
           onRegister={onRegister}
           onLogout={onLogout}
           onNavigate={onNavigate}
+          showPropertyOwnerDashboard={showPropertyOwnerDashboard}
         />
       )}
       <main className={`flex-1 ${className}`}>{children}</main>

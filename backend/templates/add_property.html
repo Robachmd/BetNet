@@ -8,7 +8,7 @@
 {% trans "Total price (ETB)" as price_label_sale %}
 {% trans "Monthly rate — short-term (ETB)" as price_label_short %}
 {% trans "Monthly rent (ETB)" as price_label_rent %}
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
+<div class="section-shell max-w-5xl py-8 sm:py-12"
   x-data="{
     propertyType: '',
     listingType: 'rent',
@@ -60,7 +60,7 @@
     {% csrf_token %}
 
     <!-- Section 1: Basic Info -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="surface-card overflow-hidden">
       <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-primary-700 text-white flex items-center justify-center text-sm font-bold">1</div>
@@ -145,7 +145,7 @@
     </div>
 
     <!-- Section 2: Location -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="surface-card overflow-hidden">
       <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-primary-700 text-white flex items-center justify-center text-sm font-bold">2</div>
@@ -190,7 +190,7 @@
     </div>
 
     <!-- Section 3: Amenities -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="surface-card overflow-hidden">
       <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-primary-700 text-white flex items-center justify-center text-sm font-bold">3</div>
@@ -270,7 +270,7 @@
     </div>
 
     <!-- Section 4: Pricing -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="surface-card overflow-hidden">
       <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-primary-700 text-white flex items-center justify-center text-sm font-bold">4</div>
@@ -354,7 +354,7 @@
     </div>
 
     <!-- Section 5: Images -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="surface-card overflow-hidden">
       <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-primary-700 text-white flex items-center justify-center text-sm font-bold">5</div>
@@ -394,7 +394,7 @@
     </div>
 
     <!-- Section 6: Short videos -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="surface-card overflow-hidden">
       <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full bg-primary-700 text-white flex items-center justify-center text-sm font-bold">6</div>

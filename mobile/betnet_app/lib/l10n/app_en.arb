@@ -1,0 +1,22 @@
+{
+  "@@locale": "en",
+  "appTitle": "BetNet",
+  "browse": "Browse",
+  "saved": "Saved",
+  "chat": "Chat",
+  "alerts": "Alerts",
+  "profile": "Profile",
+  "logIn": "Log in",
+  "eventHalls": "Event halls",
+  "floorNumberLabel": "Floor number",
+  "floorNumberHint": "e.g. 3 (ground = 0)",
+  "floorNumberHelp": "Unit or shop floor (0–200). Optional.",
+  "floorMeta": "Floor {n}",
+  "@floorMeta": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  }
+}

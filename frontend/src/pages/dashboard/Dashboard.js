@@ -4,7 +4,12 @@ import useAuth from '../../hooks/useAuth';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 export default function Dashboard() {
-  const { user, isLoading, isAdmin, isLandlord, isRenter } = useAuth();
+  const {
+    user,
+    isLoading,
+    isAdmin,
+    isPropertyOwner,
+  } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -12,14 +17,14 @@ export default function Dashboard() {
 
     if (isAdmin) {
       navigate('/dashboard/admin', { replace: true });
-    } else if (isLandlord) {
-      navigate('/dashboard/landlord', { replace: true });
-    } else if (isRenter) {
-      navigate('/dashboard/renter', { replace: true });
-    } else {
-      navigate('/', { replace: true });
+      return;
     }
-  }, [user, isLoading, isAdmin, isLandlord, isRenter, navigate]);
+    if (isPropertyOwner) {
+      navigate('/dashboard/property-owner', { replace: true });
+      return;
+    }
+    navigate('/dashboard/renter', { replace: true });
+  }, [user, isLoading, isAdmin, isPropertyOwner, navigate]);
 
   return <LoadingSpinner fullScreen text="Redirecting to your dashboard..." />;
 }

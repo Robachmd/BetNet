@@ -1,6 +1,7 @@
 import random
 import string
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
@@ -38,13 +39,24 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     class Role(models.TextChoices):
         RENTER = "RENTER", "Renter"
-        LANDLORD = "LANDLORD", "Landlord"
+        LANDLORD = "LANDLORD", "Property Owner"
         ADMIN = "ADMIN", "Admin"
+
+    class OwnerType(models.TextChoices):
+        """Business type for property owners."""
+        INDIVIDUAL = "INDIVIDUAL", "Individual"
+        AGENT = "AGENT", "Agent / broker"
+        COMPANY = "COMPANY", "Real estate company"
 
     class Language(models.TextChoices):
         EN = "EN", "English"
         AM = "AM", "Amharic"
         OM = "OM", "Afaan Oromo"
+
+    class AppMode(models.TextChoices):
+        """Which home/dashboard the user last chose (one account, two experiences)."""
+        RENTER = "RENTER", "Renter / browsing"
+        LANDLORD = "LANDLORD", "Property owner / listings"
 
     username = None  # Remove default username field
 
@@ -58,6 +70,17 @@ class User(AbstractUser):
         max_length=10,
         choices=Role.choices,
         default=Role.RENTER,
+    )
+    landlord_eligible = models.BooleanField(
+        default=False,
+        help_text="True if the user may list properties: registered as a property owner or completed owner opt-in.",
+    )
+    active_app_mode = models.CharField(
+        max_length=10,
+        choices=AppMode.choices,
+        default=AppMode.RENTER,
+        db_index=True,
+        help_text="Last selected dashboard: renter vs property owner (same login).",
     )
     profile_image = models.ImageField(
         upload_to="profile_images/%Y/%m/",
@@ -77,6 +100,13 @@ class User(AbstractUser):
     city = models.CharField(max_length=100, blank=True, default="")
     sub_city = models.CharField(max_length=100, blank=True, default="")
     bio = models.TextField(blank=True, default="")
+    owner_type = models.CharField(
+        max_length=10,
+        choices=OwnerType.choices,
+        blank=True,
+        default="",
+        help_text="Set for property owners: individual, agent, or company.",
+    )
 
     # OTP fields
     otp = models.CharField(max_length=6, blank=True, default="")
@@ -116,3 +146,49 @@ class User(AbstractUser):
         self.phone_verified = True
         self.save(update_fields=["otp", "otp_created_at", "phone_verified"])
         return True
+
+
+class OwnerProfile(models.Model):
+    """Extended profile for property owners: agency/company details and public branding."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="owner_profile",
+    )
+    display_name = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        help_text="Public display name (e.g. brand). Falls back to user name if empty.",
+    )
+    company_legal_name = models.CharField(max_length=255, blank=True, default="")
+    trade_license_number = models.CharField(max_length=100, blank=True, default="")
+    license_expiry = models.DateField(null=True, blank=True)
+    website = models.URLField(blank=True, default="")
+    logo = models.ImageField(
+        upload_to="owner_logos/%Y/%m/",
+        blank=True,
+        default="",
+    )
+    verified_badge = models.BooleanField(
+        default=False,
+        help_text="KYC / business verification badge (set by staff after review).",
+    )
+    verified_at = models.DateTimeField(null=True, blank=True)
+    public_slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text="Optional /company/{slug} public page.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return f"OwnerProfile({self.user_id})"

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load i18n humanize %}
+
+{% block title %}{% trans "Listing Package Payment – BetNet" %}{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-[calc(100vh-68px)]" x-data="{ method: 'CHAPA', processing: false }">
+  <div class="section-shell max-w-3xl">
+    <a href="{% url 'landlord_dashboard' %}" class="btn-secondary mb-6">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M15 18l-6-6 6-6"/></svg>
+      {% trans "Back to Property Owner Dashboard" %}
+    </a>
+
+    <div class="mb-8">
+      <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">{% trans "Listing Package Payment" %}</h1>
+      <p class="text-gray-500 mt-1">{% trans "Pay once for a package, then publish listings using listing package slots." %}</p>
+    </div>
+
+    <div class="surface-card p-6 mb-5">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">{% trans "Selected Package" %}</h2>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <p class="text-sm text-gray-500">{% trans "Package" %}</p>
+          <p class="text-lg font-bold text-gray-900">
+            {{ option.listings }} {% trans "Listing" %}{% if option.listings > 1 %}s{% endif %}
+          </p>
+        </div>
+        <div class="sm:text-right">
+          <p class="text-sm text-gray-500">{% trans "Price" %}</p>
+          <p class="text-2xl font-extrabold text-gray-900">{{ option.price_etb|intcomma }} ETB</p>
+        </div>
+      </div>
+      <p class="text-xs text-gray-500 mt-3">
+        {% trans "After payment, listing package slots are added to your account." %}
+      </p>
+    </div>
+
+    <div class="surface-card p-6 mb-5">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">{% trans "Pay with" %}</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <label @click="method = 'CHAPA'"
+               :class="method === 'CHAPA' ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500/20' : 'border-gray-200 hover:border-gray-300'"
+               class="relative flex flex-col items-center gap-2 p-4 rounded-xl border cursor-pointer transition-all">
+          <input type="radio" name="payment_method" value="CHAPA" class="sr-only" :checked="method === 'CHAPA'">
+          <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <span class="text-green-700 font-bold text-sm">C</span>
+          </div>
+          <span class="text-sm font-medium text-gray-700">{% trans "Chapa" %}</span>
+        </label>
+
+        <label @click="method = 'TELEBIRR'"
+               :class="method === 'TELEBIRR' ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500/20' : 'border-gray-200 hover:border-gray-300'"
+               class="relative flex flex-col items-center gap-2 p-4 rounded-xl border cursor-pointer transition-all">
+          <input type="radio" name="payment_method" value="TELEBIRR" class="sr-only" :checked="method === 'TELEBIRR'">
+          <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+            <span class="text-blue-700 font-bold text-sm">T</span>
+          </div>
+          <span class="text-sm font-medium text-gray-700">{% trans "Telebirr" %}</span>
+        </label>
+
+        <label @click="method = 'BANK_TRANSFER'"
+               :class="method === 'BANK_TRANSFER' ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500/20' : 'border-gray-200 hover:border-gray-300'"
+               class="relative flex flex-col items-center gap-2 p-4 rounded-xl border cursor-pointer transition-all">
+          <input type="radio" name="payment_method" value="BANK_TRANSFER" class="sr-only" :checked="method === 'BANK_TRANSFER'">
+          <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+            <span class="text-purple-700 font-bold text-sm">B</span>
+          </div>
+          <span class="text-sm font-medium text-gray-700">{% trans "Bank Transfer" %}</span>
+        </label>
+      </div>
+    </div>
+
+    <form method="post" action="{% url 'listing_package_payment' listings=option.listings %}" @submit="processing = true">
+      {% csrf_token %}
+      <input type="hidden" name="payment_method" :value="method">
+      <button type="submit" :disabled="processing" class="btn-primary w-full py-4 text-base disabled:opacity-50 disabled:cursor-wait">
+        <span x-show="!processing">{% blocktrans with amt=option.price_etb|intcomma %}Pay ETB {{ amt }}{% endblocktrans %}</span>
+        <span x-show="processing" class="flex items-center justify-center gap-2">
+          <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+          {% trans "Processing…" %}
+        </span>
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

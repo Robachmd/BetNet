@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Max, Q, Subquery, OuterRef, Count
 from rest_framework import generics, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -20,8 +19,19 @@ User = get_user_model()
 class IsConversationParticipant(permissions.BasePermission):
     """Only allow participants of the conversation to access it."""
 
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated)
+
     def has_object_permission(self, request, view, obj):
-        conversation = obj if isinstance(obj, Conversation) else obj.conversation
+        # Create and some DRF paths invoke object checks with no instance yet.
+        if obj is None:
+            return True
+        if isinstance(obj, Conversation):
+            conversation = obj
+        else:
+            conversation = getattr(obj, "conversation", None)
+        if conversation is None:
+            return False
         return conversation.participants.filter(pk=request.user.pk).exists()
 
 
@@ -41,16 +51,13 @@ class ConversationViewSet(
         return ConversationListSerializer
 
     def get_queryset(self):
+        # Avoid annotate+distinct+order_by combos that can trigger DB errors on some backends.
         return (
             Conversation.objects.filter(
                 participants=self.request.user,
                 is_active=True,
             )
-            .annotate(
-                last_message_time=Max("messages__created_at"),
-            )
-            .order_by("-last_message_time", "-updated_at")
-            .distinct()
+            .order_by("-updated_at")
         )
 
     def check_object_permissions(self, request, obj):

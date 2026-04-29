@@ -74,5 +74,7 @@
 		<string>cbebirr</string>
 		<string>awashbirr</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>BetNet uses your location to show properties near you.</string>
 </dict>
 </plist>

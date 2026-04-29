@@ -20,11 +20,11 @@
   </div>
 </section>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="{ filtersOpen: false }">
+<div class="section-shell max-w-7xl py-8" x-data="{ filtersOpen: false }">
 
   <!-- Filters -->
   <form method="GET" action="{% url 'halls' %}" class="mb-8">
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="surface-card overflow-hidden">
 
       <button type="button" @click="filtersOpen = !filtersOpen"
         class="w-full lg:hidden flex items-center justify-between px-5 py-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
@@ -88,7 +88,7 @@
   {% if halls %}
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
     {% for hall in halls %}
-    <article class="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-purple-200 transition-all duration-300 hover:-translate-y-1">
+    <article class="group surface-card overflow-hidden hover:shadow-xl hover:border-purple-200 transition-all duration-300 hover:-translate-y-1">
 
       <!-- Image -->
       <div class="relative h-52 overflow-hidden">

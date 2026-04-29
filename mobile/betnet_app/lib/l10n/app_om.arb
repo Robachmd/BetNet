@@ -1,0 +1,22 @@
+{
+  "@@locale": "om",
+  "appTitle": "BetNet",
+  "browse": "Barbaadi",
+  "saved": "Olkaa'ame",
+  "chat": "Haasa'u",
+  "alerts": "Beeksisa",
+  "profile": "Ibsa dhuunfaa",
+  "logIn": "Seeni",
+  "eventHalls": "Mana waligaltee",
+  "floorNumberLabel": "Lisa bu'uura",
+  "floorNumberHint": "fakkaata 3 (lafa = 0)",
+  "floorNumberHelp": "Lisa kuusaa ykn dukaanaa (0–200). Filannoo.",
+  "floorMeta": "Lisa {n}",
+  "@floorMeta": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  }
+}

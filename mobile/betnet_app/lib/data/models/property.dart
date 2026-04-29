@@ -1,4 +1,5 @@
 import '../../core/media_url.dart';
+import '../../utils/property_types.dart';
 
 class PropertySummary {
   PropertySummary({
@@ -18,6 +19,9 @@ class PropertySummary {
     required this.isFavorited,
     this.favoriteId,
     this.createdAt,
+    this.isVerified,
+    this.views = 0,
+    this.floorNumber,
   });
 
   final int id;
@@ -37,6 +41,10 @@ class PropertySummary {
   final bool isFavorited;
   final int? favoriteId;
   final DateTime? createdAt;
+  final bool? isVerified;
+  final int views;
+  /// Backend `floor_number`; only meaningful for [isFloorRelevantPropertyType].
+  final int? floorNumber;
 
   String get locationLine {
     final parts = [city, if (subCity != null && subCity!.isNotEmpty) subCity!];
@@ -44,6 +52,42 @@ class PropertySummary {
   }
 
   String get resolvedImage => resolveMediaUrl(primaryImageUrl);
+
+  /// Parse [PropertyDetailSerializer] JSON (nested `location`, `images`).
+  factory PropertySummary.fromDetailJson(Map<String, dynamic> j) {
+    final loc = j['location'] as Map<String, dynamic>?;
+    String? img;
+    final imgs = j['images'];
+    if (imgs is List && imgs.isNotEmpty) {
+      final first = imgs.first;
+      if (first is Map<String, dynamic>) {
+        img = first['image'] as String?;
+      }
+    }
+    return PropertySummary(
+      id: j['id'] as int,
+      slug: j['slug'] as String,
+      title: j['title'] as String,
+      propertyType: j['property_type'] as String? ?? '',
+      bedrooms: j['bedrooms'] as String?,
+      listingType: (j['listing_type'] as String?) ?? 'rent',
+      priceMonthly: '${j['price_monthly']}',
+      priceCurrency: j['price_currency'] as String? ?? 'ETB',
+      city: loc?['city'] as String? ?? '',
+      subCity: loc?['sub_city'] as String?,
+      specificLocation: loc?['specific_location'] as String?,
+      primaryImageUrl: img,
+      isAvailable: j['is_available'] as bool? ?? true,
+      isFavorited: j['is_favorited'] as bool? ?? false,
+      favoriteId: j['favorite_id'] as int?,
+      createdAt: j['created_at'] != null
+          ? DateTime.tryParse(j['created_at'] as String)
+          : null,
+      isVerified: j['is_verified'] as bool?,
+      views: (j['views'] as num?)?.toInt() ?? (j['view_count'] as num?)?.toInt() ?? 0,
+      floorNumber: parseFloorNumberFromJson(j['floor_number']),
+    );
+  }
 
   factory PropertySummary.fromJson(Map<String, dynamic> j) {
     return PropertySummary(
@@ -65,6 +109,9 @@ class PropertySummary {
       createdAt: j['created_at'] != null
           ? DateTime.tryParse(j['created_at'] as String)
           : null,
+      isVerified: j['is_verified'] as bool?,
+      views: (j['views'] as num?)?.toInt() ?? (j['view_count'] as num?)?.toInt() ?? 0,
+      floorNumber: parseFloorNumberFromJson(j['floor_number']),
     );
   }
 
@@ -85,11 +132,16 @@ class PropertySummary {
         'is_favorited': isFavorited,
         'favorite_id': favoriteId,
         'created_at': createdAt?.toIso8601String(),
+        'views': views,
+        'floor_number': floorNumber,
       };
 
   PropertySummary copyWith({
     bool? isFavorited,
     int? favoriteId,
+    bool? isVerified,
+    int? views,
+    int? floorNumber,
   }) {
     return PropertySummary(
       id: id,
@@ -108,6 +160,9 @@ class PropertySummary {
       isFavorited: isFavorited ?? this.isFavorited,
       favoriteId: favoriteId ?? this.favoriteId,
       createdAt: createdAt,
+      isVerified: isVerified ?? this.isVerified,
+      views: views ?? this.views,
+      floorNumber: floorNumber ?? this.floorNumber,
     );
   }
 }
@@ -164,6 +219,11 @@ class PropertyDetail {
     required this.images,
     required this.owner,
     this.mapsUrl,
+    this.bathrooms,
+    this.areaSqm,
+    this.shopClassCount,
+    this.amenitiesMap,
+    this.hallDetailMap,
   });
 
   final PropertySummary summary;
@@ -171,6 +231,11 @@ class PropertyDetail {
   final List<PropertyImage> images;
   final PropertyOwner owner;
   final String? mapsUrl;
+  final int? bathrooms;
+  final String? areaSqm;
+  final int? shopClassCount;
+  final Map<String, dynamic>? amenitiesMap;
+  final Map<String, dynamic>? hallDetailMap;
 
   factory PropertyDetail.fromJson(Map<String, dynamic> j) {
     final loc = j['location'] as Map<String, dynamic>?;
@@ -193,11 +258,24 @@ class PropertyDetail {
       createdAt: j['created_at'] != null
           ? DateTime.tryParse(j['created_at'] as String)
           : null,
+      views: (j['views'] as num?)?.toInt() ?? (j['view_count'] as num?)?.toInt() ?? 0,
+      floorNumber: parseFloorNumberFromJson(j['floor_number']),
     );
     final imgs = (j['images'] as List<dynamic>? ?? [])
         .map((e) => PropertyImage.fromJson(e as Map<String, dynamic>))
         .toList();
     final thumb = imgs.isNotEmpty ? imgs.first.imageUrl : null;
+
+    Map<String, dynamic>? amenMap;
+    final rawAmen = j['amenities'];
+    if (rawAmen is Map) {
+      amenMap = Map<String, dynamic>.from(rawAmen);
+    }
+    Map<String, dynamic>? hallMap;
+    final rawHall = j['hall_detail'];
+    if (rawHall is Map) {
+      hallMap = Map<String, dynamic>.from(rawHall);
+    }
     final summaryWithThumb = PropertySummary(
       id: summary.id,
       slug: summary.slug,
@@ -215,6 +293,8 @@ class PropertyDetail {
       isFavorited: summary.isFavorited,
       favoriteId: summary.favoriteId,
       createdAt: summary.createdAt,
+      views: summary.views,
+      floorNumber: summary.floorNumber,
     );
     return PropertyDetail(
       summary: summaryWithThumb,
@@ -222,6 +302,11 @@ class PropertyDetail {
       images: imgs,
       owner: PropertyOwner.fromJson(j['owner'] as Map<String, dynamic>),
       mapsUrl: loc?['maps_url'] as String?,
+      bathrooms: (j['bathrooms'] as num?)?.toInt(),
+      areaSqm: j['area_sqm'] != null ? '${j['area_sqm']}' : null,
+      shopClassCount: (j['shop_class_count'] as num?)?.toInt(),
+      amenitiesMap: amenMap,
+      hallDetailMap: hallMap,
     );
   }
 }

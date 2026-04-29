@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../services/betnet_api.dart';
 import '../../utils/phone_et.dart';
-import 'register_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -33,8 +33,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       final phone = normalizeEthiopianPhone(_phone.text);
       await ref.read(authControllerProvider.notifier).login(phone, _pass.text);
-      if (mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
+      if (!mounted) return;
+      final from = GoRouterState.of(context).uri.queryParameters['from'];
+      if (from != null && from.isNotEmpty) {
+        context.go(Uri.decodeComponent(from));
+      } else {
+        context.go('/');
       }
     } catch (e) {
       setState(() => _error = '$e');
@@ -98,12 +102,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     : const Text('Log in'),
               ),
               TextButton(
-                onPressed: () {
-                  Navigator.push<void>(
-                    context,
-                    MaterialPageRoute<void>(builder: (_) => const RegisterScreen()),
-                  );
-                },
+                onPressed: () => context.push('/register'),
                 child: const Text('Create an account'),
               ),
             ],

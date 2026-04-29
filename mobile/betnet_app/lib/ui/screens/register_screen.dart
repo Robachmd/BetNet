@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../services/betnet_api.dart';
 import '../../utils/phone_et.dart';
@@ -21,6 +22,34 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _busy = false;
   String? _error;
 
+  String? _validatePasswordStrength(String value) {
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters.';
+    }
+    final hasUpper = RegExp(r'[A-Z]').hasMatch(value);
+    final hasLower = RegExp(r'[a-z]').hasMatch(value);
+    final hasDigit = RegExp(r'\d').hasMatch(value);
+    if (!hasUpper || !hasLower || !hasDigit) {
+      return 'Password must include uppercase, lowercase, and a number.';
+    }
+    return null;
+  }
+
+  String? _validateBeforeSubmit() {
+    if (_first.text.trim().isEmpty) return 'First name is required.';
+    if (_last.text.trim().isEmpty) return 'Last name is required.';
+
+    final phoneError = validateEthiopianMobile(_phone.text);
+    if (phoneError != null) return phoneError;
+
+    final passwordError = _validatePasswordStrength(_pass.text);
+    if (passwordError != null) return passwordError;
+    if (_pass2.text.isEmpty) return 'Please confirm your password.';
+    if (_pass.text != _pass2.text) return 'Passwords do not match.';
+
+    return null;
+  }
+
   @override
   void dispose() {
     _phone.dispose();
@@ -32,6 +61,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _submit() async {
+    final localError = _validateBeforeSubmit();
+    if (localError != null) {
+      setState(() => _error = localError);
+      return;
+    }
+
     setState(() {
       _busy = true;
       _error = null;
@@ -46,8 +81,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             lastName: _last.text.trim(),
             role: _role,
           );
-      if (mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
+      if (!mounted) return;
+      final from = GoRouterState.of(context).uri.queryParameters['from'];
+      if (from != null && from.isNotEmpty) {
+        context.go(Uri.decodeComponent(from));
+      } else {
+        context.go('/');
       }
     } catch (e) {
       setState(() => _error = '$e');
@@ -70,7 +109,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
                   labelText: 'Mobile',
-                  hintText: '+251…',
+                  hintText: '09..., 07..., or +251...',
+                  helperText: 'Ethio Telecom and Safaricom numbers are supported.',
                 ),
               ),
               const SizedBox(height: 12),
@@ -89,7 +129,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 decoration: const InputDecoration(labelText: 'I am a'),
                 items: const [
                   DropdownMenuItem(value: 'RENTER', child: Text('Renter')),
-                  DropdownMenuItem(value: 'LANDLORD', child: Text('Landlord')),
+                  DropdownMenuItem(value: 'LANDLORD', child: Text('Property Owner')),
                 ],
                 onChanged: (v) => setState(() => _role = v ?? 'RENTER'),
               ),
@@ -98,7 +138,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 controller: _pass,
                 obscureText: true,
                 decoration:
-                    const InputDecoration(labelText: 'Password (8+ chars)'),
+                    const InputDecoration(
+                      labelText: 'Password',
+                      helperText: 'Use 8+ chars with uppercase, lowercase, and number.',
+                    ),
               ),
               const SizedBox(height: 12),
               TextField(

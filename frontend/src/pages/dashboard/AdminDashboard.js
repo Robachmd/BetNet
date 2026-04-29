@@ -12,7 +12,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { propertyService } from '../../services/properties';
 import { bookingService } from '../../services/bookings';
 import { paymentService } from '../../services/payments';
-import { formatPrice, formatRelativeDate } from '../../utils/helpers';
+import { formatPrice, formatRelativeDate, listFromApi, ensureArray } from '../../utils/helpers';
 import api from '../../services/api';
 
 function ErrorSection({ title, onRetry }) {
@@ -124,17 +124,17 @@ export default function AdminDashboard() {
           revenue: adminStats.revenue || 0,
           activeBookings: adminStats.activeBookings || 0,
         });
-        setUsersTrend(adminStats.usersTrend || []);
-        setListingsByType(adminStats.listingsByType || []);
-        setRevenueByMonth(adminStats.revenueByMonth || []);
-        setRecentActivity(adminStats.recentActivity || []);
+        setUsersTrend(ensureArray(adminStats.usersTrend));
+        setListingsByType(ensureArray(adminStats.listingsByType));
+        setRevenueByMonth(ensureArray(adminStats.revenueByMonth));
+        setRecentActivity(ensureArray(adminStats.recentActivity));
       } else {
         const [propsData, bookingsData] = await Promise.all([
           propertyService.getProperties({ limit: 1000 }),
-          bookingService.getLandlordBookings({ limit: 100 }),
+          bookingService.getPropertyOwnerBookings({ limit: 100 }),
         ]);
-        const props = propsData.properties || propsData.data || [];
-        const books = bookingsData.bookings || bookingsData.data || [];
+        const props = listFromApi(propsData);
+        const books = listFromApi(bookingsData);
 
         setMetrics({
           totalUsers: 0,
@@ -187,6 +187,10 @@ export default function AdminDashboard() {
     { icon: FiDollarSign, label: 'Revenue', value: formatPrice(metrics.revenue), color: 'text-purple-600 bg-purple-50' },
     { icon: FiCalendar, label: 'Active Bookings', value: metrics.activeBookings, color: 'text-orange-600 bg-orange-50' },
   ];
+  const safeUsersTrend = ensureArray(usersTrend);
+  const safeListingsByType = ensureArray(listingsByType);
+  const safeRevenueByMonth = ensureArray(revenueByMonth);
+  const safeRecentActivity = ensureArray(recentActivity);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -233,15 +237,15 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <h3 className="text-base font-semibold text-gray-900 mb-4">New Users (30 days)</h3>
-                  <CSSBarChart data={usersTrend} color="blue" />
+                  <CSSBarChart data={safeUsersTrend} color="blue" />
                 </div>
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <h3 className="text-base font-semibold text-gray-900 mb-4">Listings by Type</h3>
-                  <CSSDonutChart data={listingsByType} />
+                  <CSSDonutChart data={safeListingsByType} />
                 </div>
                 <div className="bg-white rounded-xl shadow-sm p-6">
                   <h3 className="text-base font-semibold text-gray-900 mb-4">Revenue by Month</h3>
-                  <CSSBarChart data={revenueByMonth} color="green" />
+                  <CSSBarChart data={safeRevenueByMonth} color="green" />
                 </div>
               </div>
 
@@ -278,11 +282,11 @@ export default function AdminDashboard() {
                 {/* Recent Activity */}
                 <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
                   <h3 className="text-base font-semibold text-gray-900 mb-4">Recent Activity</h3>
-                  {recentActivity.length === 0 ? (
+                  {safeRecentActivity.length === 0 ? (
                     <p className="text-sm text-gray-400 text-center py-8">No recent activity to display</p>
                   ) : (
                     <div className="space-y-3">
-                      {recentActivity.slice(0, 10).map((activity, i) => (
+                      {safeRecentActivity.slice(0, 10).map((activity, i) => (
                         <div key={i} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                             activity.type === 'user' ? 'bg-blue-50 text-blue-500'

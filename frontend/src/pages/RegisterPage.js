@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   FiPhone, FiLock, FiEye, FiEyeOff, FiUser, FiArrowRight,
   FiArrowLeft, FiCheck, FiHome, FiKey,
@@ -16,6 +16,7 @@ const STEPS = [
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { register } = useAuth();
 
   const [step, setStep] = useState(0);
@@ -35,6 +36,13 @@ export default function RegisterPage() {
   });
 
   const [fieldErrors, setFieldErrors] = useState({});
+
+  useEffect(() => {
+    const intent = (searchParams.get('intent') || '').toLowerCase();
+    if (intent === 'property_owner' || intent === 'landlord') {
+      setForm((f) => ({ ...f, role: 'property_owner' }));
+    }
+  }, [searchParams]);
 
   const updateField = (field, value) => {
     setForm((f) => ({ ...f, [field]: value }));
@@ -314,20 +322,20 @@ export default function RegisterPage() {
 
                 <button
                   type="button"
-                  onClick={() => updateField('role', 'landlord')}
+                  onClick={() => updateField('role', 'property_owner')}
                   className={`p-6 rounded-2xl border-2 text-center transition-all ${
-                    form.role === 'landlord'
+                    form.role === 'property_owner'
                       ? 'border-green-600 bg-green-50 shadow-sm'
                       : 'border-gray-200 hover:border-green-300'
                   }`}
                 >
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 ${
-                    form.role === 'landlord' ? 'bg-green-100' : 'bg-gray-100'
+                    form.role === 'property_owner' ? 'bg-green-100' : 'bg-gray-100'
                   }`}>
-                    <FiHome className={`w-7 h-7 ${form.role === 'landlord' ? 'text-green-600' : 'text-gray-400'}`} />
+                    <FiHome className={`w-7 h-7 ${form.role === 'property_owner' ? 'text-green-600' : 'text-gray-400'}`} />
                   </div>
-                  <p className={`font-semibold mb-1 ${form.role === 'landlord' ? 'text-green-800' : 'text-gray-800'}`}>
-                    Landlord
+                  <p className={`font-semibold mb-1 ${form.role === 'property_owner' ? 'text-green-800' : 'text-gray-800'}`}>
+                    Property Owner
                   </p>
                   <p className="text-xs text-gray-500">I want to list my property</p>
                 </button>

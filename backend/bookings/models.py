@@ -9,7 +9,7 @@ _property = builtins.property
 
 
 class Booking(models.Model):
-    """Property visit / rental scheduling between renter and landlord."""
+    """Property visit / rental scheduling between renter and property owner."""
 
     class BookingType(models.TextChoices):
         VISIT = "VISIT", "Property Visit"

@@ -48,11 +48,21 @@ final listingsProvider = FutureProvider.autoDispose<ListingsResult>((ref) async 
   try {
     final items = await api.fetchProperties(
       city: filters.city,
+      subCity: filters.subCity,
       propertyType: filters.propertyType,
       bedrooms: filters.bedrooms,
       priceMin: filters.priceMin,
       priceMax: filters.priceMax,
       search: filters.searchQuery,
+      listingType: filters.listingType,
+      ordering: filters.ordering,
+      hasParking: filters.hasParking,
+      hasWifi: filters.hasWifi,
+      hasSecurity: filters.hasSecurity,
+      hasGenerator: filters.hasGenerator,
+      isFurnished: filters.isFurnished,
+      hasElevator: filters.hasElevator,
+      petsAllowed: filters.petsAllowed,
     );
     await cache.saveList(items);
     return ListingsResult(

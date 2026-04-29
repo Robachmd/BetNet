@@ -82,8 +82,34 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const contextValue = useMemo(
-    () => ({
+  const switchAppMode = useCallback(async (mode) => {
+    const data = await authService.setActiveAppMode(mode);
+    setUser(data);
+    return data;
+  }, []);
+
+  const becomePropertyOwner = useCallback(async () => {
+    const res = await authService.enablePropertyOwner();
+    if (res.user) {
+      setUser(res.user);
+    } else {
+      await refreshUser();
+    }
+    return res;
+  }, [refreshUser]);
+
+  const contextValue = useMemo(() => {
+    const roleN = (user?.role || '').toLowerCase();
+    const isPropertyOwnerRole = roleN === 'landlord';
+    const isRenterRole = roleN === 'renter';
+    const isAdmin = roleN === 'admin';
+    const propertyOwnerEligible = user?.landlord_eligible === true;
+    // Property owner UI is only for landlord accounts (or admins). Renters must register
+    // a separate property owner account to list; no "upgrade on same account" for dashboard access.
+    const canAccessPropertyOwner = isPropertyOwnerRole || isAdmin;
+    const activeApp = (user?.active_app_mode || 'RENTER').toLowerCase();
+    const isOwnerMode = activeApp === 'landlord';
+    return {
       user,
       isAuthenticated,
       isLoading,
@@ -93,12 +119,22 @@ export function AuthProvider({ children }) {
       logout,
       updateProfile,
       refreshUser,
-      isLandlord: ['LANDLORD', 'landlord'].includes(user?.role),
-      isRenter: ['RENTER', 'renter'].includes(user?.role),
-      isAdmin: ['ADMIN', 'admin'].includes(user?.role),
-    }),
-    [user, isAuthenticated, isLoading, login, register, verifyOTP, logout, updateProfile, refreshUser]
-  );
+      switchAppMode,
+      becomePropertyOwner,
+      isPropertyOwner: isPropertyOwnerRole,
+      isRenter: isRenterRole,
+      isAdmin,
+      propertyOwnerEligible,
+      canAccessPropertyOwner,
+      isOwnerMode,
+      activeAppMode: user?.active_app_mode || 'RENTER',
+      // Backward-compatible aliases for existing call sites.
+      becomeLandlord: becomePropertyOwner,
+      isLandlord: isPropertyOwnerRole,
+      landlordEligible: propertyOwnerEligible,
+      canAccessLandlord: canAccessPropertyOwner,
+    };
+  }, [user, isAuthenticated, isLoading, login, register, verifyOTP, logout, updateProfile, refreshUser, switchAppMode, becomePropertyOwner]);
 
   return (
     <AuthContext.Provider value={contextValue}>

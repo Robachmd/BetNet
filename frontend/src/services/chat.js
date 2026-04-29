@@ -1,7 +1,7 @@
 import api from './api';
+import { WS_BASE_URL } from '../config/runtime';
 
 const CHAT_PREFIX = '/chat';
-const WS_BASE_URL = process.env.REACT_APP_WS_URL || 'ws://localhost:5000';
 
 export const chatService = {
   async getConversations(params = {}) {
@@ -14,11 +14,12 @@ export const chatService = {
     return data;
   },
 
-  async createConversation(participantId, propertyId) {
-    const { data } = await api.post(`${CHAT_PREFIX}/conversations`, {
-      participantId,
-      propertyId,
-    });
+  async createConversation(participantId, propertyId = null) {
+    const body = { participant_id: participantId };
+    if (propertyId != null && propertyId !== '') {
+      body.property_id = propertyId;
+    }
+    const { data } = await api.post(`${CHAT_PREFIX}/conversations`, body);
     return data;
   },
 
@@ -50,8 +51,8 @@ export const chatService = {
   },
 
   async markAsRead(conversationId) {
-    const { data } = await api.put(
-      `${CHAT_PREFIX}/conversations/${conversationId}/read`
+    const { data } = await api.post(
+      `${CHAT_PREFIX}/conversations/${conversationId}/read/`
     );
     return data;
   },

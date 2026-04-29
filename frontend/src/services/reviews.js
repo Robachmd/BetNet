@@ -9,6 +9,14 @@ export const reviewService = {
     return data;
   },
 
+  /** Reviews written by the current user (see backend: mine=1). */
+  async getMyReviews(params = {}) {
+    const { data } = await api.get(`${R}/reviews/`, {
+      params: { page_size: 20, mine: 1, ...params },
+    });
+    return data;
+  },
+
   async createReview(reviewData) {
     const { data } = await api.post(`${R}/reviews/`, reviewData);
     return data;

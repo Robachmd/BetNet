@@ -1,20 +1,26 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   FiSearch, FiPlus, FiArrowLeft, FiWifi, FiWifiOff,
 } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 import useAuth from '../hooks/useAuth';
 import useWebSocket from '../hooks/useWebSocket';
 import ChatList from '../components/chat/ChatList';
 import ChatWindow from '../components/chat/ChatWindow';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { chatService } from '../services/chat';
+import {
+  ensureArray, listFromApi, mapChatConversationRow, mapChatConversationDetail, mapApiMessageToUi,
+} from '../utils/helpers';
 import toast from 'react-hot-toast';
 
 export default function ChatPage() {
   const { conversationId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
@@ -55,14 +61,31 @@ export default function ChatPage() {
     setLoadingConvs(true);
     try {
       const data = await chatService.getConversations();
-      const convs = data.conversations || data.data || data || [];
+      const raw = listFromApi(data);
+      const convs = raw.map((c) => mapChatConversationRow(c)).filter(Boolean);
       setConversations(convs);
 
       if (conversationId) {
-        const found = convs.find((c) => c.id === conversationId);
+        const found = convs.find((c) => String(c.id) === String(conversationId));
         if (found) {
           setActiveConversation(found);
           setMobileShowChat(true);
+        } else {
+          try {
+            const detail = await chatService.getConversationById(conversationId);
+            const ui = mapChatConversationDetail(detail, user?.id);
+            if (ui) {
+              setConversations((prev) => {
+                if (prev.some((p) => String(p.id) === String(ui.id))) return prev;
+                return [ui, ...prev];
+              });
+              setActiveConversation(ui);
+              setMobileShowChat(true);
+            }
+          } catch {
+            toast.error('Could not open this conversation');
+            navigate('/chat', { replace: true });
+          }
         }
       }
     } catch {
@@ -70,14 +93,15 @@ export default function ChatPage() {
     } finally {
       setLoadingConvs(false);
     }
-  }, [conversationId]);
+  }, [conversationId, user?.id, navigate]);
 
   const loadMessages = useCallback(async (convId) => {
     if (!convId) return;
     setLoadingMsgs(true);
     try {
       const data = await chatService.getMessages(convId, { limit: 50 });
-      const msgs = data.messages || data.data || data || [];
+      const raw = Array.isArray(data?.messages) ? data.messages : listFromApi(data);
+      const msgs = raw.map((m) => mapApiMessageToUi(m)).filter(Boolean);
       setMessages(msgs);
       chatService.markAsRead(convId).catch(() => {});
       setConversations((prev) =>
@@ -119,9 +143,19 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, optimisticMsg]);
 
     try {
-      const result = await chatService.sendMessage(activeConversation.id, { text });
+      const result = await chatService.sendMessage(activeConversation.id, { content: text });
+      const rawMsg = result.message || result;
+      const created =
+        mapApiMessageToUi(rawMsg)
+        || {
+          id: rawMsg?.id || optimisticMsg.id,
+          senderId: user?.id,
+          text,
+          createdAt: rawMsg?.created_at || optimisticMsg.createdAt,
+          type: 'text',
+        };
       setMessages((prev) =>
-        prev.map((m) => (m.id === optimisticMsg.id ? (result.message || result) : m))
+        prev.map((m) => (m.id === optimisticMsg.id ? created : m)),
       );
       wsSend({ type: 'message', conversationId: activeConversation.id, text });
     } catch {
@@ -134,8 +168,8 @@ export default function ChatPage() {
     if (!activeConversation?.id) return;
     try {
       const result = await chatService.sendImageMessage(activeConversation.id, file);
-      const msg = result.message || result;
-      setMessages((prev) => [...prev, msg]);
+      const msg = mapApiMessageToUi(result.message || result);
+      if (msg) setMessages((prev) => [...prev, msg]);
     } catch {
       toast.error('Failed to send image');
     }
@@ -147,12 +181,13 @@ export default function ChatPage() {
     navigate('/chat', { replace: true });
   };
 
+  const safeConversations = ensureArray(conversations);
   const filteredConversations = searchQuery
-    ? conversations.filter((c) =>
+    ? safeConversations.filter((c) =>
         (c.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (c.propertyTitle || '').toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : conversations;
+    : safeConversations;
 
   const recipient = activeConversation
     ? { name: activeConversation.name, avatar: activeConversation.avatar, online: activeConversation.online }
@@ -165,14 +200,24 @@ export default function ChatPage() {
         {/* Header */}
         <div className="px-4 py-4 border-b border-gray-100">
           <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xl font-bold text-gray-900">Messages</h1>
-            <div className="flex items-center gap-2">
+            <Link
+              to="/"
+              className="flex items-center gap-2 rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-green-200"
+              aria-label={t('nav.home')}
+            >
+              <div className="w-8 h-8 bg-gradient-to-br from-green-700 to-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-sm">B</span>
+              </div>
+              <span className="text-xl font-bold text-green-800">{t('app.name')}</span>
+            </Link>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <h1 className="sr-only">Messages</h1>
               {isConnected ? (
                 <FiWifi className="w-4 h-4 text-green-500" title="Connected" />
               ) : (
                 <FiWifiOff className="w-4 h-4 text-red-400" title="Disconnected" />
               )}
-              <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors">
+              <button type="button" className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors" aria-label="New">
                 <FiPlus className="w-5 h-5" />
               </button>
             </div>

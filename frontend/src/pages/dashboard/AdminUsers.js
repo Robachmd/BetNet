@@ -11,7 +11,7 @@ import Pagination from '../../components/common/Pagination';
 import Modal from '../../components/common/Modal';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import EmptyState from '../../components/common/EmptyState';
-import { formatDate, formatPhoneNumber, getAvatarUrl, getErrorMessage } from '../../utils/helpers';
+import { formatDate, formatPhoneNumber, getAvatarUrl, getErrorMessage, listFromApi, ensureArray } from '../../utils/helpers';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -38,7 +38,7 @@ export default function AdminUsers() {
       if (filters.verified) params.isVerified = filters.verified === 'true';
 
       const { data } = await api.get('/admin/users', { params });
-      const list = data.users || data.data || data || [];
+      const list = listFromApi(data);
       setUsers(list);
       setTotalPages(data.totalPages || data.pagination?.totalPages || Math.ceil((data.total || list.length) / 20));
     } catch {
@@ -86,12 +86,13 @@ export default function AdminUsers() {
   const roleBadge = (role) => {
     const config = {
       admin: { variant: 'error', label: 'Admin' },
-      landlord: { variant: 'info', label: 'Landlord' },
+      landlord: { variant: 'info', label: 'Property Owner' },
       renter: { variant: 'neutral', label: 'Renter' },
     };
     const c = config[role] || config.renter;
     return <Badge variant={c.variant} size="sm">{c.label}</Badge>;
   };
+  const safeUsers = ensureArray(users);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -139,7 +140,7 @@ export default function AdminUsers() {
                 >
                   <option value="">All Roles</option>
                   <option value="renter">Renter</option>
-                  <option value="landlord">Landlord</option>
+                  <option value="landlord">Property Owner</option>
                   <option value="admin">Admin</option>
                 </select>
                 <select
@@ -158,7 +159,7 @@ export default function AdminUsers() {
           {/* Table */}
           {loading ? (
             <LoadingSpinner text="Loading users..." />
-          ) : users.length === 0 ? (
+          ) : safeUsers.length === 0 ? (
             <EmptyState icon="default" title="No users found" description="Try adjusting your search or filters." />
           ) : (
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -176,7 +177,7 @@ export default function AdminUsers() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {users.map((u) => (
+                    {safeUsers.map((u) => (
                       <tr key={u.id || u._id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">

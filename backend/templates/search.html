@@ -21,11 +21,11 @@
   </div>
 </section>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="{ filtersOpen: false }">
+<div class="section-shell max-w-7xl py-8" x-data="{ filtersOpen: false }">
 
   <!-- Filters -->
   <form method="GET" action="{% url 'search' %}" class="mb-8">
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="surface-card overflow-hidden">
 
       <!-- Mobile toggle -->
       <button type="button" @click="filtersOpen = !filtersOpen"

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
 
 import '../../data/models/chat.dart';
+import '../../core/config.dart';
 import '../../services/betnet_api.dart';
+import '../../services/chat_realtime_service.dart';
 
 final messagesProvider = FutureProvider.autoDispose
     .family<List<ChatMessage>, int>((ref, conversationId) async {
@@ -26,11 +29,48 @@ class ChatThreadScreen extends ConsumerStatefulWidget {
 class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
   final _text = TextEditingController();
   bool _sending = false;
+  bool _realtimeConnected = false;
+  Timer? _fallbackPoll;
 
   @override
   void dispose() {
+    _fallbackPoll?.cancel();
+    ref.read(chatRealtimeServiceProvider).disconnect();
     _text.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _setupRealtime());
+  }
+
+  Future<void> _setupRealtime() async {
+    if (!AppConfig.enableRealtimeChat) {
+      _startFallbackPolling();
+      return;
+    }
+    await ref.read(chatRealtimeServiceProvider).connect(
+      conversationId: widget.conversationId,
+      onMessage: (_) {
+        if (!mounted) return;
+        setState(() => _realtimeConnected = true);
+        ref.invalidate(messagesProvider(widget.conversationId));
+      },
+      onError: (_) {
+        if (!mounted) return;
+        setState(() => _realtimeConnected = false);
+        _startFallbackPolling();
+      },
+    );
+  }
+
+  void _startFallbackPolling() {
+    _fallbackPoll?.cancel();
+    _fallbackPoll = Timer.periodic(const Duration(seconds: 8), (_) {
+      ref.invalidate(messagesProvider(widget.conversationId));
+    });
   }
 
   Future<void> _send() async {
@@ -38,7 +78,11 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
     if (t.isEmpty || _sending) return;
     setState(() => _sending = true);
     try {
+      if (_realtimeConnected) {
+        await ref.read(chatRealtimeServiceProvider).sendMessage(t);
+      } else {
       await ref.read(betNetApiProvider).sendMessage(widget.conversationId, t);
+      }
       _text.clear();
       ref.invalidate(messagesProvider(widget.conversationId));
     } catch (e) {
@@ -58,6 +102,15 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
       appBar: AppBar(title: Text(widget.title)),
       body: Column(
         children: [
+          if (!_realtimeConnected)
+            const Material(
+              color: Color(0xFFFFF3E0),
+              child: ListTile(
+                dense: true,
+                leading: Icon(Icons.sync_problem_outlined),
+                title: Text('Realtime unavailable, using polling fallback'),
+              ),
+            ),
           Expanded(
             child: async.when(
               data: (msgs) {
@@ -103,6 +156,11 @@ class _ChatThreadScreenState extends ConsumerState<ChatThreadScreen> {
                         hintText: 'Type a message…',
                       ),
                       onSubmitted: (_) => _send(),
+                      onChanged: (_) {
+                        if (_realtimeConnected) {
+                          ref.read(chatRealtimeServiceProvider).sendTyping();
+                        }
+                      },
                     ),
                   ),
                   FilledButton(

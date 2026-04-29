@@ -6,7 +6,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import JsonResponse
-from django.urls import include, path
+from django.urls import include, path, re_path
 from django.views.generic import RedirectView
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -66,7 +66,11 @@ def api_root(request):
             'reviews': '/api/reviews/',
             'chat': '/api/chat/',
             'payments': '/api/payments/',
+            'listing_packages': '/api/payments/listing-packages/',
+            'listing_slot_summary': '/api/payments/listing-packages/slots/summary/',
+            'owner_profile': '/api/accounts/owner-profile/',
             'notifications': '/api/notifications/',
+            'location_alerts': '/api/notifications/location-alerts/',
             'analytics': '/api/analytics/',
         },
     })
@@ -74,33 +78,6 @@ def api_root(request):
 
 urlpatterns = [
     path('i18n/', include('django.conf.urls.i18n')),
-    # Pages
-    path('', views.home, name='home'),
-    path('login/', views.login_view, name='login'),
-    path('register/', views.register_view, name='register'),
-    path('logout/', views.logout_view, name='logout'),
-    path('dashboard/', views.dashboard_view, name='dashboard'),
-    path('dashboard/renter/', views.renter_dashboard, name='renter_dashboard'),
-    path('dashboard/landlord/', views.landlord_dashboard, name='landlord_dashboard'),
-    path('search/', views.search_view, name='search'),
-    path('property/<slug:slug>/', views.property_detail, name='property_detail'),
-    path('add-property/', views.add_property, name='add_property'),
-    path('edit-property/<slug:slug>/', views.edit_property, name='edit_property'),
-    path('favorite/<int:property_id>/', views.toggle_favorite, name='toggle_favorite'),
-    path('book/<slug:slug>/', views.book_visit, name='book_visit'),
-    path('booking/<int:booking_id>/manage/', views.manage_booking, name='manage_booking'),
-    path('halls/', views.halls_view, name='halls'),
-    path('profile/', views.profile_view, name='profile'),
-    path('messages/', views.messages_inbox, name='messages_inbox'),
-    path(
-        'messages/start-owner/<int:user_id>/',
-        views.start_owner_to_owner_message,
-        name='start_owner_dm',
-    ),
-    path('messages/<int:conversation_id>/', views.conversation_thread, name='conversation_thread'),
-    path('publish/<slug:slug>/', views.publish_payment, name='publish_payment'),
-    path('publish/<slug:slug>/pay/', views.process_publish_payment, name='process_publish_payment'),
-
     # Admin & API
     path('admin/', admin.site.urls),
     path(
@@ -115,5 +92,51 @@ urlpatterns = [
     path('api/', include((api_urlpatterns, 'api'))),
 ]
 
+if settings.SERVE_DJANGO_PAGES:
+    urlpatterns = [
+        # Server-rendered pages (kept for local/dev compatibility).
+        path('', views.home, name='home'),
+        path('login/', views.login_view, name='login'),
+        path('register/', views.register_view, name='register'),
+        path('logout/', views.logout_view, name='logout'),
+        path('dashboard/', views.dashboard_view, name='dashboard'),
+        path('dashboard/renter/', views.renter_dashboard, name='renter_dashboard'),
+        path('dashboard/landlord/', views.landlord_dashboard, name='landlord_dashboard'),
+        path(
+            'dashboard/landlord/packages/<int:listings>/',
+            views.listing_package_payment,
+            name='listing_package_payment',
+        ),
+        path(
+            'dashboard/landlord/publish/<slug:slug>/',
+            views.publish_with_package,
+            name='publish_with_package',
+        ),
+        path('search/', views.search_view, name='search'),
+        path('property/<slug:slug>/', views.property_detail, name='property_detail'),
+        path('add-property/', views.add_property, name='add_property'),
+        path('edit-property/<slug:slug>/', views.edit_property, name='edit_property'),
+        path('favorite/<int:property_id>/', views.toggle_favorite, name='toggle_favorite'),
+        path('book/<slug:slug>/', views.book_visit, name='book_visit'),
+        path('booking/<int:booking_id>/manage/', views.manage_booking, name='manage_booking'),
+        path('halls/', views.halls_view, name='halls'),
+        path('profile/', views.profile_view, name='profile'),
+        path('messages/', views.messages_inbox, name='messages_inbox'),
+        path(
+            'messages/start-owner/<int:user_id>/',
+            views.start_owner_to_owner_message,
+            name='start_owner_dm',
+        ),
+        path('messages/<int:conversation_id>/', views.conversation_thread, name='conversation_thread'),
+        path('publish/<slug:slug>/', views.publish_payment, name='publish_payment'),
+        path('publish/<slug:slug>/pay/', views.process_publish_payment, name='process_publish_payment'),
+    ] + urlpatterns
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# React SPA: must be last so /api/, /admin/, /media/ (DEBUG), etc. match first
+if not settings.SERVE_DJANGO_PAGES:
+    urlpatterns += [
+        re_path(r'^.*$', views.spa_index, name='spa'),
+    ]

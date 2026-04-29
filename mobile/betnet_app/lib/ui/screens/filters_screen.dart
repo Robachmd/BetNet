@@ -158,14 +158,28 @@ class _FiltersScreenState extends ConsumerState<FiltersScreen> {
                 child: FilledButton(
                   onPressed: () {
                     final prev = ref.read(browseFiltersProvider);
-                    ref.read(browseFiltersProvider.notifier).state = BrowseFilters(
+                    ref.read(browseFiltersProvider.notifier).state =
+                        BrowseFilters(
                       city: _city,
-                      propertyType:
-                          _studioOnly ? null : (_typeKey != null ? kPropertyTypeChoices[_typeKey!] : null),
+                      subCity: prev.subCity,
+                      propertyType: _studioOnly
+                          ? null
+                          : (_typeKey != null
+                              ? kPropertyTypeChoices[_typeKey!]
+                              : null),
                       bedrooms: _studioOnly ? 'STUDIO' : null,
                       priceMin: _priceRange.start,
                       priceMax: _priceRange.end,
                       searchQuery: prev.searchQuery,
+                      listingType: prev.listingType,
+                      ordering: prev.ordering,
+                      hasParking: prev.hasParking,
+                      hasWifi: prev.hasWifi,
+                      hasSecurity: prev.hasSecurity,
+                      hasGenerator: prev.hasGenerator,
+                      isFurnished: prev.isFurnished,
+                      hasElevator: prev.hasElevator,
+                      petsAllowed: prev.petsAllowed,
                     );
                     ref.invalidate(listingsProvider);
                     Navigator.pop(context);

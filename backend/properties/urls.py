@@ -9,6 +9,16 @@ router.register(r"favorites", views.FavoriteViewSet, basename="favorite")
 
 urlpatterns = [
     path("cities/", views.CitySearchView.as_view(), name="cities"),
+    path(
+        "properties/admin/<int:pk>/verify/",
+        views.AdminPropertyVerifyView.as_view(),
+        name="admin-property-verify",
+    ),
+    path(
+        "properties/admin/<int:pk>/reject/",
+        views.AdminPropertyRejectView.as_view(),
+        name="admin-property-reject",
+    ),
     path("", include(router.urls)),
     path(
         "properties/<slug:property_slug>/images/",

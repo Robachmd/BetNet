@@ -9,7 +9,7 @@ import useAuth from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
 import Badge from '../../components/common/Badge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import { formatPrice } from '../../utils/helpers';
+import { formatPrice, ensureArray } from '../../utils/helpers';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -101,11 +101,11 @@ export default function AdminAnalytics() {
         totalRevenue: data.totalRevenue || 0,
         totalViews: data.totalViews || 0,
       });
-      setUsersOverTime(data.usersOverTime || []);
-      setListingsByCity(data.listingsByCity || []);
-      setRevenueBreakdown(data.revenueBreakdown || []);
-      setPopularSearches(data.popularSearches || []);
-      setMostViewedAreas(data.mostViewedAreas || []);
+      setUsersOverTime(ensureArray(data.usersOverTime));
+      setListingsByCity(ensureArray(data.listingsByCity));
+      setRevenueBreakdown(ensureArray(data.revenueBreakdown));
+      setPopularSearches(ensureArray(data.popularSearches));
+      setMostViewedAreas(ensureArray(data.mostViewedAreas));
     } catch {
       toast.error('Failed to load analytics');
     } finally {

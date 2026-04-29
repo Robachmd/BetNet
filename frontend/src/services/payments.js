@@ -13,6 +13,16 @@ export const paymentService = {
     return data;
   },
 
+  /** POST /payments/verify/ — confirm status with Chapa/Telebirr (transaction_id, payment_method). */
+  async confirmPaymentWithProvider(transactionId, paymentMethod) {
+    const method = (paymentMethod || 'CHAPA').toString().toUpperCase();
+    const { data } = await api.post(`${PAYMENTS_PREFIX}/verify/`, {
+      transaction_id: transactionId,
+      payment_method: method,
+    });
+    return data;
+  },
+
   async getPaymentHistory(params = {}) {
     const { data } = await api.get(`${PAYMENTS_PREFIX}/history`, { params });
     return data;
@@ -58,9 +68,14 @@ export const paymentService = {
     return data;
   },
 
-  async getLandlordEarnings(params = {}) {
+  async getPropertyOwnerEarnings(params = {}) {
     const { data } = await api.get(`${PAYMENTS_PREFIX}/earnings`, { params });
     return data;
+  },
+
+  // Backward-compatible alias while call sites migrate.
+  async getLandlordEarnings(params = {}) {
+    return this.getPropertyOwnerEarnings(params);
   },
 
   async requestPayout(amount, paymentMethod) {

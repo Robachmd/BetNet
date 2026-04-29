@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Notification, NotificationPreference
+from .models import LocationAlert, Notification, NotificationPreference
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -35,3 +35,30 @@ class NotificationPreferenceSerializer(serializers.ModelSerializer):
             "booking_updates",
             "message_notifications",
         ]
+
+
+class LocationAlertSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LocationAlert
+        fields = [
+            "id",
+            "label",
+            "city",
+            "sub_city",
+            "latitude",
+            "longitude",
+            "radius_km",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ("id", "created_at", "updated_at")
+
+    def validate(self, attrs):
+        lat = attrs.get("latitude", getattr(self.instance, "latitude", None))
+        lon = attrs.get("longitude", getattr(self.instance, "longitude", None))
+        if (lat is None) ^ (lon is None):
+            raise serializers.ValidationError(
+                "Set both latitude and longitude, or leave both empty for city-only matching."
+            )
+        return attrs

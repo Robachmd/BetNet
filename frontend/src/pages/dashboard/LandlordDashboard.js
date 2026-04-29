@@ -15,7 +15,10 @@ import { propertyService } from '../../services/properties';
 import { bookingService } from '../../services/bookings';
 import { paymentService } from '../../services/payments';
 import { chatService } from '../../services/chat';
-import { formatPrice, formatRelativeDate, getImageUrl } from '../../utils/helpers';
+import { getListingSlotSummary } from '../../services/listingPackages';
+import {
+  formatPrice, formatRelativeDate, getImageUrl, listFromApi, ensureArray, mapChatConversationRow,
+} from '../../utils/helpers';
 
 function ErrorSection({ title, onRetry }) {
   return (
@@ -53,14 +56,19 @@ function RevenueChart({ data }) {
   );
 }
 
-export default function LandlordDashboard() {
+export default function PropertyOwnerDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [unreadMessages, setUnreadMessages] = useState(0);
 
   const [stats, setStats] = useState({
-    totalProperties: 0, activeListings: 0, totalViews: 0,
-    pendingBookings: 0, monthlyRevenue: 0,
+    totalProperties: 0,
+    availableProperties: 0,
+    verifiedProperties: 0,
+    totalViews: 0,
+    pendingBookings: 0,
+    monthlyRevenue: 0,
+    remainingPackageSlots: 0,
   });
   const [pendingBookings, setPendingBookings] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -79,22 +87,25 @@ export default function LandlordDashboard() {
     setL('stats', true);
     setE('stats', null);
     try {
-      const [propsData, bookData, earningsData] = await Promise.all([
+      const [propsData, bookData, earningsData, slotSummary] = await Promise.all([
         propertyService.getMyProperties({ limit: 100 }),
-        bookingService.getLandlordBookings({ status: 'pending', limit: 100 }),
-        paymentService.getLandlordEarnings({ period: 'month' }),
+        bookingService.getPropertyOwnerBookings({ status: 'pending', limit: 100 }),
+        paymentService.getPropertyOwnerEarnings({ period: 'month' }),
+        getListingSlotSummary(),
       ]);
-      const propsList = propsData.properties || propsData.data || propsData || [];
-      const booksList = bookData.bookings || bookData.data || bookData || [];
+      const propsList = listFromApi(propsData);
+      const booksList = listFromApi(bookData);
       const earnings = earningsData.total || earningsData.monthlyRevenue || 0;
       const totalViews = propsList.reduce((sum, p) => sum + (p.views || 0), 0);
 
       setStats({
         totalProperties: propsList.length,
-        activeListings: propsList.filter((p) => p.status === 'available' || p.status === 'active').length,
+        availableProperties: propsList.filter((p) => p.status === 'available' || p.status === 'active').length,
+        verifiedProperties: propsList.filter((p) => Boolean(p.isVerified ?? p.is_verified)).length,
         totalViews,
         pendingBookings: booksList.length,
         monthlyRevenue: earnings,
+        remainingPackageSlots: Number(slotSummary?.package_slots_remaining ?? 0),
       });
       setProperties(propsList);
       setPendingBookings(booksList);
@@ -112,7 +123,7 @@ export default function LandlordDashboard() {
     setE('messages', null);
     try {
       const data = await chatService.getConversations({ limit: 5 });
-      const convs = data.conversations || data.data || data || [];
+      const convs = listFromApi(data).map((c) => mapChatConversationRow(c)).filter(Boolean);
       setRecentMessages(convs);
       const unread = await chatService.getUnreadCount();
       setUnreadMessages(unread.count || unread || 0);
@@ -127,8 +138,8 @@ export default function LandlordDashboard() {
     setL('revenue', true);
     setE('revenue', null);
     try {
-      const data = await paymentService.getLandlordEarnings({ period: 'year' });
-      const monthly = data.monthly || data.data || [];
+      const data = await paymentService.getPropertyOwnerEarnings({ period: 'year' });
+      const monthly = Array.isArray(data?.monthly) ? data.monthly : listFromApi(data);
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       if (monthly.length > 0) {
         setRevenueData(monthly.map((m, i) => ({
@@ -166,31 +177,39 @@ export default function LandlordDashboard() {
 
   const handleNavigation = (key) => {
     const routes = {
-      dashboard: '/dashboard/landlord',
-      properties: '/dashboard/landlord',
-      'add-property': '/dashboard/landlord/add-property',
-      bookings: '/dashboard/landlord',
+      dashboard: '/dashboard/property-owner',
+      properties: '/dashboard/property-owner',
+      'add-property': '/dashboard/property-owner/add-property',
+      bookings: '/dashboard/property-owner',
       messages: '/chat',
-      reviews: '/dashboard/landlord',
-      analytics: '/dashboard/landlord',
-      notifications: '/dashboard/landlord',
+      reviews: '/dashboard/property-owner',
+      analytics: '/dashboard/property-owner',
+      notifications: '/dashboard/property-owner',
       settings: '/profile',
     };
     if (routes[key]) navigate(routes[key]);
   };
 
-  const statCards = [
+  const primaryStatCards = [
     { icon: FiHome, label: 'Total Properties', value: stats.totalProperties, color: 'text-blue-600 bg-blue-50' },
-    { icon: FiList, label: 'Active Listings', value: stats.activeListings, color: 'text-green-600 bg-green-50' },
+    { icon: FiList, label: 'Available', value: stats.availableProperties, color: 'text-green-600 bg-green-50' },
+    { icon: FiCheck, label: 'Verified', value: stats.verifiedProperties, color: 'text-teal-600 bg-teal-50' },
     { icon: FiEye, label: 'Total Views', value: stats.totalViews, color: 'text-purple-600 bg-purple-50' },
+    { icon: FiStar, label: 'Remaining listing package', value: stats.remainingPackageSlots, color: 'text-emerald-600 bg-emerald-50' },
+  ];
+
+  const secondaryStatCards = [
     { icon: FiCalendar, label: 'Pending Bookings', value: stats.pendingBookings, color: 'text-orange-600 bg-orange-50' },
     { icon: FiDollarSign, label: 'Monthly Revenue', value: formatPrice(stats.monthlyRevenue), color: 'text-emerald-600 bg-emerald-50' },
   ];
+  const safePendingBookings = ensureArray(pendingBookings);
+  const safeRecentMessages = ensureArray(recentMessages);
+  const safeProperties = ensureArray(properties);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar
-        role="landlord"
+        role="property_owner"
         activeKey="dashboard"
         user={user}
         unreadMessages={unreadMessages}
@@ -203,12 +222,12 @@ export default function LandlordDashboard() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Landlord Dashboard</h1>
-              <p className="text-gray-500 mt-1">Welcome back, {user?.name?.split(' ')[0] || 'Landlord'}</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Property Owner Dashboard</h1>
+              <p className="text-gray-500 mt-1">Welcome back, {user?.name?.split(' ')[0] || 'Property Owner'}</p>
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => navigate('/dashboard/landlord/add-property')}
+                onClick={() => navigate('/dashboard/property-owner/add-property')}
                 className="flex items-center gap-2 px-4 py-2.5 bg-green-700 text-white text-sm font-medium rounded-xl hover:bg-green-800 transition-colors"
               >
                 <FiPlusCircle className="w-4 h-4" /> Add Property
@@ -222,25 +241,58 @@ export default function LandlordDashboard() {
           ) : errors.stats ? (
             <ErrorSection title="dashboard stats" onRetry={loadStats} />
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-              {statCards.map((card) => (
-                <div key={card.label} className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                  <div className={`w-10 h-10 rounded-lg ${card.color} flex items-center justify-center mb-3`}>
-                    <card.icon className="w-5 h-5" />
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
+                {primaryStatCards.map((card) => (
+                  <div key={card.label} className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div className={`w-10 h-10 rounded-lg ${card.color} flex items-center justify-center mb-3`}>
+                      <card.icon className="w-5 h-5" />
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 truncate">{card.value}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{card.label}</p>
                   </div>
-                  <p className="text-xl font-bold text-gray-900 truncate">{card.value}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{card.label}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                {secondaryStatCards.map((card) => (
+                  <div key={card.label} className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div className={`w-10 h-10 rounded-lg ${card.color} flex items-center justify-center mb-3`}>
+                      <card.icon className="w-5 h-5" />
+                    </div>
+                    <p className="text-xl font-bold text-gray-900 truncate">{card.value}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{card.label}</p>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             {[
-              { icon: FiPlusCircle, label: 'Add New Property', desc: 'List a new rental property', onClick: () => navigate('/dashboard/landlord/add-property'), color: 'bg-green-700 hover:bg-green-800' },
-              { icon: FiInbox, label: 'View Inquiries', desc: 'Check pending booking requests', onClick: () => {}, color: 'bg-blue-600 hover:bg-blue-700' },
-              { icon: FiBarChart2, label: 'View Analytics', desc: 'See property performance', onClick: () => {}, color: 'bg-purple-600 hover:bg-purple-700' },
+              { icon: FiPlusCircle, label: 'Add New Property', desc: 'List a new rental property', onClick: () => navigate('/dashboard/property-owner/add-property'), color: 'bg-green-700 hover:bg-green-800' },
+              {
+                icon: FiInbox,
+                label: 'View Inquiries',
+                desc: 'Check pending booking requests',
+                onClick: () =>
+                  document.getElementById('pending-bookings-section')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                  }),
+                color: 'bg-blue-600 hover:bg-blue-700',
+              },
+              {
+                icon: FiBarChart2,
+                label: 'View Analytics',
+                desc: 'See property performance',
+                onClick: () =>
+                  document.getElementById('owner-performance-section')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                  }),
+                color: 'bg-purple-600 hover:bg-purple-700',
+              },
             ].map((action) => (
               <button
                 key={action.label}
@@ -254,21 +306,21 @@ export default function LandlordDashboard() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <div id="dashboard-main-grid" className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             {/* Pending Bookings */}
-            <div className="lg:col-span-2">
+            <div id="pending-bookings-section" className="lg:col-span-2 scroll-mt-24">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">Pending Bookings</h2>
-                <Badge variant="pending" size="sm">{pendingBookings.length} pending</Badge>
+                <Badge variant="pending" size="sm">{safePendingBookings.length} pending</Badge>
               </div>
 
               {loading.bookings ? (
                 <LoadingSpinner />
-              ) : pendingBookings.length === 0 ? (
+              ) : safePendingBookings.length === 0 ? (
                 <EmptyState icon="booking" title="No pending bookings" description="New booking requests will appear here." />
               ) : (
                 <div className="space-y-3">
-                  {pendingBookings.slice(0, 5).map((booking) => (
+                  {safePendingBookings.slice(0, 5).map((booking) => (
                     <div key={booking.id} className="bg-white rounded-xl shadow-sm p-4">
                       <BookingCard booking={booking} showActions={false} />
                       <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
@@ -314,11 +366,11 @@ export default function LandlordDashboard() {
                   <LoadingSpinner size="sm" />
                 ) : errors.messages ? (
                   <ErrorSection title="messages" onRetry={loadMessages} />
-                ) : recentMessages.length === 0 ? (
+                ) : safeRecentMessages.length === 0 ? (
                   <p className="text-sm text-gray-400 text-center py-4">No messages yet</p>
                 ) : (
                   <div className="space-y-3">
-                    {recentMessages.slice(0, 4).map((conv) => (
+                    {safeRecentMessages.slice(0, 4).map((conv) => (
                       <button
                         key={conv.id}
                         onClick={() => navigate(`/chat/${conv.id}`)}
@@ -358,7 +410,11 @@ export default function LandlordDashboard() {
                       : 'Upgrade for more features'}
                   </span>
                 </div>
-                <button className="mt-4 w-full py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors">
+                <button
+                  type="button"
+                  onClick={() => navigate('/dashboard/property-owner/listing-packages')}
+                  className="mt-4 w-full py-2 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
+                >
                   {user?.subscription?.plan ? 'Manage Plan' : 'Upgrade Now'}
                 </button>
               </div>
@@ -366,7 +422,7 @@ export default function LandlordDashboard() {
           </div>
 
           {/* Revenue Chart & Property Performance */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div id="owner-performance-section" className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 scroll-mt-24">
             {/* Revenue Chart */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex items-center justify-between mb-6">
@@ -386,21 +442,32 @@ export default function LandlordDashboard() {
             <div className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-gray-900">Property Performance</h2>
-                <button className="text-sm text-green-700 hover:text-green-800 font-medium">View All</button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    document.getElementById('owner-performance-section')?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start',
+                    })
+                  }
+                  className="text-sm text-green-700 hover:text-green-800 font-medium"
+                >
+                  View All
+                </button>
               </div>
               {loading.properties ? (
                 <LoadingSpinner />
-              ) : properties.length === 0 ? (
+              ) : safeProperties.length === 0 ? (
                 <EmptyState
                   icon="property"
                   title="No properties"
                   description="Add your first property to start tracking."
                   actionLabel="Add Property"
-                  onAction={() => navigate('/dashboard/landlord/add-property')}
+                  onAction={() => navigate('/dashboard/property-owner/add-property')}
                 />
               ) : (
                 <div className="space-y-3">
-                  {properties.slice(0, 5).map((property) => {
+                  {safeProperties.slice(0, 5).map((property) => {
                     const lt = String(property.listing_type || property.listingType || 'rent').toLowerCase();
                     const priceTail = lt === 'sale' ? ' Total price' : lt === 'short_term' ? '/month (short-term)' : '/month';
                     return (
@@ -447,7 +514,7 @@ export default function LandlordDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {properties.slice(0, 8).map((property) => (
+                    {safeProperties.slice(0, 8).map((property) => (
                       <tr key={property.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-3">
@@ -467,7 +534,7 @@ export default function LandlordDashboard() {
                         <td className="px-5 py-3 text-gray-600 hidden md:table-cell">{property.views || 0}</td>
                         <td className="px-5 py-3 text-right">
                           <button
-                            onClick={() => navigate(`/dashboard/landlord/edit-property/${property.slug || property.id}`)}
+                            onClick={() => navigate(`/dashboard/property-owner/edit-property/${property.slug || property.id}`)}
                             className="text-green-700 hover:text-green-800 font-medium text-sm"
                           >
                             Edit

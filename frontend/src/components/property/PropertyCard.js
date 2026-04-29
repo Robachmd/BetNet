@@ -211,6 +211,14 @@ export default function PropertyCard({
           <span className="text-lg font-bold text-green-800">{formatETB(price)} ETB</span>
           <span className="text-sm text-gray-400">{priceUnit}</span>
         </div>
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-xs text-gray-400">
+            Tap to view details
+          </span>
+          <span className="text-sm font-medium text-primary-700 group-hover:translate-x-0.5 transition-transform">
+            View
+          </span>
+        </div>
       </div>
     </article>
   );

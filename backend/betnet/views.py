@@ -13,7 +13,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import IntegrityError
 from django.db.models import Avg, Count, F, Max, Min, Q, Sum
-from django.http import JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
+from django.views.decorators.cache import never_cache
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -25,7 +26,8 @@ from accounts.models import User
 from bookings.models import Booking, HallBooking
 from chat.models import Conversation, Message
 from notifications.services import notify_booking_update, notify_visit_booking_created
-from payments.models import Payment
+from payments.models import ListingPackage, ListingPackagePurchase, Payment
+from payments.listing_package_services import activate_listing_package_purchase
 from properties.city_utils import resolve_city_from_post
 from properties.models import (
     Amenities,
@@ -41,6 +43,13 @@ from reviews.models import Review
 
 MAX_LISTING_PROPERTY_VIDEOS = 5
 MAX_PROPERTY_VIDEO_BYTES = 75 * 1024 * 1024
+LANDLORD_DASHBOARD_PACKAGE_OPTIONS = [
+    {"code": "starter_1", "listings": 1, "price_etb": 199},
+    {"code": "smart_5", "listings": 5, "price_etb": 799},
+    {"code": "pro_20", "listings": 20, "price_etb": 2400},
+    {"code": "scale_50", "listings": 50, "price_etb": 5000},
+    {"code": "max_100", "listings": 100, "price_etb": 8000},
+]
 
 
 def _parse_visit_time_from_post(value: str):
@@ -316,6 +325,37 @@ def _safe_redirect_path(request, candidate: str, fallback_name: str, **fallback_
     return redirect(fallback_name, **fallback_kwargs)
 
 
+def _dashboard_package_option(listings: int):
+    for opt in LANDLORD_DASHBOARD_PACKAGE_OPTIONS:
+        if int(opt["listings"]) == int(listings):
+            return opt
+    return None
+
+
+def _get_or_create_dashboard_listing_package(option: dict) -> ListingPackage:
+    package = ListingPackage.objects.filter(code=option["code"]).first()
+    defaults = {
+        "name": f"{option['listings']} Listings Package",
+        "listing_quota": option["listings"],
+        "price": option["price_etb"],
+        "currency": "ETB",
+        "validity_days": 365,
+        "tagline": f"Post up to {option['listings']} listings without per-post fees.",
+        "badge_label": "",
+        "is_active": True,
+    }
+    if package:
+        changed = False
+        for field, value in defaults.items():
+            if getattr(package, field) != value:
+                setattr(package, field, value)
+                changed = True
+        if changed:
+            package.save()
+        return package
+    return ListingPackage.objects.create(code=option["code"], **defaults)
+
+
 def _floor_number_from_post(post, property_type: str):
     if property_type not in (
         Property.PropertyType.APARTMENT,
@@ -430,11 +470,16 @@ def login_view(request):
 
         user = None
         if "@" in identifier:
-            try:
-                u = User.objects.get(email__iexact=identifier)
-                user = authenticate(request, username=str(u.phone_number), password=password)
-            except User.DoesNotExist:
-                pass
+            # Email is not unique on the model; duplicates would make .get() raise MultipleObjectsReturned.
+            u = (
+                User.objects.filter(email__iexact=identifier)
+                .order_by("pk")
+                .first()
+            )
+            if u is not None:
+                user = authenticate(
+                    request, username=str(u.phone_number), password=password
+                )
         else:
             phone_number = _normalize_phone(identifier)
             user = authenticate(request, username=phone_number, password=password)
@@ -521,6 +566,10 @@ def register_view(request):
             role=role,
             email=email,
         )
+        if role == User.Role.LANDLORD:
+            user.landlord_eligible = True
+            user.active_app_mode = User.AppMode.LANDLORD
+            user.save(update_fields=["landlord_eligible", "active_app_mode"])
         login(request, user)
         messages.success(request, _("Account created successfully! Welcome to BetNet."))
         resp = redirect("home")
@@ -546,9 +595,14 @@ def logout_view(request):
 
 @login_required
 def dashboard_view(request):
-    if request.user.role == User.Role.ADMIN:
+    u = request.user
+    if u.role == User.Role.ADMIN:
         return redirect("renter_dashboard")
-    if request.user.role == User.Role.LANDLORD:
+    mode = getattr(u, "active_app_mode", User.AppMode.RENTER)
+    can_owner = u.role == User.Role.LANDLORD or getattr(
+        u, "landlord_eligible", False
+    )
+    if can_owner and mode == User.AppMode.LANDLORD:
         return redirect("landlord_dashboard")
     return redirect("renter_dashboard")
 
@@ -606,12 +660,16 @@ def renter_dashboard(request):
 
 
 # ---------------------------------------------------------------------------
-# 7. Landlord dashboard
+# 7. Property owner dashboard
 # ---------------------------------------------------------------------------
 
 @login_required
 def landlord_dashboard(request):
     user = request.user
+    listing_package_options = LANDLORD_DASHBOARD_PACKAGE_OPTIONS
+    from payments.listing_package_services import total_slot_remaining_from_packages
+
+    package_slots_remaining = total_slot_remaining_from_packages(user)
     my_properties = (
         Property.objects
         .filter(owner=user)
@@ -665,12 +723,119 @@ def landlord_dashboard(request):
         "unpublished_count": unpublished_count,
         "published_count": published_count,
         "listing_payments": listing_payments,
+        "listing_package_options": listing_package_options,
+        "package_slots_remaining": package_slots_remaining,
         "activity_feed": _dashboard_activity_feed(user, as_landlord=True),
     })
 
 
 # ---------------------------------------------------------------------------
-# 8. Search / Browse
+# 8. Listing package payment (landlord dashboard)
+# ---------------------------------------------------------------------------
+
+
+@login_required
+def listing_package_payment(request, listings):
+    user = request.user
+    can_owner = user.role in (User.Role.LANDLORD, User.Role.ADMIN) or getattr(
+        user, "landlord_eligible", False
+    )
+    if not can_owner:
+        messages.error(request, _("Only property owners can buy listing packages."))
+        return redirect("dashboard")
+
+    option = _dashboard_package_option(listings)
+    if not option:
+        messages.error(request, _("Invalid package selection."))
+        return redirect("landlord_dashboard")
+
+    package = _get_or_create_dashboard_listing_package(option)
+
+    if request.method == "POST":
+        payment_method = request.POST.get("payment_method", Payment.PaymentMethod.CHAPA)
+        if payment_method not in Payment.PaymentMethod.values:
+            messages.error(request, _("Invalid payment method."))
+            return redirect("listing_package_payment", listings=listings)
+
+        payment = Payment.objects.create(
+            user=user,
+            payment_type=Payment.PaymentType.LISTING_PACKAGE,
+            amount=package.price,
+            currency=package.currency,
+            payment_method=payment_method,
+            listing_package=package,
+            description=f"Listing package: {package.name}",
+        )
+        ListingPackagePurchase.objects.create(
+            user=user,
+            package=package,
+            status=ListingPackagePurchase.Status.PENDING,
+            slots_total=package.listing_quota,
+            slots_used=0,
+            payment=payment,
+        )
+
+        payment.mark_completed(
+            {
+                "simulated": True,
+                "note": "Demo package checkout completed from server-rendered dashboard.",
+                "recorded_status": "COMPLETED",
+                "recorded_at": timezone.now().isoformat(),
+            }
+        )
+        activate_listing_package_purchase(payment)
+        messages.success(
+            request,
+            _(
+                "Payment successful. You now have %(count)d listing credits. "
+                "Use those credits to publish properties without paying each time."
+            )
+            % {"count": package.listing_quota},
+        )
+        return redirect("landlord_dashboard")
+
+    return render(
+        request,
+        "listing_package_payment.html",
+        {
+            "package": package,
+            "option": option,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# 9. Publish draft using package credits
+# ---------------------------------------------------------------------------
+
+
+@login_required
+@require_POST
+def publish_with_package(request, slug):
+    prop = get_object_or_404(Property, slug=slug, owner=request.user)
+    if prop.is_published:
+        messages.info(request, _("This listing is already published."))
+        return redirect("landlord_dashboard")
+
+    from payments.listing_package_services import consume_slot_for_publish
+
+    if consume_slot_for_publish(request.user, prop):
+        messages.success(
+            request,
+            _("Listing published successfully using your package credit."),
+        )
+    else:
+        messages.warning(
+            request,
+            _(
+                "No package credits available. Buy a listing package to publish this draft."
+            ),
+        )
+    return redirect("landlord_dashboard")
+
+
+# ---------------------------------------------------------------------------
+# 10. Search / Browse
 # ---------------------------------------------------------------------------
 
 def search_view(request):
@@ -918,8 +1083,11 @@ def property_detail(request, slug):
 
 @login_required
 def add_property(request):
-    if request.user.role not in (User.Role.LANDLORD, User.Role.ADMIN):
-        messages.error(request, _("Only landlords can list properties."))
+    if not (
+        request.user.role in (User.Role.LANDLORD, User.Role.ADMIN)
+        or getattr(request.user, "landlord_eligible", False)
+    ):
+        messages.error(request, _("Only property owners can list properties."))
         return redirect("dashboard")
 
     if request.method == "POST":
@@ -1016,13 +1184,28 @@ def add_property(request):
 
             video_files = [f for f in request.FILES.getlist("videos") if f]
             _attach_property_videos(prop, video_files)
-            msg = _("Your listing is saved! Complete payment to publish it.")
+            from payments.listing_package_services import consume_slot_for_publish
+
+            if consume_slot_for_publish(request.user, prop):
+                prop.refresh_from_db()
+                vmsg = _(
+                    "Your listing is now live. You had an available package credit (or plan slot), so no per-post payment was required."
+                )
+                if video_files:
+                    vmsg += " " + _("%(count)d short video(s) uploaded.") % {
+                        "count": len(video_files)
+                    }
+                messages.success(request, vmsg)
+                return redirect("property_detail", slug=prop.slug)
+            dmsg = _(
+                "Your listing is saved as a draft. In your dashboard, use Listing packages to buy a bundle: you pay once per package, then publish until those credits are used—no per-post fee."
+            )
             if video_files:
-                msg += " " + _("%(count)d short video(s) uploaded.") % {
+                dmsg += " " + _("%(count)d short video(s) uploaded.") % {
                     "count": len(video_files)
                 }
-            messages.info(request, msg)
-            return redirect("publish_payment", slug=prop.slug)
+            messages.info(request, dmsg)
+            return redirect("landlord_dashboard")
 
         except (ValueError, TypeError, ValidationError) as exc:
             messages.error(
@@ -1318,7 +1501,7 @@ def book_visit(request, slug):
 
     messages.success(
         request,
-        _("Your visit has been booked! The landlord will confirm soon."),
+        _("Your visit has been booked! The property owner will confirm soon."),
     )
     return redirect("property_detail", slug=slug)
 
@@ -1482,8 +1665,12 @@ def start_owner_to_owner_message(request, user_id):
         messages.error(request, _("You cannot message yourself."))
         return redirect("messages_inbox")
 
-    owner_roles = {User.Role.LANDLORD, User.Role.ADMIN}
-    if request.user.role not in owner_roles or other.role not in owner_roles:
+    def _is_property_owner(u):
+        return u.role in (User.Role.LANDLORD, User.Role.ADMIN) or getattr(
+            u, "landlord_eligible", False
+        )
+
+    if not _is_property_owner(request.user) or not _is_property_owner(other):
         messages.error(
             request,
             _("Owner-to-owner chat is only available between property owners."),
@@ -1634,3 +1821,14 @@ def process_publish_payment(request, slug):
         _("Payment successful! Your listing is now live."),
     )
     return redirect("property_detail", slug=prop.slug)
+
+
+@never_cache
+def spa_index(request):
+    """Serve the CRA production bundle index.html when SERVE_DJANGO_PAGES is False."""
+    index = settings.REACT_BUILD_DIR / 'index.html'
+    if not index.is_file():
+        raise Http404(
+            'React build not found. From the repo root: cd frontend && npm run build'
+        )
+    return HttpResponse(index.read_bytes(), content_type='text/html; charset=utf-8')

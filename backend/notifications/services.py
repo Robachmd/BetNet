@@ -1,4 +1,5 @@
 import logging
+import math
 from datetime import datetime
 
 from asgiref.sync import async_to_sync
@@ -7,7 +8,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.utils import timezone as django_timezone
 
-from .models import Notification, NotificationPreference
+from .models import LocationAlert, Notification, NotificationPreference
 
 logger = logging.getLogger(__name__)
 
@@ -91,29 +92,84 @@ def send_sms_notification(phone, message):
     logger.info("SMS to %s: %s", phone, message[:80])
 
 
-def notify_new_listing(property_obj):
-    """Notify users who have new-listing alerts enabled in the same city."""
-    from django.contrib.auth import get_user_model
+def _haversine_km(
+    lat1: float, lon1: float, lat2: float, lon2: float
+) -> float:
+    """Great-circle distance between two WGS84 points in kilometres."""
+    r = 6371.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlmb = math.radians(lon2 - lon1)
+    h = (
+        math.sin(dphi / 2) ** 2
+        + math.cos(p1) * math.cos(p2) * math.sin(dlmb / 2) ** 2
+    )
+    return 2 * r * math.asin(min(1.0, math.sqrt(h)))
 
-    User = get_user_model()
 
-    city = property_obj.location.city
-    recipients = (
-        User.objects.filter(
-            city__iexact=city,
-            notification_preferences__new_listing_alerts=True,
+def _location_alert_matches(alert: LocationAlert, property_obj) -> bool:
+    """True if the published property falls inside this watch definition."""
+    loc = property_obj.location
+    if loc.city.strip().lower() != alert.city.strip().lower():
+        return False
+    alat, alon = alert.latitude, alert.longitude
+    plat, plon = loc.latitude, loc.longitude
+    if (
+        alat is not None
+        and alon is not None
+        and plat is not None
+        and plon is not None
+    ):
+        dist = _haversine_km(
+            float(plat), float(plon), float(alat), float(alon)
         )
-        .exclude(pk=property_obj.owner_id)
+        return dist <= float(alert.radius_km)
+    if alert.sub_city and alert.sub_city.strip():
+        return loc.sub_city.strip().lower() == alert.sub_city.strip().lower()
+    return True
+
+
+def notify_subscribers_of_new_listing(property_obj):
+    """
+    Notify every user (except the poster) with at least one **active** LocationAlert
+    that matches this property. Users with `new_listing_alerts=False` are skipped;
+    missing preference rows are treated as opted in. At most one notification
+    per user per property.
+    """
+    users_opted_out = NotificationPreference.objects.filter(
+        new_listing_alerts=False
+    ).values_list("user_id", flat=True)
+    alerts = (
+        LocationAlert.objects.filter(is_active=True, user__is_active=True)
+        .exclude(user_id=property_obj.owner_id)
+        .exclude(user_id__in=users_opted_out)
+        .select_related("user")
     )
 
-    for user in recipients.iterator():
+    seen_recipients: set[int] = set()
+    loc = property_obj.location
+    place = f"{loc.city}" + (f", {loc.sub_city}" if loc.sub_city else "")
+    for alert in alerts.iterator():
+        if alert.user_id in seen_recipients:
+            continue
+        if not _location_alert_matches(alert, property_obj):
+            continue
         create_notification(
-            recipient=user,
+            recipient=alert.user,
             notification_type=Notification.NotificationType.NEW_LISTING,
             title="New listing in your area",
-            message=f'"{property_obj.title}" was just listed in {city}.',
-            data={"property_id": property_obj.pk},
+            message=f'"{property_obj.title}" was just listed in {place}.',
+            data={
+                "property_id": property_obj.pk,
+                "property_slug": property_obj.slug,
+                "location_alert_id": alert.pk,
+            },
         )
+        seen_recipients.add(alert.user_id)
+
+
+# Backwards-compatible name
+notify_new_listing = notify_subscribers_of_new_listing
 
 
 def notify_price_drop(property_obj, old_price):
@@ -149,7 +205,7 @@ def notify_price_drop(property_obj, old_price):
 
 
 def notify_visit_booking_created(booking):
-    """Notify landlord when a renter requests a property visit."""
+    """Notify property owner when a renter requests a property visit."""
     if booking.booking_type != booking.BookingType.VISIT:
         return
     prop = booking.property
@@ -229,7 +285,7 @@ def send_visit_day_reminders():
 
 
 def notify_booking_update(booking):
-    """Notify the renter and landlord about a booking status change."""
+    """Notify the renter and property owner about a booking status change."""
     status_label = booking.get_status_display()
     property_title = booking.property.title
 

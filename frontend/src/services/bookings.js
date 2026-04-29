@@ -74,17 +74,34 @@ export const bookingService = {
     return data;
   },
 
+  /**
+   * Same endpoint as getMyBookings: property owners and renters see bookings they own or made.
+   * Property owner UIs should filter to pending requests on the user's own properties.
+   */
+  async getPropertyOwnerBookings(params = {}) {
+    const { data } = await api.get(`${B}/bookings/`, {
+      params: { page_size: 100, ...params },
+    });
+    return data;
+  },
+
   async getBookingById(id) {
     const { data } = await api.get(`${B}/bookings/${id}/`);
     return data;
   },
 
-  async updateBookingStatus(id, status, landlord_response = '') {
+  async updateBookingStatus(id, status, property_owner_response = '') {
     const { data } = await api.patch(`${B}/bookings/${id}/update-status/`, {
       status,
-      landlord_response,
+      landlord_response: property_owner_response,
+      property_owner_response,
     });
     return data;
+  },
+
+  // Backward-compatible alias while call sites migrate.
+  async getLandlordBookings(params = {}) {
+    return this.getPropertyOwnerBookings(params);
   },
 
   async cancelBooking(id) {

@@ -10,6 +10,8 @@ from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
+from accounts.models import User as AccountsUser
+
 from .models import (
     City,
     Property,
@@ -32,14 +34,24 @@ from .serializers import (
     HallDetailSerializer,
 )
 from .filters import PropertyFilter, HallFilter
-from .permissions import IsLandlord, IsOwnerOrAdmin, IsOwnerOrReadOnly
+from .permissions import IsPropertyOwner, IsOwnerOrAdmin, IsOwnerOrReadOnly
+
+
+def _is_platform_admin(user) -> bool:
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_staff:
+        return True
+    return getattr(user, "role", None) == AccountsUser.Role.ADMIN
 
 
 # ── Property CRUD ViewSet ─────────────────────────────────────────────────────
 
 class PropertyViewSet(viewsets.ModelViewSet):
     queryset = (
-        Property.objects.select_related("location", "amenities", "owner", "hall_detail")
+        Property.objects.select_related(
+            "location", "amenities", "owner", "hall_detail", "listing_slot_purchase"
+        )
         .prefetch_related("images", "videos")
         .all()
     )
@@ -59,10 +71,67 @@ class PropertyViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ("create",):
-            return [permissions.IsAuthenticated(), IsLandlord()]
-        if self.action in ("update", "partial_update", "destroy"):
+            return [permissions.IsAuthenticated(), IsPropertyOwner()]
+        if self.action in (
+            "update",
+            "partial_update",
+            "destroy",
+            "publish",
+        ):
             return [permissions.IsAuthenticated(), IsOwnerOrAdmin()]
         return [permissions.AllowAny()]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.action == "list" and not _is_platform_admin(self.request.user):
+            return qs.filter(is_published=True, is_available=True)
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        from payments.listing_package_services import has_listing_capacity
+
+        if not has_listing_capacity(request.user):
+            return Response(
+                {
+                    "detail": (
+                        "No listing slots available. Purchase a listing package in Payments "
+                        "or use an active subscription."
+                    ),
+                    "code": "no_listing_slots",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().create(request, *args, **kwargs)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="publish",
+    )
+    def publish(self, request, slug=None):
+        """Use one listing slot (from a paid package) or legacy subscription; then publish."""
+        from payments.listing_package_services import consume_slot_for_publish
+
+        prop = self.get_object()
+        if consume_slot_for_publish(request.user, prop):
+            prop.refresh_from_db()
+            return Response(
+                PropertyDetailSerializer(prop, context={"request": request}).data,
+                status=status.HTTP_200_OK,
+            )
+        return Response(
+            {
+                "detail": "No listing slots available. Purchase a listing package in Payments or use an active subscription.",
+                "code": "no_listing_slots",
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    def perform_destroy(self, instance):
+        from payments.listing_package_services import release_slot_on_property_delete
+
+        release_slot_on_property_delete(instance)
+        instance.delete()
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -228,7 +297,7 @@ class NearbyPropertiesView(generics.ListAPIView):
         )
 
 
-# ── My Properties (landlord dashboard) ───────────────────────────────────────
+# ── My Properties (property owner dashboard) ─────────────────────────────────
 
 class MyPropertiesView(generics.ListAPIView):
     serializer_class = PropertyListSerializer
@@ -249,7 +318,11 @@ class HallRentalListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = HallFilter
-    ordering_fields = ["property__price_monthly", "capacity"]
+    ordering_fields = [
+        "property__price_monthly",
+        "property__created_at",
+        "capacity",
+    ]
 
     def get_queryset(self):
         return (
@@ -327,3 +400,50 @@ class CitySearchView(generics.ListAPIView):
                 | Q(search_text__icontains=q)
             )
         return qs[:100]
+
+
+class AdminPropertyVerifyView(APIView):
+    """Mark a listing verified (platform admin or Django staff)."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        if not _is_platform_admin(request.user):
+            return Response(
+                {"detail": "Admin access required."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        prop = get_object_or_404(Property, pk=pk)
+        prop.is_verified = True
+        prop.save(update_fields=["is_verified"])
+        return Response(
+            PropertyDetailSerializer(prop, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class AdminPropertyRejectView(APIView):
+    """Unpublish / hide a listing (moderation). Optional reason is accepted but not stored."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        if not _is_platform_admin(request.user):
+            return Response(
+                {"detail": "Admin access required."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        prop = get_object_or_404(Property, pk=pk)
+        prop.is_verified = False
+        prop.is_published = False
+        prop.is_available = False
+        prop.save(update_fields=["is_verified", "is_published", "is_available"])
+        return Response(
+            {
+                "detail": "Listing rejected and hidden.",
+                "property": PropertyDetailSerializer(
+                    prop, context={"request": request}
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )

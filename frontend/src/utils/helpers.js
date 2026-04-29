@@ -1,5 +1,6 @@
 import { format, formatDistanceToNow, parseISO, isValid } from 'date-fns';
 import { UPLOADS_URL, DEFAULT_CURRENCY } from './constants';
+import { API_ORIGIN } from '../config/runtime';
 
 export function formatPrice(amount, currency = DEFAULT_CURRENCY) {
   if (amount === null || amount === undefined) return '';
@@ -49,8 +50,7 @@ export function formatRelativeDate(dateStr) {
 }
 
 function mediaOrigin() {
-  const base = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
-  return base.replace(/\/?api\/?$/i, '') || 'http://localhost:8000';
+  return API_ORIGIN;
 }
 
 export function listFromApi(data) {
@@ -60,7 +60,89 @@ export function listFromApi(data) {
   if (data.properties && Array.isArray(data.properties)) return data.properties;
   if (data.bookings && Array.isArray(data.bookings)) return data.bookings;
   if (data.data && Array.isArray(data.data)) return data.data;
+  if (data.notifications && Array.isArray(data.notifications)) {
+    return data.notifications;
+  }
+  if (data.conversations && Array.isArray(data.conversations)) {
+    return data.conversations;
+  }
+  if (data.reviews && Array.isArray(data.reviews)) {
+    return data.reviews;
+  }
   return [];
+}
+
+export function ensureArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+/** Display name for API user objects (name may be absent; profile uses first/last). */
+export function userDisplayName(user) {
+  if (!user) return 'User';
+  const joined = [user.first_name, user.last_name].filter(Boolean).join(' ').trim();
+  if (joined) return joined;
+  if (user.full_name) return String(user.full_name);
+  if (user.name) return String(user.name);
+  if (user.phone_number) return String(user.phone_number);
+  if (user.email) return String(user.email);
+  return 'User';
+}
+
+/** Normalize chat list API row for ChatList / ChatWindow (snake_case API → UI shape). */
+export function mapChatConversationRow(raw) {
+  if (!raw) return null;
+  const op = raw.other_participant;
+  const lm = raw.last_message;
+  const prop = raw.property;
+  return {
+    id: raw.id,
+    name: op ? userDisplayName(op) : 'Unknown',
+    avatar: op?.profile_image ? getAvatarUrl(op.profile_image) : null,
+    lastMessage: lm?.content ?? '',
+    lastMessageAt: lm?.created_at,
+    unread: raw.unread_count ?? 0,
+    propertyTitle: prop?.title,
+    online: raw.online,
+  };
+}
+
+/** Map chat message API row to ChatWindow shape (content/sender vs text/senderId). */
+export function mapApiMessageToUi(m) {
+  if (!m) return null;
+  const sid = m.sender?.id ?? m.sender_id ?? m.senderId;
+  const rawImage = m.image;
+  let imageUrl;
+  if (rawImage) {
+    imageUrl = typeof rawImage === 'string' ? getAvatarUrl(rawImage) : rawImage.url || rawImage;
+  }
+  const mt = (m.message_type || m.type || '').toString().toUpperCase();
+  return {
+    id: m.id,
+    senderId: sid,
+    text: m.content ?? m.text ?? '',
+    createdAt: m.created_at ?? m.createdAt,
+    type: mt === 'IMAGE' ? 'image' : 'text',
+    imageUrl,
+    read: m.is_read ?? m.read,
+  };
+}
+
+/** Normalize conversation detail for active thread (participants array). */
+export function mapChatConversationDetail(detail, currentUserId) {
+  if (!detail) return null;
+  const parts = detail.participants || [];
+  const other = parts.find((p) => p.id !== currentUserId) || parts[0];
+  const prop = detail.property;
+  return {
+    id: detail.id,
+    name: other ? userDisplayName(other) : 'Unknown',
+    avatar: other?.profile_image ? getAvatarUrl(other.profile_image) : null,
+    lastMessage: '',
+    lastMessageAt: detail.updated_at,
+    unread: detail.unread_count ?? 0,
+    propertyTitle: prop?.title,
+    online: false,
+  };
 }
 
 /** Favorite list API returns { results: [{ id, property, property_detail }] } */
@@ -110,6 +192,34 @@ export function isHallPropertyType(propertyType) {
   const u = String(propertyType).toUpperCase().replace(/[\s-]+/g, '_');
   if (u === 'HALL_RENTAL' || u === 'HALL') return true;
   return String(propertyType).toLowerCase() === 'hall';
+}
+
+const FLOOR_RELEVANT_API_TYPES = new Set([
+  'APARTMENT',
+  'CONDOMINIUM',
+  'REAL_ESTATE',
+  'BUSINESS_SHOP',
+]);
+
+/** DRF `property_type` enum — listing may show floor for these types. */
+export function apiPropertyTypeSupportsFloor(apiType) {
+  if (apiType == null || apiType === '') return false;
+  return FLOOR_RELEVANT_API_TYPES.has(String(apiType).toUpperCase());
+}
+
+/**
+ * Add/Edit property form uses PROPERTY_TYPES `.value` (e.g. apartment, shop).
+ */
+export function formPropertyTypeSupportsFloor(propertyType) {
+  if (propertyType == null || propertyType === '') return false;
+  const v = String(propertyType).toLowerCase();
+  return (
+    v === 'apartment'
+    || v === 'condominium'
+    || v === 'shop'
+    || v === 'office'
+    || v === 'commercial'
+  );
 }
 
 export function normalizePropertyForCard(raw) {

@@ -6,6 +6,7 @@ class AppNotification {
     required this.message,
     required this.isRead,
     required this.createdAt,
+    this.data = const {},
   });
 
   final int id;
@@ -14,6 +15,7 @@ class AppNotification {
   final String message;
   final bool isRead;
   final DateTime createdAt;
+  final Map<String, dynamic> data;
 
   factory AppNotification.fromJson(Map<String, dynamic> j) {
     return AppNotification(
@@ -24,6 +26,9 @@ class AppNotification {
       isRead: j['is_read'] as bool? ?? false,
       createdAt: DateTime.tryParse(j['created_at'] as String? ?? '') ??
           DateTime.now(),
+      data: j['data'] is Map
+          ? Map<String, dynamic>.from(j['data'] as Map)
+          : const {},
     );
   }
 }

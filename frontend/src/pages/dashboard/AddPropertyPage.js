@@ -1,20 +1,21 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import {
   FiChevronRight, FiChevronLeft, FiUpload, FiX, FiCheck,
   FiSave, FiImage, FiMapPin, FiHome, FiDollarSign, FiGrid,
-  FiPlayCircle, FiTrash2,
+  FiPlayCircle, FiTrash2, FiInfo,
 } from 'react-icons/fi';
 import useAuth from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { propertyService } from '../../services/properties';
+import { getListingSlotSummary } from '../../services/listingPackages';
 import {
   PROPERTY_TYPES, LISTING_TYPES, CITIES, ADDIS_ABABA_SUB_CITIES, AMENITIES,
   HALL_AMENITIES, MAX_IMAGES_PER_PROPERTY, ACCEPTED_IMAGE_TYPES,
 } from '../../utils/constants';
-import { validateImageFile, getErrorMessage, isHallPropertyType } from '../../utils/helpers';
+import { validateImageFile, getErrorMessage, isHallPropertyType, formPropertyTypeSupportsFloor } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
 const STEPS = [
@@ -69,6 +70,8 @@ export default function AddPropertyPage() {
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [dragActive, setDragActive] = useState(false);
+  const [remainingSlots, setRemainingSlots] = useState(null);
+  const [loadingSlots, setLoadingSlots] = useState(true);
   const fileInputRef = useRef(null);
 
   const {
@@ -79,6 +82,7 @@ export default function AddPropertyPage() {
     defaultValues: {
       title: '', description: '', propertyType: '', bedrooms: '', bathrooms: '',
       area: '', city: '', subCity: '', specificLocation: '', amenities: [], hallAmenities: [], monthlyRent: '',
+      floorNumber: '',
       hourlyRate: '', dailyRate: '', capacity: '', videoUrl: '',
       listingType: 'rent',
     },
@@ -89,11 +93,33 @@ export default function AddPropertyPage() {
   const city = watch('city');
   const isHall = isHallPropertyType(propertyType);
 
+  useEffect(() => {
+    let mounted = true;
+    const loadSlots = async () => {
+      setLoadingSlots(true);
+      try {
+        const summary = await getListingSlotSummary();
+        if (!mounted) return;
+        setRemainingSlots(Number(summary?.package_slots_remaining ?? 0));
+      } catch {
+        if (!mounted) return;
+        setRemainingSlots(null);
+      } finally {
+        if (mounted) setLoadingSlots(false);
+      }
+    };
+    loadSlots();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const handleNavigation = (key) => {
     const routes = {
-      dashboard: '/dashboard/landlord',
-      properties: '/dashboard/landlord',
-      'add-property': '/dashboard/landlord/add-property',
+      dashboard: '/dashboard/property-owner',
+      properties: '/dashboard/property-owner',
+      'add-property': '/dashboard/property-owner/add-property',
+      'listing-packages': '/dashboard/property-owner/listing-packages',
       messages: '/chat',
       settings: '/profile',
     };
@@ -198,6 +224,18 @@ export default function AddPropertyPage() {
   const onSubmit = async (data) => {
     setSubmitting(true);
     try {
+      const summary = await getListingSlotSummary();
+      if (!summary?.can_publish) {
+        toast.error('You need an active listing package before creating a property draft.');
+        navigate('/dashboard/property-owner/listing-packages', {
+          state: {
+            source: 'add-property',
+            intendedAction: 'create-property',
+          },
+        });
+        return;
+      }
+
       const propertyData = {
         title: data.title,
         description: data.description,
@@ -222,6 +260,19 @@ export default function AddPropertyPage() {
         videoUrl: data.videoUrl || undefined,
       };
 
+      if (formPropertyTypeSupportsFloor(data.propertyType)) {
+        const raw = data.floorNumber;
+        if (raw !== '' && raw !== undefined && raw !== null) {
+          const n = Number(raw);
+          if (Number.isNaN(n) || n < 0 || n > 200) {
+            toast.error('Floor number must be between 0 and 200.');
+            setSubmitting(false);
+            return;
+          }
+          propertyData.floor_number = n;
+        }
+      }
+
       const result = await propertyService.createProperty(propertyData);
       const created = result.property || result;
       const propertySlug = created.slug;
@@ -231,9 +282,32 @@ export default function AddPropertyPage() {
       }
 
       localStorage.removeItem('betnet_property_draft');
-      toast.success('Property created successfully!');
-      navigate('/dashboard/landlord');
+
+      try {
+        await propertyService.publishProperty(propertySlug);
+        toast.success('Property created and published — it is now live in search.');
+        navigate('/dashboard/property-owner');
+      } catch (pubErr) {
+        const code = pubErr?.response?.data?.code;
+        if (code === 'no_listing_slots') {
+          toast.success('Property saved as a draft. Buy a listing package to publish (one payment per package, not per post).');
+          navigate('/dashboard/property-owner/listing-packages', { state: { draftSlug: propertySlug } });
+          return;
+        }
+        toast.error(getErrorMessage(pubErr));
+        navigate('/dashboard/property-owner');
+      }
     } catch (err) {
+      if (err?.response?.data?.code === 'no_listing_slots') {
+        toast.error('No listing package slots available. Buy a listing package before creating a property.');
+        navigate('/dashboard/property-owner/listing-packages', {
+          state: {
+            source: 'add-property',
+            intendedAction: 'create-property',
+          },
+        });
+        return;
+      }
       toast.error(getErrorMessage(err));
     } finally {
       setSubmitting(false);
@@ -311,6 +385,23 @@ export default function AddPropertyPage() {
                   <label className={labelClass}>Area (m²)</label>
                   <input {...register('area')} type="number" min="0" className={inputClass} placeholder="0" />
                 </div>
+              </div>
+            )}
+
+            {!isHall && formPropertyTypeSupportsFloor(propertyType) && (
+              <div className="max-w-md">
+                <label className={labelClass}>Floor number</label>
+                <input
+                  {...register('floorNumber')}
+                  type="number"
+                  min="0"
+                  max="200"
+                  className={inputClass}
+                  placeholder="e.g. 3 (ground = 0)"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Optional. Shown for apartment, condominium, office, shop, or commercial space (0–200).
+                </p>
               </div>
             )}
 
@@ -620,6 +711,9 @@ export default function AddPropertyPage() {
                     { label: 'Bedrooms', value: values.bedrooms },
                     { label: 'Bathrooms', value: values.bathrooms },
                     { label: 'Area', value: values.area ? `${values.area} m²` : '-' },
+                    ...(formPropertyTypeSupportsFloor(values.propertyType) ? [
+                      { label: 'Floor', value: values.floorNumber !== '' && values.floorNumber != null ? values.floorNumber : '-' },
+                    ] : []),
                   ] : [
                     { label: 'Capacity', value: values.capacity ? `${values.capacity} people` : '-' },
                   ]),
@@ -694,7 +788,7 @@ export default function AddPropertyPage() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar
-        role="landlord"
+        role="property_owner"
         activeKey="add-property"
         user={user}
         onNavigate={handleNavigation}
@@ -716,6 +810,35 @@ export default function AddPropertyPage() {
             >
               <FiSave className="w-4 h-4" />
               {savingDraft ? 'Saving...' : 'Save Draft'}
+            </button>
+          </div>
+
+          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50/90 px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-emerald-700 font-semibold mb-1">
+              Remaining listing package slots
+            </p>
+            <div className="flex items-end gap-2">
+              <p className="text-3xl font-bold text-emerald-900 leading-none">
+                {loadingSlots ? '...' : (remainingSlots ?? '!')}
+              </p>
+              <p className="text-sm text-emerald-800 pb-0.5">slots left to publish</p>
+            </div>
+          </div>
+
+          <div className="mb-6 rounded-xl border border-green-200 bg-green-50/90 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex gap-3 min-w-0">
+              <FiInfo className="w-5 h-5 text-green-700 flex-shrink-0 mt-0.5" aria-hidden />
+              <p className="text-sm text-gray-700">
+                Going live on BetNet uses <span className="font-medium text-gray-900">one listing package slot</span> per published
+                property. Review packages, prices, and your balance anytime.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/property-owner/listing-packages')}
+              className="flex-shrink-0 px-4 py-2 text-sm font-medium text-green-800 bg-white border border-green-200 rounded-lg hover:bg-green-50 transition-colors"
+            >
+              Listing packages
             </button>
           </div>
 

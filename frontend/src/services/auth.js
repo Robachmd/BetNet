@@ -22,7 +22,13 @@ export const authService = {
   },
 
   async register(userData) {
-    const roleMap = { renter: 'RENTER', landlord: 'LANDLORD' };
+    const roleMap = {
+      renter: 'RENTER',
+      landlord: 'LANDLORD',
+      property_owner: 'LANDLORD',
+      propertyowner: 'LANDLORD',
+      owner: 'LANDLORD',
+    };
     const role =
       roleMap[(userData.role || '').toLowerCase()] ||
       (userData.role || 'RENTER').toUpperCase();
@@ -83,6 +89,32 @@ export const authService = {
 
   async updateProfile(profileData) {
     const { data } = await api.patch(`${AUTH}/profile/`, profileData);
+    localStorage.setItem('user', JSON.stringify(data));
+    return data;
+  },
+
+  async enablePropertyOwner() {
+    let data;
+    try {
+      ({ data } = await api.post(`${AUTH}/enable-property-owner/`));
+    } catch {
+      ({ data } = await api.post(`${AUTH}/enable-landlord/`));
+    }
+    if (data.user) {
+      localStorage.setItem('user', JSON.stringify(data.user));
+    }
+    return data;
+  },
+
+  // Backward-compatible alias while older call sites migrate.
+  async enableLandlord() {
+    return this.enablePropertyOwner();
+  },
+
+  async setActiveAppMode(mode) {
+    const { data } = await api.patch(`${AUTH}/profile/`, {
+      active_app_mode: mode,
+    });
     localStorage.setItem('user', JSON.stringify(data));
     return data;
   },

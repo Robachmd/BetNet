@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../data/models/notification_item.dart';
 import '../../services/betnet_api.dart';
-import 'login_screen.dart';
 
 final notificationsListProvider =
     FutureProvider.autoDispose<List<AppNotification>>((ref) async {
@@ -32,12 +32,7 @@ class NotificationsScreen extends ConsumerWidget {
               const Text('Log in to see booking and listing alerts.'),
               const SizedBox(height: 16),
               FilledButton(
-                onPressed: () {
-                  Navigator.push<void>(
-                    context,
-                    MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
-                  );
-                },
+                onPressed: () => context.push('/login'),
                 child: const Text('Log in'),
               ),
             ],
@@ -91,6 +86,10 @@ class NotificationsScreen extends ConsumerWidget {
                           .markNotificationRead(n.id);
                       ref.invalidate(notificationsListProvider);
                       await onChanged?.call();
+                      final slug = n.data['property_slug']?.toString();
+                      if (context.mounted && slug != null && slug.isNotEmpty) {
+                        context.push('/property/$slug');
+                      }
                     } catch (_) {}
                   },
                 );

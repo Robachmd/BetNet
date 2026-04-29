@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/models/chat.dart';
 import '../../services/betnet_api.dart';
 import 'chat_thread_screen.dart';
-import 'login_screen.dart';
 
 final conversationsProvider =
     FutureProvider.autoDispose<List<ConversationListItem>>((ref) async {
@@ -26,15 +26,10 @@ class ChatListScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Sign in to message landlords.'),
+              const Text('Sign in to message property owners.'),
               const SizedBox(height: 16),
               FilledButton(
-                onPressed: () {
-                  Navigator.push<void>(
-                    context,
-                    MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
-                  );
-                },
+                onPressed: () => context.push('/login'),
                 child: const Text('Log in'),
               ),
             ],

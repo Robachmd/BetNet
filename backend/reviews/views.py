@@ -65,7 +65,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class ReviewResponseView(generics.CreateAPIView):
-    """Landlord / property owner responds to a review on their property."""
+    """Property owner responds to a review on their property."""
 
     serializer_class = ReviewResponseSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -107,7 +107,7 @@ class PropertyReviewSummaryView(generics.GenericAPIView):
 
 
 class UserReviewSummaryView(generics.GenericAPIView):
-    """GET aggregated review summary for a user (landlord or tenant)."""
+    """GET aggregated review summary for a user (property owner or tenant)."""
 
     permission_classes = [permissions.AllowAny]
     serializer_class = ReviewSummarySerializer

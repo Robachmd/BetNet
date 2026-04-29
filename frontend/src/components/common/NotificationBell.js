@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiBell, FiCheck, FiHome, FiCalendar, FiMessageSquare, FiAlertCircle } from 'react-icons/fi';
-
-const typeIcons = {
-  booking: FiCalendar,
-  message: FiMessageSquare,
-  property: FiHome,
-  alert: FiAlertCircle,
-};
+import { FiBell, FiCheck } from 'react-icons/fi';
+import {
+  getNotificationVisualMeta,
+  isNotificationRead,
+  notificationTimestamp,
+} from '../../utils/notificationUi';
 
 export default function NotificationBell({
   notifications = [],
@@ -76,32 +74,38 @@ export default function NotificationBell({
               </div>
             ) : (
               notifications.map((notif) => {
-                const Icon = typeIcons[notif.type] || FiBell;
+                const read = isNotificationRead(notif);
+                const { Icon, shortLabel, iconWrapClass } = getNotificationVisualMeta(notif);
                 return (
                   <button
                     key={notif.id}
                     onClick={() => { onNotificationClick(notif); setIsOpen(false); }}
                     className={`flex items-start gap-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
-                      !notif.read ? 'bg-green-50/50' : ''
+                      !read ? 'bg-green-50/50' : ''
                     }`}
                   >
                     <div
                       className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        !notif.read ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                        read ? 'bg-gray-100 text-gray-400' : `${iconWrapClass}`
                       }`}
                     >
                       <Icon className="w-4 h-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm ${!notif.read ? 'font-medium text-gray-800' : 'text-gray-600'}`}>
+                      {shortLabel && (
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 mb-0.5">
+                          {shortLabel}
+                        </p>
+                      )}
+                      <p className={`text-sm ${!read ? 'font-medium text-gray-800' : 'text-gray-600'}`}>
                         {notif.title}
                       </p>
                       {notif.message && (
                         <p className="text-xs text-gray-400 mt-0.5 truncate">{notif.message}</p>
                       )}
-                      <p className="text-xs text-gray-300 mt-1">{formatTime(notif.createdAt)}</p>
+                      <p className="text-xs text-gray-300 mt-1">{formatTime(notificationTimestamp(notif))}</p>
                     </div>
-                    {!notif.read && (
+                    {!read && (
                       <span className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
                     )}
                   </button>

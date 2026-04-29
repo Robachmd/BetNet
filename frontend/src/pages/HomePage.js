@@ -80,6 +80,8 @@ export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [newestListings, setNewestListings] = useState([]);
+  const [loadingNewest, setLoadingNewest] = useState(true);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [testimonialIndex, setTestimonialIndex] = useState(0);
 
@@ -88,6 +90,14 @@ export default function HomePage() {
       .then((data) => setFeatured(listFromApi(data)))
       .catch((err) => setError(getErrorMessage(err)))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    propertyService
+      .getProperties({ sort: 'newest', limit: 8, page: 1 })
+      .then((data) => setNewestListings(listFromApi(data)))
+      .catch(() => setNewestListings([]))
+      .finally(() => setLoadingNewest(false));
   }, []);
 
   const handleSearch = (query) => {
@@ -209,6 +219,44 @@ export default function HomePage() {
             </button>
           ))}
         </div>
+      </section>
+
+      {/* Newest listings */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 md:pb-16">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              {t('home.newestTitle')}
+            </h2>
+            <p className="text-gray-500">{t('home.newestSub')}</p>
+          </div>
+          <Link
+            to="/search?sort=newest"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-green-700 hover:text-green-800"
+          >
+            {t('home.seeAllNewest')}
+            <FiArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+        {loadingNewest ? (
+          <LoadingSpinner text={t('home.loadingNewest')} />
+        ) : newestListings.length === 0 ? (
+          <p className="text-center text-gray-400 py-8">{t('home.noNewest')}</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {newestListings.slice(0, 8).map((raw) => {
+              const property = normalizePropertyForCard(raw);
+              return (
+                <PropertyCard
+                  key={property.id}
+                  property={property}
+                  onClick={handlePropertyClick}
+                  onFavoriteToggle={handleFavoriteToggle}
+                />
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Featured Properties */}

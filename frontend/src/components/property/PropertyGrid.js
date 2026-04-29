@@ -1,27 +1,8 @@
 import React from 'react';
 import PropertyCard from './PropertyCard';
 import EmptyState from '../common/EmptyState';
+import { PropertyGridSkeleton } from '../common/Skeletons';
 import { normalizePropertyForCard } from '../../utils/helpers';
-
-function SkeletonCard() {
-  return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-sm animate-pulse">
-      <div className="aspect-[4/3] bg-gray-200" />
-      <div className="p-4 space-y-3">
-        <div className="flex justify-between">
-          <div className="h-4 bg-gray-200 rounded w-3/4" />
-          <div className="h-4 bg-gray-200 rounded w-10" />
-        </div>
-        <div className="h-3 bg-gray-200 rounded w-1/2" />
-        <div className="flex gap-4">
-          <div className="h-3 bg-gray-200 rounded w-16" />
-          <div className="h-3 bg-gray-200 rounded w-16" />
-        </div>
-        <div className="h-5 bg-gray-200 rounded w-28" />
-      </div>
-    </div>
-  );
-}
 
 export default function PropertyGrid({
   properties = [],
@@ -38,10 +19,8 @@ export default function PropertyGrid({
 }) {
   if (isLoading) {
     return (
-      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 ${className}`}>
-        {Array.from({ length: skeletonCount }, (_, i) => (
-          <SkeletonCard key={i} />
-        ))}
+      <div className={className}>
+        <PropertyGridSkeleton count={skeletonCount} />
       </div>
     );
   }

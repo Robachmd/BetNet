@@ -1,6 +1,11 @@
 from django.contrib import admin
 
-from .models import Payment, Subscription
+from .models import (
+    ListingPackage,
+    ListingPackagePurchase,
+    Payment,
+    Subscription,
+)
 
 
 @admin.register(Payment)
@@ -19,14 +24,14 @@ class PaymentAdmin(admin.ModelAdmin):
     search_fields = ["transaction_id", "user__email", "user__first_name", "description"]
     readonly_fields = ["transaction_id", "payment_data", "created_at", "updated_at"]
     date_hierarchy = "created_at"
-    raw_id_fields = ["user", "property", "hall_booking"]
+    raw_id_fields = ["user", "property", "hall_booking", "listing_package"]
     list_per_page = 30
 
     fieldsets = (
         (None, {"fields": ("user", "payment_type", "status")}),
         ("Amount", {"fields": ("amount", "currency")}),
         ("Payment details", {"fields": ("payment_method", "transaction_id", "description")}),
-        ("Related objects", {"fields": ("property", "hall_booking")}),
+        ("Related objects", {"fields": ("property", "hall_booking", "listing_package")}),
         ("Provider data", {"fields": ("payment_data",), "classes": ("collapse",)}),
         ("Timestamps", {"fields": ("created_at", "updated_at")}),
     )
@@ -49,3 +54,37 @@ class SubscriptionAdmin(admin.ModelAdmin):
     readonly_fields = ["created_at"]
     raw_id_fields = ["user"]
     list_per_page = 30
+
+
+@admin.register(ListingPackage)
+class ListingPackageAdmin(admin.ModelAdmin):
+    list_display = (
+        "code",
+        "name",
+        "listing_quota",
+        "price",
+        "compare_at_price",
+        "is_active",
+        "sort_order",
+    )
+    list_filter = ("is_active",)
+    search_fields = ("code", "name")
+    ordering = ("sort_order", "listing_quota")
+
+
+@admin.register(ListingPackagePurchase)
+class ListingPackagePurchaseAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "package",
+        "status",
+        "slots_total",
+        "slots_used",
+        "created_at",
+    )
+    list_filter = ("status",)
+    search_fields = ("user__phone_number", "user__email", "package__code")
+    raw_id_fields = ("user", "package", "payment")
+    readonly_fields = ("created_at", "updated_at")
+    date_hierarchy = "created_at"

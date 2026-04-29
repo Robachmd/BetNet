@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/models/property.dart';
 import '../../services/betnet_api.dart';
 import '../widgets/property_card.dart';
-import 'login_screen.dart';
-import 'property_detail_screen.dart';
 
 final favoritesProvider =
     FutureProvider.autoDispose<List<PropertySummary>>((ref) async {
@@ -34,12 +33,7 @@ class FavoritesScreen extends ConsumerWidget {
                 const Text('Log in to save homes and sync across devices.'),
                 const SizedBox(height: 16),
                 FilledButton(
-                  onPressed: () {
-                    Navigator.push<void>(
-                      context,
-                      MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
-                    );
-                  },
+                  onPressed: () => context.push('/login'),
                   child: const Text('Log in'),
                 ),
               ],
@@ -69,14 +63,7 @@ class FavoritesScreen extends ConsumerWidget {
                   padding: const EdgeInsets.only(bottom: 12),
                   child: PropertyCard(
                     property: p,
-                    onTap: () {
-                      Navigator.push<void>(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (_) => PropertyDetailScreen(slug: p.slug),
-                        ),
-                      );
-                    },
+                    onTap: () => context.push('/property/${p.slug}'),
                   ),
                 );
               },

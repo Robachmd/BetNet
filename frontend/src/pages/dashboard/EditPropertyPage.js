@@ -16,7 +16,7 @@ import {
 } from '../../utils/constants';
 import {
   validateImageFile, getImageUrl, getErrorMessage,
-  propertyTypeFormFromApi, isHallPropertyType,
+  propertyTypeFormFromApi, isHallPropertyType, formPropertyTypeSupportsFloor,
 } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
@@ -76,6 +76,8 @@ export default function EditPropertyPage() {
   const [dragActive, setDragActive] = useState(false);
   const [deletingImage, setDeletingImage] = useState(null);
   const [availabilityStatus, setAvailabilityStatus] = useState('available');
+  const [isPublished, setIsPublished] = useState(true);
+  const [publishing, setPublishing] = useState(false);
   const fileInputRef = useRef(null);
 
   const {
@@ -112,6 +114,9 @@ export default function EditPropertyPage() {
           capacity: property.hallDetails?.capacity || property.capacity || '',
           videoUrl: property.videoUrl || '',
           listingType: property.listing_type || property.listingType || 'rent',
+          floorNumber: property.floor_number != null && property.floor_number !== ''
+            ? String(property.floor_number)
+            : '',
         });
 
         setExistingImages(
@@ -123,9 +128,10 @@ export default function EditPropertyPage() {
         );
 
         setAvailabilityStatus(property.status || 'available');
+        setIsPublished(!!(property.is_published ?? property.isPublished));
       } catch (err) {
         toast.error('Failed to load property');
-        navigate('/dashboard/landlord');
+        navigate('/dashboard/property-owner');
       } finally {
         setPageLoading(false);
       }
@@ -136,8 +142,10 @@ export default function EditPropertyPage() {
 
   const handleNavigation = (key) => {
     const routes = {
-      dashboard: '/dashboard/landlord',
-      properties: '/dashboard/landlord',
+      dashboard: '/dashboard/property-owner',
+      properties: '/dashboard/property-owner',
+      'add-property': '/dashboard/property-owner/add-property',
+      'listing-packages': '/dashboard/property-owner/listing-packages',
       messages: '/chat',
       settings: '/profile',
     };
@@ -237,6 +245,30 @@ export default function EditPropertyPage() {
     if (e.dataTransfer.files?.length) handleImageFiles(e.dataTransfer.files);
   };
 
+  const handlePublish = async () => {
+    setPublishing(true);
+    try {
+      await propertyService.publishProperty(slug);
+      setIsPublished(true);
+      toast.success('Listing is now live.');
+    } catch (e) {
+      if (e?.response?.data?.code === 'no_listing_slots') {
+        toast.error('No listing package slots left. Open Listing Packages to buy a bundle (pay once, publish until package slots are used).');
+        navigate('/dashboard/property-owner/listing-packages', {
+          state: {
+            draftSlug: slug,
+            source: 'edit-property',
+            intendedAction: 'publish-property',
+          },
+        });
+      } else {
+        toast.error(getErrorMessage(e));
+      }
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   const onSubmit = async (data) => {
     setSubmitting(true);
     try {
@@ -265,6 +297,21 @@ export default function EditPropertyPage() {
         videoUrl: data.videoUrl || undefined,
       };
 
+      if (formPropertyTypeSupportsFloor(data.propertyType)) {
+        const raw = data.floorNumber;
+        if (raw === '' || raw === undefined || raw === null) {
+          propertyData.floor_number = null;
+        } else {
+          const n = Number(raw);
+          if (Number.isNaN(n) || n < 0 || n > 200) {
+            toast.error('Floor number must be between 0 and 200.');
+            setSubmitting(false);
+            return;
+          }
+          propertyData.floor_number = n;
+        }
+      }
+
       await propertyService.updateProperty(slug, propertyData);
 
       if (newImages.length > 0) {
@@ -272,7 +319,7 @@ export default function EditPropertyPage() {
       }
 
       toast.success('Property updated successfully!');
-      navigate('/dashboard/landlord');
+      navigate('/dashboard/property-owner');
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -287,7 +334,7 @@ export default function EditPropertyPage() {
   if (pageLoading) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-        <Sidebar role="landlord" activeKey="properties" user={user} onNavigate={handleNavigation} onLogout={logout} />
+        <Sidebar role="property_owner" activeKey="properties" user={user} onNavigate={handleNavigation} onLogout={logout} />
         <main className="flex-1 flex items-center justify-center">
           <LoadingSpinner size="lg" text="Loading property..." />
         </main>
@@ -333,6 +380,20 @@ export default function EditPropertyPage() {
                 <div><label className={labelClass}>Bedrooms</label><input {...register('bedrooms')} type="number" min="0" className={inputClass} /></div>
                 <div><label className={labelClass}>Bathrooms</label><input {...register('bathrooms')} type="number" min="0" className={inputClass} /></div>
                 <div><label className={labelClass}>Area (m²)</label><input {...register('area')} type="number" min="0" className={inputClass} /></div>
+              </div>
+            )}
+            {!isHall && formPropertyTypeSupportsFloor(propertyType) && (
+              <div className="max-w-md">
+                <label className={labelClass}>Floor number</label>
+                <input
+                  {...register('floorNumber')}
+                  type="number"
+                  min="0"
+                  max="200"
+                  className={inputClass}
+                  placeholder="e.g. 3 (ground = 0)"
+                />
+                <p className="text-xs text-gray-400 mt-1">Optional. 0–200 for this property type.</p>
               </div>
             )}
             {/* Availability Status */}
@@ -571,6 +632,9 @@ export default function EditPropertyPage() {
                 <div><span className="text-gray-400">Type:</span> <span className="font-medium text-gray-800">{selectedType?.label}</span></div>
                 <div><span className="text-gray-400">City:</span> <span className="font-medium text-gray-800">{selectedCity?.label}</span></div>
                 <div><span className="text-gray-400">Price:</span> <span className="font-medium text-gray-800">{isHall ? `${values.dailyRate || values.hourlyRate || 0} ETB` : `${values.monthlyRent} ${priceReviewSuffix}`}</span></div>
+                {formPropertyTypeSupportsFloor(values.propertyType) && (
+                  <div><span className="text-gray-400">Floor:</span> <span className="font-medium text-gray-800">{values.floorNumber !== '' && values.floorNumber != null ? values.floorNumber : '—'}</span></div>
+                )}
                 <div><span className="text-gray-400">Images:</span> <span className="font-medium text-gray-800">{existingImages.length} existing + {newImages.length} new</span></div>
                 <div><span className="text-gray-400">Status:</span> <span className="font-medium text-gray-800 capitalize">{availabilityStatus}</span></div>
               </div>
@@ -586,12 +650,12 @@ export default function EditPropertyPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar role="landlord" activeKey="properties" user={user} onNavigate={handleNavigation} onLogout={logout} />
+      <Sidebar role="property_owner" activeKey="properties" user={user} onNavigate={handleNavigation} onLogout={logout} />
 
       <main className="flex-1 min-w-0">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <button
-            onClick={() => navigate('/dashboard/landlord')}
+            onClick={() => navigate('/dashboard/property-owner')}
             className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors"
           >
             <FiArrowLeft className="w-4 h-4" /> Back to Dashboard
@@ -599,6 +663,26 @@ export default function EditPropertyPage() {
 
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Edit Property</h1>
           <p className="text-sm text-gray-500 mb-6">Step {currentStep} of {STEPS.length}</p>
+
+          {!isPublished && (
+            <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-amber-900">Draft — not visible in public search</p>
+                <p className="text-xs text-amber-800 mt-0.5">
+                  If you have listing package slots, publishing uses one slot (no extra per-post charge). If you
+                  have no slots, buy a listing package first.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handlePublish}
+                disabled={publishing}
+                className="shrink-0 px-4 py-2 bg-green-700 text-white text-sm font-medium rounded-lg hover:bg-green-800 disabled:opacity-60"
+              >
+                {publishing ? 'Publishing…' : 'Publish to catalog'}
+              </button>
+            </div>
+          )}
 
           <ProgressBar currentStep={currentStep} steps={STEPS} />
 

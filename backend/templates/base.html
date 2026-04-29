@@ -96,6 +96,69 @@
     ::-webkit-scrollbar-track { background: #f3f4f6; }
     ::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+    /* Match React dashboard surface language on Django templates. */
+    .surface-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 1rem;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+    .section-shell {
+      max-width: 72rem;
+      margin: 0 auto;
+      padding: 1.5rem 1rem;
+    }
+    @media (min-width: 640px) {
+      .section-shell { padding: 2rem 1.5rem; }
+    }
+    @media (min-width: 1024px) {
+      .section-shell { padding: 2rem; }
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      border-radius: 0.75rem;
+      padding: 0.625rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      background: #166534;
+      color: #ffffff;
+      transition: all .2s ease;
+    }
+    .btn-primary:hover { background: #14532d; }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      border-radius: 0.75rem;
+      padding: 0.625rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+      color: #374151;
+      transition: all .2s ease;
+    }
+    .btn-secondary:hover { background: #f9fafb; border-color: #9ca3af; }
+    .input-field {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 0.75rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      background: #ffffff;
+      color: #111827;
+      transition: all .2s ease;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: #16a34a;
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+    }
   </style>
 
   {% block extra_css %}{% endblock %}
@@ -379,7 +442,7 @@
             <span class="text-xl font-extrabold text-primary-400">Bet<span class="text-secondary-500">Net</span></span>
           </a>
           <p class="text-sm leading-relaxed max-w-xs">
-            {% blocktrans trimmed %}Ethiopia's trusted property marketplace. Find verified homes, apartments, commercial spaces, and event halls, with transparent pricing and no hidden platform fees.{% endblocktrans %}
+            {% blocktrans trimmed %}Ethiopia's trusted property marketplace for verified rentals, sales, and event halls. BetNet helps renters and property owners transact with transparent pricing, identity checks, and reliable support.{% endblocktrans %}
           </p>
           <div class="flex gap-3 mt-5">
             <a href="#" class="w-9 h-9 rounded-lg bg-gray-800 hover:bg-primary-700 flex items-center justify-center transition-colors" aria-label="{% trans 'Facebook' %}">
@@ -398,21 +461,45 @@
         <div>
           <h4 class="text-white text-sm font-bold uppercase tracking-wider mb-5">{% trans "Platform" %}</h4>
           <ul class="space-y-3">
-            <li><a href="{% url 'search' %}" class="text-sm hover:text-primary-400 transition-colors">{% trans "Browse Listings" %}</a></li>
-            <li><a href="{% url 'halls' %}" class="text-sm hover:text-primary-400 transition-colors">{% trans "Event Halls" %}</a></li>
-            <li><a href="#" class="text-sm hover:text-primary-400 transition-colors">{% trans "Price Insights" %}</a></li>
-            <li><a href="#" class="text-sm hover:text-primary-400 transition-colors">{% trans "Neighborhoods" %}</a></li>
+            <li>
+              <a href="{% url 'search' %}" class="text-sm hover:text-primary-400 transition-colors">{% trans "Browse Listings" %}</a>
+              <p class="text-xs text-gray-500 mt-0.5">{% trans "Verified homes, apartments, and commercial spaces" %}</p>
+            </li>
+            <li>
+              <a href="{% url 'halls' %}" class="text-sm hover:text-primary-400 transition-colors">{% trans "Event Halls" %}</a>
+              <p class="text-xs text-gray-500 mt-0.5">{% trans "Compare venue size, amenities, and availability" %}</p>
+            </li>
+            <li>
+              <a href="#" class="text-sm hover:text-primary-400 transition-colors">{% trans "Price Insights" %}</a>
+              <p class="text-xs text-gray-500 mt-0.5">{% trans "Area-level price context for smarter decisions" %}</p>
+            </li>
+            <li>
+              <a href="#" class="text-sm hover:text-primary-400 transition-colors">{% trans "Neighborhoods" %}</a>
+              <p class="text-xs text-gray-500 mt-0.5">{% trans "Explore top sub-cities and local market trends" %}</p>
+            </li>
           </ul>
         </div>
 
-        <!-- For Landlords -->
+        <!-- For Property Owners -->
         <div>
-          <h4 class="text-white text-sm font-bold uppercase tracking-wider mb-5">{% trans "For Landlords" %}</h4>
+          <h4 class="text-white text-sm font-bold uppercase tracking-wider mb-5">{% trans "For Property Owners" %}</h4>
           <ul class="space-y-3">
-            <li><a href="{% url 'register' %}" class="text-sm hover:text-primary-400 transition-colors">{% trans "List Your Property" %}</a></li>
-            <li><a href="#" class="text-sm hover:text-primary-400 transition-colors">{% trans "Pricing Plans" %}</a></li>
-            <li><a href="#" class="text-sm hover:text-primary-400 transition-colors">{% trans "Verification" %}</a></li>
-            <li><a href="#" class="text-sm hover:text-primary-400 transition-colors">{% trans "Landlord Guide" %}</a></li>
+            <li>
+              <a href="{% url 'register' %}" class="text-sm hover:text-primary-400 transition-colors">{% trans "List Your Property" %}</a>
+              <p class="text-xs text-gray-500 mt-0.5">{% trans "Create your owner account and publish listings" %}</p>
+            </li>
+            <li>
+              <a href="#" class="text-sm hover:text-primary-400 transition-colors">{% trans "Pricing Plans" %}</a>
+              <p class="text-xs text-gray-500 mt-0.5">{% trans "Simple package-based pricing for listing capacity" %}</p>
+            </li>
+            <li>
+              <a href="#" class="text-sm hover:text-primary-400 transition-colors">{% trans "Verification" %}</a>
+              <p class="text-xs text-gray-500 mt-0.5">{% trans "Build trust with profile and listing verification" %}</p>
+            </li>
+            <li>
+              <a href="#" class="text-sm hover:text-primary-400 transition-colors">{% trans "Property Owner Guide" %}</a>
+              <p class="text-xs text-gray-500 mt-0.5">{% trans "Best practices for photos, pricing, and response time" %}</p>
+            </li>
           </ul>
         </div>
 
@@ -421,10 +508,15 @@
           <h4 class="text-white text-sm font-bold uppercase tracking-wider mb-5">{% trans "Company" %}</h4>
           <ul class="space-y-3">
             <li><a href="#" class="text-sm hover:text-primary-400 transition-colors">{% trans "About Us" %}</a></li>
-            <li><a href="#" class="text-sm hover:text-primary-400 transition-colors">{% trans "Contact" %}</a></li>
+            <li><a href="mailto:support@betnet.et" class="text-sm hover:text-primary-400 transition-colors">{% trans "Contact" %}</a></li>
             <li><a href="#" class="text-sm hover:text-primary-400 transition-colors">{% trans "Privacy Policy" %}</a></li>
             <li><a href="#" class="text-sm hover:text-primary-400 transition-colors">{% trans "Terms of Service" %}</a></li>
           </ul>
+          <div class="mt-5 text-xs text-gray-500 space-y-1">
+            <p>{% trans "Support:" %} <a href="mailto:support@betnet.et" class="hover:text-primary-400 transition-colors">support@betnet.et</a></p>
+            <p>{% trans "Phone:" %} <a href="tel:+251911000000" class="hover:text-primary-400 transition-colors">+251 91 100 0000</a></p>
+            <p>{% trans "Support hours:" %} {% trans "Mon - Sat, 8:00 AM - 6:00 PM (EAT)" %}</p>
+          </div>
         </div>
       </div>
 

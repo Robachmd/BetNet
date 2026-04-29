@@ -1,17 +1,25 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
+from accounts.models import User as AccountUser
 
-class IsLandlord(BasePermission):
-    """Allow only users whose role is 'landlord'."""
 
-    message = "Only landlords can perform this action."
+class IsPropertyOwner(BasePermission):
+    """Property owners: registered as property owner, or renter with landlord_eligible."""
+
+    message = "Only property owners can perform this action."
 
     def has_permission(self, request, view):
-        return (
-            request.user
-            and request.user.is_authenticated
-            and getattr(request.user, "role", None) == "landlord"
-        )
+        u = request.user
+        if not u or not u.is_authenticated:
+            return False
+        role = (getattr(u, "role", None) or "").strip().upper()
+        if role in (AccountUser.Role.LANDLORD, AccountUser.Role.ADMIN):
+            return True
+        return bool(getattr(u, "landlord_eligible", False))
+
+
+# Backward-compatible alias.
+IsLandlord = IsPropertyOwner
 
 
 class IsOwnerOrAdmin(BasePermission):

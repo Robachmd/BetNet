@@ -13,7 +13,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import EmptyState from '../../components/common/EmptyState';
 import { propertyService } from '../../services/properties';
 import { PROPERTY_TYPES, CITIES } from '../../utils/constants';
-import { formatPrice, getImageUrl, getErrorMessage } from '../../utils/helpers';
+import { formatPrice, getImageUrl, getErrorMessage, listFromApi, ensureArray } from '../../utils/helpers';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -51,7 +51,7 @@ export default function AdminListings() {
         data = await propertyService.getProperties(params);
       }
 
-      const list = data.properties || data.data || data || [];
+      const list = listFromApi(data);
       setProperties(list);
       setTotalPages(data.totalPages || data.pagination?.totalPages || Math.ceil((data.total || list.length) / 15));
     } catch {
@@ -140,10 +140,10 @@ export default function AdminListings() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === properties.length) {
+    if (selectedIds.size === safeProperties.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(properties.map((p) => p.id)));
+      setSelectedIds(new Set(safeProperties.map((p) => p.id)));
     }
   };
 
@@ -162,6 +162,7 @@ export default function AdminListings() {
     setCurrentPage(1);
     loadProperties();
   };
+  const safeProperties = ensureArray(properties);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -244,7 +245,7 @@ export default function AdminListings() {
           {/* Table */}
           {loading ? (
             <LoadingSpinner text="Loading listings..." />
-          ) : properties.length === 0 ? (
+          ) : safeProperties.length === 0 ? (
             <EmptyState icon="property" title="No properties found" description="Try adjusting your filters." />
           ) : (
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -255,7 +256,7 @@ export default function AdminListings() {
                       <th className="text-left px-4 py-3 w-10">
                         <input
                           type="checkbox"
-                          checked={selectedIds.size === properties.length && properties.length > 0}
+                          checked={selectedIds.size === safeProperties.length && safeProperties.length > 0}
                           onChange={toggleSelectAll}
                           className="rounded border-gray-300 text-green-600 focus:ring-green-500"
                         />
@@ -270,7 +271,7 @@ export default function AdminListings() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {properties.map((property) => (
+                    {safeProperties.map((property) => (
                       <tr key={property.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3">
                           <input

@@ -23,6 +23,8 @@ export default function ChatList({
   isLoading = false,
   className = '',
 }) {
+  const safeConversations = Array.isArray(conversations) ? conversations : [];
+
   if (isLoading) {
     return (
       <div className={`divide-y divide-gray-100 ${className}`}>
@@ -40,7 +42,7 @@ export default function ChatList({
     );
   }
 
-  if (conversations.length === 0) {
+  if (safeConversations.length === 0) {
     return (
       <div className={`flex flex-col items-center justify-center py-16 px-4 ${className}`}>
         <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-4">
@@ -48,7 +50,7 @@ export default function ChatList({
         </div>
         <h3 className="font-semibold text-gray-700 mb-1">No conversations</h3>
         <p className="text-sm text-gray-400 text-center">
-          Start a conversation by contacting a landlord on a property listing.
+          Start a conversation by contacting a property owner on a property listing.
         </p>
       </div>
     );
@@ -56,7 +58,7 @@ export default function ChatList({
 
   return (
     <div className={`divide-y divide-gray-50 ${className}`}>
-      {conversations.map((conv) => {
+      {safeConversations.map((conv) => {
         const isActive = conv.id === activeId;
         return (
           <button

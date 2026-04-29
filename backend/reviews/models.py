@@ -6,7 +6,7 @@ from django.db import models
 class Review(models.Model):
     class ReviewType(models.TextChoices):
         PROPERTY_REVIEW = "PROPERTY_REVIEW", "Property Review"
-        LANDLORD_REVIEW = "LANDLORD_REVIEW", "Landlord Review"
+        LANDLORD_REVIEW = "LANDLORD_REVIEW", "Property Owner Review"
         TENANT_REVIEW = "TENANT_REVIEW", "Tenant Review"
 
     reviewer = models.ForeignKey(

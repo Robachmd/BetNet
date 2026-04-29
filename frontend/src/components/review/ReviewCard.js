@@ -73,10 +73,10 @@ export default function ReviewCard({
         </button>
       )}
 
-      {/* Landlord response */}
+      {/* Property owner response */}
       {landlordResponse && (
         <div className="mt-4 ml-4 pl-4 border-l-2 border-green-200">
-          <p className="text-xs font-semibold text-green-700 mb-1">Landlord Response</p>
+          <p className="text-xs font-semibold text-green-700 mb-1">Property Owner Response</p>
           <p className="text-sm text-gray-600">{landlordResponse}</p>
         </div>
       )}

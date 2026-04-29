@@ -1,0 +1,22 @@
+{
+  "@@locale": "am",
+  "appTitle": "BetNet",
+  "browse": "ይፈልጉ",
+  "saved": "የተቀመጡ",
+  "chat": "ውይይት",
+  "alerts": "ማስታወቂያዎች",
+  "profile": "መገለጫ",
+  "logIn": "ግባ",
+  "eventHalls": "የሃል ክፍሎች",
+  "floorNumberLabel": "የመኖሪያ ወለል",
+  "floorNumberHint": "ለምሳሌ 3 (መሬት = 0)",
+  "floorNumberHelp": "የክፍል ወይም የሱቅ ወለል (0–200)። አማራጭ።",
+  "floorMeta": "ወለል {n}",
+  "@floorMeta": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  }
+}

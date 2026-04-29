@@ -15,3 +15,20 @@ String normalizeEthiopianPhone(String raw) {
   }
   return s;
 }
+
+final RegExp _ethiopianMobileE164 = RegExp(r'^\+251[79]\d{8}$');
+
+/// Validates Ethiopian mobile numbers for both major providers:
+/// - Ethio Telecom: 09XXXXXXXX
+/// - Safaricom Ethiopia: 07XXXXXXXX
+/// Also accepts international forms: +2519XXXXXXXX / +2517XXXXXXXX.
+String? validateEthiopianMobile(String raw) {
+  final normalized = normalizeEthiopianPhone(raw);
+  if (normalized.isEmpty) {
+    return 'Mobile number is required.';
+  }
+  if (!_ethiopianMobileE164.hasMatch(normalized)) {
+    return 'Enter a valid Ethiopian mobile number: 09..., 07..., +2519..., or +2517....';
+  }
+  return null;
+}

@@ -1,20 +1,16 @@
-<p align="center">
-  <img src="frontend/public/betnet-logo.svg" alt="BetNet logo" width="360" />
-  <h1 align="center">BetNet &mdash; Ethiopia's Trusted Property Marketplace</h1>
-  <p align="center">
-    A full-stack platform connecting renters, buyers, sellers, and property owners across Ethiopia with verified listings, real-time chat, price insights, and integrated payments.
-  </p>
-</p>
+# BetNet — Ethiopia's Trusted Property Marketplace
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Django-5.1-092E20?logo=django" alt="Django" />
-  <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react" alt="React" />
-  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql" alt="PostgreSQL" />
-  <img src="https://img.shields.io/badge/Redis-7-DC382D?logo=redis" alt="Redis" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?logo=tailwindcss" alt="Tailwind" />
-  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker" alt="Docker" />
-  <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
-</p>
+![BetNet logo](frontend/public/betnet-logo.svg)
+
+A full-stack platform connecting renters, buyers, sellers, and property owners across Ethiopia with verified listings, real-time chat, price insights, and integrated payments.
+
+![Django](https://img.shields.io/badge/Django-5.1-092E20?logo=django)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql)
+![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?logo=tailwindcss)
+![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)
+![License](https://img.shields.io/badge/License-MIT-green)
 
 ---
 
@@ -22,15 +18,15 @@
 
 **BetNet** is a modern property marketplace purpose-built for the Ethiopian housing market. It tackles the pain points of property hunting in Ethiopia — fake listings, opaque pricing, language barriers, and fragmented communication — by providing a verified, multi-language platform with built-in scam protection, real-time messaging, and local payment integration (Chapa, Telebirr, Stripe).
 
-The platform supports residential rentals (apartments, villas, condominiums, service houses) as well as **event space / hall rentals** with availability calendars. Landlords manage listings through a dedicated dashboard, while renters discover properties via smart search with map-based exploration. An admin panel provides full analytics, user management, and listing moderation.
+The platform supports residential rentals (apartments, villas, condominiums, service houses) as well as **event space / hall rentals** with availability calendars. Property owners manage listings through a dedicated dashboard, while renters discover properties via smart search with map-based exploration. An admin panel provides full analytics, user management, and listing moderation.
 
 ---
 
 ## Features
 
 | Category | Feature | Status |
-|---|---|:---:|
-| **Trust & Safety** | Verified Listings (KYC for landlords) | ✅ |
+| --- | --- | :---: |
+| **Trust & Safety** | Verified Listings (KYC for property owners) | ✅ |
 | | Anti-Scam Reporting System | ✅ |
 | | Admin Moderation Dashboard | ✅ |
 | **Discovery** | Smart Location Search (city, sub-city, woreda) | ✅ |
@@ -50,8 +46,8 @@ The platform supports residential rentals (apartments, villas, condominiums, ser
 | | Stripe (international cards) | ✅ |
 | | Provider Webhooks | ✅ |
 | **Reviews** | Property Reviews & Ratings (1-5 stars) | ✅ |
-| | Landlord & Tenant Reviews | ✅ |
-| | Landlord Response to Reviews | ✅ |
+| | Property Owner & Tenant Reviews | ✅ |
+| | Property Owner Response to Reviews | ✅ |
 | **Subscriptions** | Basic / Standard / Premium Plans | ✅ |
 | | Featured Listing Promotion | ✅ |
 | **Localisation** | Multi-Language UI (English, Amharic, Afaan Oromo) | ✅ |
@@ -71,7 +67,7 @@ The platform supports residential rentals (apartments, villas, condominiums, ser
 ### Backend
 
 | Technology | Purpose |
-|---|---|
+| --- | --- |
 | **Django 5.1** | Web framework |
 | **Django REST Framework 3.15** | RESTful API layer |
 | **SimpleJWT** | JWT-based authentication |
@@ -90,7 +86,7 @@ The platform supports residential rentals (apartments, villas, condominiums, ser
 ### Frontend
 
 | Technology | Purpose |
-|---|---|
+| --- | --- |
 | **React 18** | UI framework |
 | **Tailwind CSS 3.4** | Utility-first styling |
 | **React Router 6** | Client-side routing |
@@ -105,7 +101,7 @@ The platform supports residential rentals (apartments, villas, condominiums, ser
 ### Infrastructure
 
 | Technology | Purpose |
-|---|---|
+| --- | --- |
 | **Docker Compose** | Multi-container orchestration |
 | **Nginx** | Reverse proxy, SSL termination |
 | **GitHub Actions** | CI/CD (planned) |
@@ -114,7 +110,7 @@ The platform supports residential rentals (apartments, villas, condominiums, ser
 
 ## Project Structure
 
-```
+```text
 betnet/
 ├── docker-compose.yml              # Orchestration (DB, Redis, backend, Celery, Nginx)
 ├── README.md
@@ -171,7 +167,7 @@ betnet/
         │   ├── LoginPage, RegisterPage, OTPVerificationPage
         │   ├── BookingPage, ChatPage, PaymentPage
         │   ├── HallRentalPage, FavoritesPage, ProfilePage
-        │   └── dashboard/          # Dashboard, Admin*, Landlord*, Renter*, AddProperty, EditProperty
+        │   └── dashboard/          # Dashboard, Admin*, PropertyOwner*, Renter*, AddProperty, EditProperty
         │
         ├── services/               # API clients (auth, properties, bookings, chat, payments, etc.)
         ├── context/                # AuthContext (React Context)
@@ -243,8 +239,13 @@ npm start
 ```bash
 cd betnet
 
-# Copy and configure environment
+# Copy and configure backend environment
 cp backend/.env.example backend/.env
+# Set DEBUG=False, SERVE_DJANGO_PAGES=False for production API-only mode
+
+# Copy and configure frontend environment
+cp frontend/.env.example frontend/.env
+# Set REACT_APP_API_URL and REACT_APP_WS_URL to your public domain
 
 # Start all services
 docker compose up --build -d
@@ -259,21 +260,22 @@ docker compose exec backend python manage.py createsuperuser
 Services will be available at:
 
 | Service | URL |
-|---|---|
-| Frontend | `http://localhost:3000` |
-| Backend API | `http://localhost:8000/api/` |
-| WebSocket (Daphne) | `ws://localhost:8001/ws/` |
-| Django Admin | `http://localhost:8000/admin/` |
-| Nginx Proxy | `http://localhost:80` |
+| --- | --- |
+| Public Web UI (React via Nginx) | `http://localhost/` |
+| Backend API (proxied) | `http://localhost/api/` |
+| WebSocket (proxied) | `ws://localhost/ws/` |
+| Django Admin (proxied) | `http://localhost/admin/` |
 
 ### Environment Variables
 
 #### Backend (`backend/.env`)
 
 | Variable | Description | Example |
-|---|---|---|
+| --- | --- | --- |
 | `SECRET_KEY` | Django secret key | `your-secret-key` |
 | `DEBUG` | Debug mode | `True` |
+| `SERVE_DJANGO_PAGES` | Enable Django-rendered pages/routes | `False` |
+| `ALLOWED_HOSTS` | Allowed hostnames for Django | `localhost,127.0.0.1` |
 | `DATABASE_URL` | PostgreSQL connection | `postgres://user:pass@localhost:5432/betnet` |
 | `REDIS_URL` | Redis connection | `redis://localhost:6379/0` |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | `my-cloud` |
@@ -283,13 +285,15 @@ Services will be available at:
 | `TELEBIRR_APP_ID` | Telebirr app ID | `app-id` |
 | `STRIPE_SECRET_KEY` | Stripe secret key | `sk_test_xxx` |
 | `CORS_ALLOWED_ORIGINS` | Allowed frontend origins | `http://localhost:3000` |
+| `CSRF_TRUSTED_ORIGINS` | Trusted browser origins for CSRF | `http://localhost` |
 
 #### Frontend (`frontend/.env`)
 
 | Variable | Description | Example |
-|---|---|---|
-| `REACT_APP_API_URL` | Backend API base URL | `http://localhost:8000/api` |
-| `REACT_APP_WS_URL` | WebSocket base URL | `ws://localhost:8000/ws` |
+| --- | --- | --- |
+| `REACT_APP_API_URL` | Backend API base URL | `http://localhost/api` |
+| `REACT_APP_WS_URL` | WebSocket origin | `ws://localhost` |
+| `REACT_APP_UPLOADS_URL` | Media/static origin fallback | `http://localhost` |
 | `REACT_APP_GOOGLE_MAPS_KEY` | Maps API key (optional) | `AIza...` |
 | `REACT_APP_CHAPA_PUBLIC_KEY` | Chapa public key | `CHAPUBK_TEST-xxx` |
 
@@ -302,20 +306,20 @@ All endpoints are prefixed with `/api/`.
 ### Accounts (`/api/accounts/`)
 
 | Method | Endpoint | Description |
-|---|---|---|
+| --- | --- | --- |
 | POST | `/register/` | Register new user (phone + password) |
 | POST | `/login/` | Obtain JWT token pair |
 | POST | `/logout/` | Blacklist refresh token |
 | POST | `/otp/request/` | Request OTP via SMS |
 | POST | `/otp/verify/` | Verify OTP code |
 | GET/PUT | `/profile/` | View/update own profile |
-| GET | `/landlord/<id>/` | View landlord public profile |
+| GET | `/landlord/<id>/` | View property owner public profile |
 | POST | `/change-password/` | Change password |
 
 ### Properties (`/api/properties/`)
 
 | Method | Endpoint | Description |
-|---|---|---|
+| --- | --- | --- |
 | GET/POST | `/properties/` | List all / create property |
 | GET/PUT/DEL | `/properties/<slug>/` | Retrieve / update / delete |
 | GET/POST | `/properties/<slug>/images/` | List / upload images |
@@ -324,7 +328,7 @@ All endpoints are prefixed with `/api/`.
 | GET | `/price-insights/` | Area price comparisons |
 | GET | `/featured/` | Featured listings |
 | GET | `/nearby/` | Nearby properties (geo query) |
-| GET | `/my-properties/` | Landlord's own listings |
+| GET | `/my-properties/` | Property owner's own listings |
 | GET | `/halls/` | Hall/event space listings |
 | GET | `/search/` | Full-text property search |
 | GET/POST | `/favorites/` | List / add favorites |
@@ -333,7 +337,7 @@ All endpoints are prefixed with `/api/`.
 ### Bookings (`/api/bookings/`)
 
 | Method | Endpoint | Description |
-|---|---|---|
+| --- | --- | --- |
 | GET/POST | `/bookings/` | List / create booking |
 | GET/PUT | `/bookings/<id>/` | Retrieve / update status |
 | GET/POST | `/hall-bookings/` | List / create hall reservation |
@@ -344,17 +348,17 @@ All endpoints are prefixed with `/api/`.
 ### Reviews (`/api/reviews/`)
 
 | Method | Endpoint | Description |
-|---|---|---|
+| --- | --- | --- |
 | GET/POST | `/reviews/` | List / create review |
 | GET/PUT/DEL | `/reviews/<id>/` | Retrieve / update / delete |
-| POST | `/reviews/<id>/respond/` | Landlord respond to review |
+| POST | `/reviews/<id>/respond/` | Property owner responds to review |
 | GET | `/properties/<id>/reviews/summary/` | Property rating summary |
 | GET | `/users/<id>/reviews/summary/` | User rating summary |
 
 ### Chat (`/api/chat/`)
 
 | Method | Endpoint | Description |
-|---|---|---|
+| --- | --- | --- |
 | GET/POST | `/conversations/` | List / start conversation |
 | GET | `/conversations/<id>/` | Conversation detail |
 | GET/POST | `/conversations/<id>/messages/` | List / send messages |
@@ -364,7 +368,7 @@ All endpoints are prefixed with `/api/`.
 ### Payments (`/api/payments/`)
 
 | Method | Endpoint | Description |
-|---|---|---|
+| --- | --- | --- |
 | POST | `/initiate/` | Initiate payment (Chapa/Telebirr/Stripe) |
 | POST | `/verify/` | Verify payment status |
 | GET | `/history/` | Payment history |
@@ -377,7 +381,7 @@ All endpoints are prefixed with `/api/`.
 ### Notifications (`/api/notifications/`)
 
 | Method | Endpoint | Description |
-|---|---|---|
+| --- | --- | --- |
 | GET | `/` | List user notifications |
 | POST | `/mark-read/` | Mark notifications as read |
 | GET/PUT | `/preferences/` | Notification preferences |
@@ -386,7 +390,7 @@ All endpoints are prefixed with `/api/`.
 ### Analytics (`/api/analytics/`) — Admin only
 
 | Method | Endpoint | Description |
-|---|---|---|
+| --- | --- | --- |
 | GET | `/dashboard/` | Platform overview stats |
 | GET | `/popular-areas/` | Most searched/viewed areas |
 | GET | `/revenue/` | Revenue analytics |
@@ -397,7 +401,7 @@ All endpoints are prefixed with `/api/`.
 ### WebSocket Endpoints
 
 | URL | Description |
-|---|---|
+| --- | --- |
 | `ws://host:8001/ws/chat/<conversation_id>/` | Real-time chat messaging |
 | `ws://host:8001/ws/notifications/` | Live notification push |
 
@@ -405,7 +409,7 @@ All endpoints are prefixed with `/api/`.
 
 ## Database Schema
 
-```
+```text
 ┌──────────────┐       ┌──────────────┐       ┌──────────────┐
 │    User       │──1:N──│   Property    │──1:N──│ PropertyImage│
 │  (accounts)   │       │ (properties)  │       └──────────────┘
@@ -468,12 +472,12 @@ All endpoints are prefixed with `/api/`.
 
 **Key relationships:**
 
-- **User** authenticates via phone number with OTP; roles are Renter, Landlord, or Admin.
+- **User** authenticates via phone number with OTP; roles are Renter, Property Owner, or Admin.
 - **Property** has a one-to-one Location (Ethiopian addresses with woreda/kebele) and Amenities.
 - **HallDetail** extends properties of type `HALL_RENTAL` with capacity, pricing, and equipment.
 - **Booking** supports visits, rental applications, and hall events with a state-machine workflow.
 - **Payment** tracks transactions across three providers (Chapa, Telebirr, Stripe) with webhook verification.
-- **Subscription** manages tiered landlord plans (Basic/Standard/Premium) with listing limits.
+- **Subscription** manages tiered property owner plans (Basic/Standard/Premium) with listing limits.
 - **Conversation/Message** powers real-time chat via Django Channels + Redis.
 
 ---
@@ -481,8 +485,8 @@ All endpoints are prefixed with `/api/`.
 ## Monetization
 
 | Revenue Stream | Description |
-|---|---|
-| **Featured Listings** | Landlords pay to promote properties to the top of search results |
+| --- | --- |
+| **Featured Listings** | Property owners pay to promote properties to the top of search results |
 | **Verification Fee** | One-time KYC identity verification charge |
 | **Subscription Plans** | Tiered plans (Basic free / Standard 499 ETB / Premium 999 ETB) with listing limits and premium features |
 | **Hall Booking Commission** | Platform fee on event space reservations |
@@ -510,6 +514,4 @@ This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) f
 
 ---
 
-<p align="center">
-  Built with ❤️ for the Ethiopian rental market
-</p>
+Built with care for the Ethiopian rental market

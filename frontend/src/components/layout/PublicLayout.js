@@ -19,7 +19,7 @@ function buildNavUser(user) {
 
 export default function PublicLayout() {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, isPropertyOwner } = useAuth();
 
   const handleNavigate = (target) => {
     if (typeof target === 'string' && target.startsWith('/')) {
@@ -56,6 +56,7 @@ export default function PublicLayout() {
       onRegister={() => navigate('/register')}
       onLogout={logout}
       onNavigate={handleNavigate}
+      showPropertyOwnerDashboard={isAuthenticated && isPropertyOwner}
     >
       <Outlet />
     </Layout>

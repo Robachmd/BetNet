@@ -64,6 +64,14 @@
            transition-shadow duration-300 overflow-hidden;
   }
 
+  .surface-card {
+    @apply bg-white rounded-2xl border border-gray-100 shadow-sm;
+  }
+
+  .section-shell {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full
            text-xs font-medium;

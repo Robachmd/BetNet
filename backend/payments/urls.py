@@ -9,6 +9,26 @@ router = DefaultRouter()
 router.register(r"subscriptions", views.SubscriptionViewSet, basename="subscription")
 
 urlpatterns = [
+    path(
+        "listing-packages/slots/summary/",
+        views.ListingSlotSummaryView.as_view(),
+        name="listing-slots-summary",
+    ),
+    path(
+        "listing-packages/my-purchases/",
+        views.MyListingPackagePurchasesView.as_view(),
+        name="my-listing-purchases",
+    ),
+    path(
+        "listing-packages/<int:package_id>/purchase/",
+        views.InitiateListingPackagePurchaseView.as_view(),
+        name="listing-package-purchase",
+    ),
+    path(
+        "listing-packages/",
+        views.ListingPackageListView.as_view(),
+        name="listing-packages",
+    ),
     path("initiate/", views.InitiatePaymentView.as_view(), name="initiate"),
     path("verify/", views.VerifyPaymentView.as_view(), name="verify"),
     path("history/", views.PaymentHistoryView.as_view(), name="history"),

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   FiUser, FiPhone, FiMail, FiLock, FiCamera, FiSave, FiEye,
   FiEyeOff, FiBell, FiCheck, FiShield, FiHome, FiCalendar,
-  FiStar, FiAlertCircle,
+  FiStar, FiAlertCircle, FiLayers, FiGrid,
 } from 'react-icons/fi';
 import useAuth from '../hooks/useAuth';
 import authService from '../services/auth';
@@ -17,14 +17,24 @@ import {
 const NOTIFICATION_PREFS = [
   { key: 'newListings', label: 'New listings in my area', description: 'Get notified when new properties are listed near you' },
   { key: 'bookingUpdates', label: 'Booking updates', description: 'Confirmations, cancellations, and reminders' },
-  { key: 'messages', label: 'Chat messages', description: 'When a landlord or renter sends you a message' },
+  { key: 'messages', label: 'Chat messages', description: 'When a property owner or renter sends you a message' },
   { key: 'priceDrops', label: 'Price drops', description: 'When a favorited property lowers its price' },
   { key: 'promotions', label: 'Promotions & tips', description: 'Offers, property tips, and BetNet news' },
 ];
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, updateProfile, isLoading: authLoading } = useAuth();
+  const {
+    user,
+    isAuthenticated,
+    updateProfile,
+    isLoading: authLoading,
+    isOwnerMode,
+    switchAppMode,
+    isPropertyOwner,
+    isRenter,
+    isAdmin,
+  } = useAuth();
   const fileInputRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState('profile');
@@ -52,6 +62,7 @@ export default function ProfilePage() {
     current: false, new: false, confirm: false,
   });
   const [passwordErrors, setPasswordErrors] = useState({});
+  const [modeSaving, setModeSaving] = useState(false);
 
   const [notifications, setNotifications] = useState({
     newListings: true,
@@ -211,8 +222,12 @@ export default function ProfilePage() {
               </h2>
               <p className="text-sm text-gray-500">{formatPhoneNumber(user.phone)}</p>
               <div className="flex flex-wrap items-center gap-2 mt-2 justify-center sm:justify-start">
-                <Badge variant={user.role === 'landlord' ? 'info' : 'success'} size="sm" icon>
-                  {user.role === 'landlord' ? 'Landlord' : 'Renter'}
+                <Badge
+                  variant={isPropertyOwner ? 'info' : isAdmin ? 'warning' : 'success'}
+                  size="sm"
+                  icon
+                >
+                  {isPropertyOwner ? 'Property Owner' : isAdmin ? 'Admin' : 'Renter'}
                 </Badge>
                 {user.isVerified && (
                   <Badge variant="verified" size="sm" icon>Verified</Badge>
@@ -222,7 +237,7 @@ export default function ProfilePage() {
 
             {/* Quick Stats */}
             <div className="flex gap-6 text-center">
-              {user.role === 'landlord' ? (
+              {isPropertyOwner ? (
                 <>
                   <div>
                     <p className="text-2xl font-bold text-gray-900">{user.listingsCount || 0}</p>
@@ -249,7 +264,103 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Verification Banner */}
+        {/* Property owner accounts: switch browsing vs managing listings (same landlord login) */}
+        {isPropertyOwner && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">How you use BetNet</h3>
+            <p className="text-xs text-gray-500 mb-4">
+              Same login: switch between browsing listings and managing your properties, packages, and payouts.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                disabled={modeSaving}
+                onClick={async () => {
+                  if (!isOwnerMode) return;
+                  setModeSaving(true);
+                  try {
+                    await switchAppMode('RENTER');
+                    navigate('/dashboard', { replace: true });
+                  } catch (e) {
+                    setError(getErrorMessage(e));
+                  } finally {
+                    setModeSaving(false);
+                  }
+                }}
+                className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium border transition-colors ${
+                  !isOwnerMode
+                    ? 'bg-green-700 text-white border-green-700'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                Browsing & bookings
+              </button>
+              <button
+                type="button"
+                disabled={modeSaving}
+                onClick={async () => {
+                  if (isOwnerMode) return;
+                  setModeSaving(true);
+                  try {
+                    await switchAppMode('LANDLORD');
+                    navigate('/dashboard', { replace: true });
+                  } catch (e) {
+                    setError(getErrorMessage(e));
+                  } finally {
+                    setModeSaving(false);
+                  }
+                }}
+                className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium border transition-colors ${
+                  isOwnerMode
+                    ? 'bg-green-700 text-white border-green-700'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                Property owner
+              </button>
+            </div>
+          </div>
+        )}
+
+        {isPropertyOwner && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Properties and packages</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard/property-owner')}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 hover:border-green-300 hover:bg-green-50"
+              >
+                <FiGrid className="w-4 h-4" />
+                Property owner dashboard
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard/property-owner/listing-packages')}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 hover:border-green-300 hover:bg-green-50"
+              >
+                <FiLayers className="w-4 h-4" />
+                Listing Packages
+              </button>
+            </div>
+          </div>
+        )}
+
+        {isRenter && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-6">
+            <h3 className="text-sm font-semibold text-emerald-900 mb-1">List properties on BetNet</h3>
+            <p className="text-xs text-emerald-800 mb-3">
+              Renter accounts cannot access the property owner dashboard. Register a separate property owner account with another phone number, then sign in with that account when you want to manage listings and packages.
+            </p>
+            <Link
+              to="/register?intent=property_owner"
+              className="inline-flex px-4 py-2 bg-emerald-700 text-white text-sm font-medium rounded-lg hover:bg-emerald-800"
+            >
+              Create property owner account
+            </Link>
+          </div>
+        )}
+
         {!user.isVerified && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
             <FiShield className="w-5 h-5 text-yellow-600 flex-shrink-0" />

@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 
 from . import views
 
@@ -9,4 +9,5 @@ urlpatterns = [
     path("mark-read/", views.MarkNotificationReadView.as_view(), name="mark-read"),
     path("preferences/", views.NotificationPreferenceView.as_view(), name="preferences"),
     path("unread-count/", views.UnreadCountView.as_view(), name="unread-count"),
+    path("location-alerts/", include(views.location_alert_router.urls)),
 ]

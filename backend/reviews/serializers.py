@@ -104,7 +104,7 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
         elif review_type == Review.ReviewType.LANDLORD_REVIEW:
             if not reviewed_user:
                 raise serializers.ValidationError(
-                    {"reviewed_user": "Reviewed user is required for landlord reviews."}
+                    {"reviewed_user": "Reviewed user is required for property owner reviews."}
                 )
             if reviewed_user == reviewer:
                 raise serializers.ValidationError(

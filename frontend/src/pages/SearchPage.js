@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { FiGrid, FiMap, FiSliders, FiChevronDown } from 'react-icons/fi';
+import { FiGrid, FiMap, FiChevronDown, FiBookmark } from 'react-icons/fi';
 import PropertyFilters from '../components/property/PropertyFilters';
 import PropertyGrid from '../components/property/PropertyGrid';
 import PropertyMap from '../components/property/PropertyMap';
 import Pagination from '../components/common/Pagination';
 import SearchBar from '../components/common/SearchBar';
+import LocationAlertsPanel from '../components/location/LocationAlertsPanel';
 import propertyService from '../services/properties';
+import { locationAlertsService } from '../services/locationAlerts';
 import { ADDIS_ABABA_SUB_CITIES, PAGINATION_DEFAULT } from '../utils/constants';
 import {
   parseQueryString, buildQueryString, getErrorMessage, listFromApi,
@@ -57,6 +59,18 @@ export default function SearchPage() {
   const [error, setError] = useState('');
   const [favoriteIds, setFavoriteIds] = useState(new Set());
   const [showSort, setShowSort] = useState(false);
+  const [savedSearches, setSavedSearches] = useState([]);
+  const [saveMessage, setSaveMessage] = useState('');
+  const [showAlertsPanel, setShowAlertsPanel] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('betnet_saved_searches');
+      setSavedSearches(raw ? JSON.parse(raw) : []);
+    } catch {
+      setSavedSearches([]);
+    }
+  }, []);
 
   const syncUrlParams = useCallback((newFilters, newQuery, newSort, newPage) => {
     const params = { ...newFilters };
@@ -154,6 +168,45 @@ export default function SearchPage() {
     } catch {}
   };
 
+  const saveCurrentSearch = async () => {
+    const snapshot = {
+      id: Date.now(),
+      title: query || [filters.propertyType, filters.city, filters.subCity].filter(Boolean).join(' · ') || 'Saved search',
+      query,
+      filters,
+      sortBy,
+      createdAt: new Date().toISOString(),
+    };
+    const next = [snapshot, ...savedSearches].slice(0, 10);
+    setSavedSearches(next);
+    localStorage.setItem('betnet_saved_searches', JSON.stringify(next));
+    setSaveMessage('Search saved.');
+
+    try {
+      if (filters.city || filters.subCity) {
+        await locationAlertsService.create({
+          label: snapshot.title,
+          city: filters.city || 'Addis Ababa',
+          sub_city: filters.subCity || '',
+          latitude: null,
+          longitude: null,
+          radius_km: 5,
+          is_active: true,
+        });
+        setSaveMessage('Search saved and area alert created.');
+      }
+    } catch {
+      setSaveMessage('Search saved. Alert was not created.');
+    }
+  };
+
+  const applySavedSearch = (row) => {
+    setQuery(row.query || '');
+    setFilters(row.filters || initialFilters);
+    setSortBy(row.sortBy || 'newest');
+    setCurrentPage(1);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Search Header */}
@@ -194,7 +247,7 @@ export default function SearchPage() {
           {/* Main Content */}
           <main className="flex-1 min-w-0">
             {/* Toolbar */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">
                   {query ? `Results for "${query}"` : 'All Properties'}
@@ -204,7 +257,14 @@ export default function SearchPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button
+                  onClick={saveCurrentSearch}
+                  className="inline-flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:border-primary-300 transition-colors"
+                >
+                  <FiBookmark className="w-4 h-4" />
+                  Save search
+                </button>
                 {/* Sort Dropdown */}
                 <div className="relative">
                   <button
@@ -237,7 +297,7 @@ export default function SearchPage() {
                 </div>
 
                 {/* View Toggle */}
-                <div className="hidden md:flex items-center bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div className="flex items-center bg-white border border-gray-200 rounded-xl overflow-hidden">
                   <button
                     onClick={() => setViewMode('grid')}
                     className={`p-2.5 transition-colors ${
@@ -259,6 +319,40 @@ export default function SearchPage() {
                 </div>
               </div>
             </div>
+            {saveMessage && (
+              <div className="mb-4 rounded-xl border border-primary-100 bg-primary-50 px-3 py-2 text-sm text-primary-800">
+                {saveMessage}
+              </div>
+            )}
+            {savedSearches.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Saved searches</p>
+                  <button
+                    onClick={() => setShowAlertsPanel((s) => !s)}
+                    className="text-xs font-medium text-primary-700"
+                  >
+                    {showAlertsPanel ? 'Hide alerts' : 'Manage alerts'}
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {savedSearches.map((row) => (
+                    <button
+                      key={row.id}
+                      onClick={() => applySavedSearch(row)}
+                      className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 hover:border-primary-300"
+                    >
+                      {row.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {showAlertsPanel && (
+              <div className="mb-6">
+                <LocationAlertsPanel />
+              </div>
+            )}
 
             {/* Error State */}
             {error && (
@@ -284,12 +378,12 @@ export default function SearchPage() {
                 onEmptyAction={handleClearFilters}
               />
             ) : (
-              <div className="space-y-6">
+              <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_1fr] gap-5">
                 <PropertyMap
                   properties={properties}
                   onPropertyClick={handlePropertyClick}
-                  height="500px"
-                  className="rounded-2xl shadow-sm"
+                  height="min(70vh,680px)"
+                  className="rounded-2xl shadow-sm xl:sticky xl:top-28"
                 />
                 <PropertyGrid
                   properties={properties}

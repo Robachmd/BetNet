@@ -215,7 +215,7 @@ export default function BookingPage() {
                 <p className="text-gray-500 mb-2 max-w-md mx-auto">
                   {isHall
                     ? 'Your booking request has been sent to the venue owner. You will be notified once it is confirmed.'
-                    : 'Your visit has been scheduled. The landlord will confirm your appointment shortly.'}
+                    : 'Your visit has been scheduled. The property owner will confirm your appointment shortly.'}
                 </p>
                 {bookingResult?.id && (
                   <p className="text-sm text-gray-400 mb-6">

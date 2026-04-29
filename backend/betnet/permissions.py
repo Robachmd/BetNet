@@ -16,8 +16,8 @@ class IsOwnerOrAdmin(BasePermission):
         return getattr(obj, owner_field, None) == request.user
 
 
-class IsLandlord(BasePermission):
-    """Allow access only to users with the landlord role."""
+class IsPropertyOwner(BasePermission):
+    """Allow access only to users with the property owner role."""
 
     def has_permission(self, request, view):
         return (
@@ -25,6 +25,10 @@ class IsLandlord(BasePermission):
             and request.user.is_authenticated
             and getattr(request.user, 'role', None) == 'landlord'
         )
+
+
+# Backward-compatible alias.
+IsLandlord = IsPropertyOwner
 
 
 class IsRenter(BasePermission):

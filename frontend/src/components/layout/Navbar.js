@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FiMenu, FiX, FiHome, FiSearch, FiUser, FiLogOut, FiSettings, FiCalendar, FiChevronDown } from 'react-icons/fi';
+import {
+  FiMenu, FiX, FiHome, FiSearch, FiUser, FiLogOut, FiSettings, FiCalendar,
+  FiChevronDown, FiLayout,
+} from 'react-icons/fi';
 import SearchBar from '../common/SearchBar';
 import LanguageSwitcher from '../common/LanguageSwitcher';
 import NotificationBell from '../common/NotificationBell';
@@ -16,8 +20,10 @@ export default function Navbar({
   onRegister = () => {},
   onLogout = () => {},
   onNavigate = () => {},
+  showPropertyOwnerDashboard = false,
 }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -63,8 +69,10 @@ export default function Navbar({
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
           <button
-            onClick={() => onNavigate('home')}
+            type="button"
+            onClick={() => navigate('/')}
             className="flex items-center gap-2 flex-shrink-0"
+            aria-label={t('nav.home')}
           >
             <div className="w-8 h-8 bg-gradient-to-br from-green-700 to-green-500 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">B</span>
@@ -123,18 +131,32 @@ export default function Navbar({
                   </button>
 
                   {profileOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50 py-1">
+                    <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50 py-1">
                       <div className="px-4 py-3 border-b border-gray-100">
                         <p className="text-sm font-semibold text-gray-800 truncate">{user.name}</p>
                         <p className="text-xs text-gray-400 truncate">{user.email}</p>
                       </div>
+                      {showPropertyOwnerDashboard && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigate('/dashboard/property-owner');
+                            setProfileOpen(false);
+                          }}
+                          className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-green-800 bg-green-50/80 hover:bg-green-50 border-b border-green-100/80"
+                        >
+                          <FiLayout className="w-4 h-4 text-green-700" /> {t('nav.propertyOwnerDashboard')}
+                        </button>
+                      )}
                       <button
+                        type="button"
                         onClick={() => { onNavigate('profile'); setProfileOpen(false); }}
                         className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50"
                       >
                         <FiUser className="w-4 h-4" /> {t('profile.title')}
                       </button>
                       <button
+                        type="button"
                         onClick={() => { onNavigate('settings'); setProfileOpen(false); }}
                         className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50"
                       >
@@ -224,7 +246,34 @@ export default function Navbar({
                       <p className="text-xs text-gray-400">{user.email}</p>
                     </div>
                   </div>
+                  {showPropertyOwnerDashboard && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigate('/dashboard/property-owner');
+                        setMobileOpen(false);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 mb-2 text-sm font-semibold text-green-800 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                    >
+                      <FiLayout className="w-4 h-4" /> {t('nav.propertyOwnerDashboard')}
+                    </button>
+                  )}
                   <button
+                    type="button"
+                    onClick={() => { onNavigate('profile'); setMobileOpen(false); }}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 mb-1 text-sm text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    <FiUser className="w-4 h-4" /> {t('profile.title')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { onNavigate('settings'); setMobileOpen(false); }}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 mb-3 text-sm text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    <FiSettings className="w-4 h-4" /> {t('dashboard.settings')}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => { onLogout(); setMobileOpen(false); }}
                     className="w-full py-2.5 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
                   >

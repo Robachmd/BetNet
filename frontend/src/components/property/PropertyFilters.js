@@ -144,21 +144,20 @@ export default function PropertyFilters({
       </Section>
 
       <Section title="Price Range (ETB)" sectionKey="price">
-        <div className="flex items-center gap-2">
+        <div className="space-y-2">
           <input
             type="number"
             placeholder="Min"
             value={minPrice}
             onChange={(e) => handleChange('minPrice', e.target.value)}
-            className="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400"
+            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400"
           />
-          <span className="text-gray-400">—</span>
           <input
             type="number"
             placeholder="Max"
             value={maxPrice}
             onChange={(e) => handleChange('maxPrice', e.target.value)}
-            className="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400"
+            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400"
           />
         </div>
       </Section>

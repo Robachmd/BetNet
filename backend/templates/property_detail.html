@@ -4,7 +4,7 @@
 {% block title %}{{ property.title }} — {% trans "BetNet" %}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" x-data="{ current: 0, showPhone: false }">
+<div class="section-shell max-w-7xl py-6" x-data="{ current: 0, showPhone: false }">
 
   <!-- Breadcrumb -->
   <nav class="flex items-center gap-2 text-sm text-gray-500 mb-6 overflow-x-auto whitespace-nowrap" aria-label="{% trans 'Breadcrumb' %}">
@@ -609,7 +609,7 @@
         <!-- Phone number reveal -->
         <div id="property-phone-reveal" x-show="showPhone" x-cloak x-transition class="mt-4 p-4 rounded-xl bg-primary-50 border border-primary-200 scroll-mt-24">
           {% if user.is_authenticated %}
-          <p class="text-sm text-gray-600 mb-1">{% trans "Landlord phone:" %}</p>
+          <p class="text-sm text-gray-600 mb-1">{% trans "Property owner phone:" %}</p>
           <p class="text-lg font-bold text-primary-700">{% if property.owner.phone_number %}{{ property.owner.phone_number }}{% else %}{% trans "Not provided" %}{% endif %}</p>
           {% else %}
           <p class="text-sm text-gray-600">
@@ -695,9 +695,9 @@
       {% endif %}
       </div>
 
-      <!-- Landlord Info -->
+      <!-- Property Owner Info -->
       <div class="bg-white rounded-2xl border border-gray-200 p-6">
-        <h3 class="text-lg font-bold text-gray-900 mb-4">{% trans "Landlord Info" %}</h3>
+        <h3 class="text-lg font-bold text-gray-900 mb-4">{% trans "Property Owner Info" %}</h3>
         <div class="flex items-center gap-3 mb-4">
           <div class="w-14 h-14 rounded-full bg-primary-700 flex items-center justify-center text-white text-xl font-bold uppercase">
             {{ property.owner.first_name|default:property.owner.username|truncatechars:1 }}
@@ -705,7 +705,7 @@
           <div>
             <p class="font-semibold text-gray-900">{{ property.owner.get_full_name|default:property.owner.username }}</p>
             <p class="text-xs text-gray-500">
-              {% if property.owner.get_role_display %}{{ property.owner.get_role_display }}{% else %}{% trans "Landlord" %}{% endif %}
+              {% if property.owner.get_role_display %}{{ property.owner.get_role_display }}{% else %}{% trans "Property Owner" %}{% endif %}
               {% if property.owner.is_verified %}
               <span class="inline-flex items-center gap-0.5 ml-1 text-primary-600">
                 <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>

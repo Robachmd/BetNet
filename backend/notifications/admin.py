@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Notification, NotificationPreference
+from .models import LocationAlert, Notification, NotificationPreference
 
 
 @admin.register(Notification)
@@ -27,4 +27,19 @@ class NotificationPreferenceAdmin(admin.ModelAdmin):
         "push_notifications",
     ]
     search_fields = ["user__phone_number"]
+    raw_id_fields = ["user"]
+
+
+@admin.register(LocationAlert)
+class LocationAlertAdmin(admin.ModelAdmin):
+    list_display = [
+        "user",
+        "label",
+        "city",
+        "sub_city",
+        "radius_km",
+        "is_active",
+    ]
+    list_filter = ["is_active", "city"]
+    search_fields = ["user__phone_number", "city", "sub_city", "label"]
     raw_id_fields = ["user"]

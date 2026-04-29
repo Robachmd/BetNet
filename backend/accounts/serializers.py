@@ -5,7 +5,7 @@ from django.contrib.auth.password_validation import validate_password
 from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework import serializers
 
-from .models import User
+from .models import OwnerProfile, User
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -45,7 +45,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
+        password = validated_data.pop("password")
+        role = validated_data.get("role", User.Role.RENTER)
+        if role == User.Role.LANDLORD:
+            validated_data["landlord_eligible"] = True
+            validated_data["active_app_mode"] = User.AppMode.LANDLORD
+        return User.objects.create_user(password=password, **validated_data)
 
 
 class UserLoginSerializer(serializers.Serializer):
@@ -104,6 +109,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "role",
+            "landlord_eligible",
+            "active_app_mode",
+            "owner_type",
             "profile_image",
             "id_verified",
             "phone_verified",
@@ -121,6 +129,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "phone_verified",
             "date_joined",
             "last_login",
+            "landlord_eligible",
         ]
 
 
@@ -136,6 +145,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             "city",
             "sub_city",
             "bio",
+            "owner_type",
+            "active_app_mode",
         ]
 
     def validate_email(self, value):
@@ -146,6 +157,28 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         ):
             raise serializers.ValidationError(
                 "This email is already in use."
+            )
+        return value
+
+    def validate_owner_type(self, value):
+        user = self.context["request"].user
+        if value and not (
+            user.role == User.Role.LANDLORD
+            or getattr(user, "landlord_eligible", False)
+        ):
+            raise serializers.ValidationError(
+                "owner_type is only for property owner accounts."
+            )
+        return value
+
+    def validate_active_app_mode(self, value):
+        user = self.context["request"].user
+        if value == User.AppMode.LANDLORD and not (
+            user.role == User.Role.LANDLORD
+            or getattr(user, "landlord_eligible", False)
+        ):
+            raise serializers.ValidationError(
+                "Use ‘Become a property owner’ before switching to owner mode."
             )
         return value
 
@@ -173,7 +206,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         return attrs
 
 
-class LandlordPublicProfileSerializer(serializers.ModelSerializer):
+class PropertyOwnerPublicProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
@@ -183,8 +216,54 @@ class LandlordPublicProfileSerializer(serializers.ModelSerializer):
             "profile_image",
             "phone_verified",
             "id_verified",
+            "owner_type",
             "city",
             "sub_city",
             "bio",
             "date_joined",
         ]
+
+
+# Backward-compatible alias during transition.
+class LandlordPublicProfileSerializer(PropertyOwnerPublicProfileSerializer):
+    pass
+
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    """Minimal user row for admin mobile/web moderation UIs."""
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "phone_number",
+            "email",
+            "first_name",
+            "last_name",
+            "role",
+            "is_active",
+            "phone_verified",
+            "id_verified",
+            "date_joined",
+            "last_login",
+        ]
+        read_only_fields = fields
+
+
+class OwnerProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OwnerProfile
+        fields = [
+            "display_name",
+            "company_legal_name",
+            "trade_license_number",
+            "license_expiry",
+            "website",
+            "logo",
+            "verified_badge",
+            "verified_at",
+            "public_slug",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ("verified_badge", "verified_at", "created_at", "updated_at")

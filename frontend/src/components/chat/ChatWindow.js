@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { FiSend, FiImage, FiSmile, FiArrowLeft, FiMoreVertical } from 'react-icons/fi';
 
 function formatMsgTime(dateStr) {
@@ -105,7 +106,15 @@ export default function ChatWindow({
             ) : recipient.online ? 'Online' : 'Offline'}
           </p>
         </div>
-        <button className="p-2 rounded-lg hover:bg-gray-100">
+        <Link
+          to="/"
+          className="flex items-center justify-center w-8 h-8 flex-shrink-0 bg-gradient-to-br from-green-700 to-green-500 rounded-lg text-white text-xs font-bold hover:opacity-90"
+          title="Home"
+          aria-label="BetNet home"
+        >
+          B
+        </Link>
+        <button type="button" className="p-2 rounded-lg hover:bg-gray-100" aria-label="More">
           <FiMoreVertical className="w-5 h-5 text-gray-500" />
         </button>
       </div>
@@ -122,11 +131,13 @@ export default function ChatWindow({
               <FiSmile className="w-7 h-7 text-green-300" />
             </div>
             <p className="text-sm text-gray-500">Start the conversation!</p>
-            <p className="text-xs text-gray-400 mt-1">Send a message to {recipient.name || 'the landlord'}</p>
+            <p className="text-xs text-gray-400 mt-1">Send a message to {recipient.name || 'the property owner'}</p>
           </div>
         ) : (
           messages.map((msg, i) => {
-            const isMine = msg.senderId === currentUserId;
+            const isMine =
+              Number(msg.senderId) === Number(currentUserId)
+              || String(msg.senderId) === String(currentUserId);
             const showDate = shouldShowDate(msg.createdAt, messages[i - 1]?.createdAt);
 
             return (

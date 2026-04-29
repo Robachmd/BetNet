@@ -25,7 +25,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     Bookings for property visits / rental applications.
 
     - Renters see their own bookings.
-    - Landlords see bookings made on their properties.
+    - Property owners see bookings made on their properties.
     - Admins see all bookings.
     """
 
@@ -81,7 +81,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["patch"], url_path="update-status")
     def update_status(self, request, pk=None):
-        """Landlord accepts or rejects a booking."""
+        """Property owner accepts or rejects a booking."""
         booking = self.get_object()
 
         if booking.property.owner != request.user and not request.user.is_staff:
@@ -99,7 +99,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="cancel")
     def cancel(self, request, pk=None):
-        """Renter or landlord cancels a booking."""
+        """Renter or property owner cancels a booking."""
         booking = self.get_object()
         user = request.user
 
@@ -125,7 +125,7 @@ class HallBookingViewSet(viewsets.ModelViewSet):
     Hall / event space bookings with date-conflict checking.
 
     - Renters see their own hall bookings.
-    - Landlords see hall bookings on their properties.
+    - Property owners see hall bookings on their properties.
     """
 
     serializer_class = HallBookingSerializer
@@ -179,7 +179,7 @@ class HallBookingViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["patch"], url_path="update-status")
     def update_status(self, request, pk=None):
-        """Landlord accepts or rejects a hall booking."""
+        """Property owner accepts or rejects a hall booking."""
         booking = self.get_object()
 
         if booking.property.owner != request.user and not request.user.is_staff:

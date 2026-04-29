@@ -8,15 +8,43 @@ User = get_user_model()
 
 
 class ParticipantSerializer(serializers.ModelSerializer):
+    """Expose profile_image URL safely for JSON APIs."""
+
+    profile_image = serializers.SerializerMethodField()
+    phone_number = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ["id", "first_name", "last_name", "profile_image", "phone_number"]
         read_only_fields = fields
 
+    def get_phone_number(self, obj):
+        pn = getattr(obj, "phone_number", None)
+        if pn is None:
+            return ""
+        try:
+            return str(pn)
+        except Exception:
+            return ""
+
+    def get_profile_image(self, obj):
+        field = getattr(obj, "profile_image", None)
+        if not field:
+            return None
+        try:
+            url = field.url
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(url)
+            return url
+        except Exception:
+            return None
+
 
 class MessageSerializer(serializers.ModelSerializer):
     sender = ParticipantSerializer(read_only=True)
     is_own = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
@@ -38,6 +66,19 @@ class MessageSerializer(serializers.ModelSerializer):
             "is_read",
             "created_at",
         ]
+
+    def get_image(self, obj):
+        field = getattr(obj, "image", None)
+        if not field:
+            return None
+        try:
+            url = field.url
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(url)
+            return url
+        except Exception:
+            return None
 
     def get_is_own(self, obj):
         request = self.context.get("request")
@@ -77,12 +118,16 @@ class ConversationPropertyBriefSerializer(serializers.Serializer):
     primary_image_url = serializers.SerializerMethodField()
 
     def get_primary_image_url(self, obj):
-        img = obj.primary_image
-        if img and img.image:
-            request = self.context.get("request")
-            if request:
-                return request.build_absolute_uri(img.image.url)
-            return img.image.url
+        try:
+            img = obj.primary_image
+            if img and getattr(img, "image", None):
+                url = img.image.url
+                request = self.context.get("request")
+                if request:
+                    return request.build_absolute_uri(url)
+                return url
+        except Exception:
+            pass
         return None
 
 
@@ -90,7 +135,7 @@ class ConversationListSerializer(serializers.ModelSerializer):
     other_participant = serializers.SerializerMethodField()
     last_message = serializers.SerializerMethodField()
     unread_count = serializers.SerializerMethodField()
-    property = ConversationPropertyBriefSerializer(read_only=True)
+    property = ConversationPropertyBriefSerializer(read_only=True, allow_null=True)
 
     class Meta:
         model = Conversation
@@ -125,7 +170,7 @@ class ConversationListSerializer(serializers.ModelSerializer):
 
 class ConversationDetailSerializer(serializers.ModelSerializer):
     participants = ParticipantSerializer(many=True, read_only=True)
-    property = ConversationPropertyBriefSerializer(read_only=True)
+    property = ConversationPropertyBriefSerializer(read_only=True, allow_null=True)
     unread_count = serializers.SerializerMethodField()
 
     class Meta:

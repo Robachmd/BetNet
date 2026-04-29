@@ -208,6 +208,7 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
             "is_verified",
             "is_featured",
             "is_available",
+            "is_published",
             "verification_date",
             "total_views",
             "is_favorited",
@@ -231,6 +232,17 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
                 user=request.user, property=obj
             ).values_list("pk", flat=True).first()
         return None
+
+
+# Types that may carry a floor (aligned with betnet.views._floor_number_from_post).
+_FLOOR_RELEVANT_PROPERTY_TYPES = frozenset(
+    {
+        Property.PropertyType.APARTMENT,
+        Property.PropertyType.CONDOMINIUM,
+        Property.PropertyType.REAL_ESTATE,
+        Property.PropertyType.BUSINESS_SHOP,
+    }
+)
 
 
 # ── Create / Update serializer ───────────────────────────────────────────────
@@ -287,6 +299,16 @@ class PropertyCreateUpdateSerializer(serializers.ModelSerializer):
                         )
                     }
                 )
+
+        if ptype not in _FLOOR_RELEVANT_PROPERTY_TYPES:
+            attrs["floor_number"] = None
+        elif "floor_number" in attrs and attrs["floor_number"] is not None:
+            fn = attrs["floor_number"]
+            if fn < 0 or fn > 200:
+                raise serializers.ValidationError(
+                    {"floor_number": "Floor number must be between 0 and 200."}
+                )
+
         return attrs
 
     @transaction.atomic

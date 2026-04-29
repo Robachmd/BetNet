@@ -4,7 +4,7 @@
 {% block title %}{% trans "Publish Listing – BetNet" %}{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto px-4 py-10" x-data="{ method: 'CHAPA', processing: false }">
+<div class="section-shell max-w-3xl py-10" x-data="{ method: 'CHAPA', processing: false }">
 
   <!-- Header -->
   <div class="text-center mb-8">
@@ -18,7 +18,7 @@
   </div>
 
   <!-- Property Summary Card -->
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+  <div class="surface-card p-6 mb-6">
     <h2 class="text-lg font-semibold text-gray-900 mb-4">{% trans "Listing Summary" %}</h2>
     <div class="flex gap-4">
       {% if property.primary_image %}
@@ -46,7 +46,7 @@
   </div>
 
   <!-- Pricing Card -->
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+  <div class="surface-card p-6 mb-6">
     <div class="flex items-center justify-between mb-2">
       <span class="text-gray-600">{% trans "Listing Fee" %}</span>
       <span class="text-xl font-bold text-gray-900">ETB {{ listing_fee|floatformat:0|intcomma }}</span>
@@ -55,7 +55,7 @@
   </div>
 
   <!-- Payment Method -->
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+  <div class="surface-card p-6 mb-6">
     <h2 class="text-lg font-semibold text-gray-900 mb-4">{% trans "Payment Method" %}</h2>
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 
@@ -102,9 +102,7 @@
 
     <button type="submit"
             :disabled="processing"
-            class="w-full py-4 rounded-xl text-white font-bold text-lg transition-all
-                   bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800
-                   disabled:opacity-50 disabled:cursor-wait shadow-lg shadow-primary-500/25">
+            class="btn-primary w-full py-4 text-lg disabled:opacity-50 disabled:cursor-wait">
       <span x-show="!processing">{% blocktrans with amt=listing_fee|floatformat:0|intcomma %}Pay ETB {{ amt }} & Publish{% endblocktrans %}</span>
       <span x-show="processing" class="flex items-center justify-center gap-2">
         <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
@@ -117,12 +115,12 @@
   </form>
 
   <p class="text-center text-xs text-gray-400 mt-4">
-    {% blocktrans trimmed %}After payment, your listing goes live immediately. Track status under <strong>Listing payments</strong> on your landlord dashboard, or in <strong>Admin → Payments</strong> (status <strong>Completed</strong> = paid).{% endblocktrans %}
+    {% blocktrans trimmed %}After payment, your listing goes live immediately. Track status under <strong>Listing payments</strong> on your property owner dashboard, or in <strong>Admin → Payments</strong> (status <strong>Completed</strong> = paid).{% endblocktrans %}
   </p>
 
   <!-- Back link -->
   <div class="text-center mt-6">
-    <a href="{% url 'dashboard' %}" class="text-sm text-primary-600 hover:underline">
+    <a href="{% url 'dashboard' %}" class="btn-secondary text-sm">
       &larr; {% trans "Back to Dashboard" %}
     </a>
   </div>

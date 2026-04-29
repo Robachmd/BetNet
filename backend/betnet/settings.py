@@ -5,6 +5,7 @@ Ethiopian Rental Marketplace Platform.
 """
 
 import os
+import socket
 from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -14,12 +15,17 @@ from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Create React App production output (npm run build in ../frontend)
+REACT_BUILD_DIR = BASE_DIR.parent / 'frontend' / 'build'
+
 env = environ.Env(
     DEBUG=(bool, True),
     ALLOWED_HOSTS=(list, ['localhost', '127.0.0.1']),
     CORS_ALLOWED_ORIGINS=(list, ['http://localhost:3000']),
+    CSRF_TRUSTED_ORIGINS=(list, ['http://localhost:3000']),
     REDIS_URL=(str, 'redis://localhost:6379/0'),
     LANGUAGE_CODE=(str, 'en'),
+    SERVE_DJANGO_PAGES=(bool, True),
 )
 
 env_file = BASE_DIR / '.env'
@@ -29,6 +35,21 @@ if env_file.exists():
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-change-me-in-production')
 DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
+SERVE_DJANGO_PAGES = env('SERVE_DJANGO_PAGES', default=DEBUG)
+
+if DEBUG:
+    # Make local mobile-device testing easier (e.g. http://192.168.x.x:8000).
+    debug_hosts = {'localhost', '127.0.0.1', '0.0.0.0'}
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None):
+            ip = info[4][0]
+            if ':' in ip:  # skip IPv6 for ALLOWED_HOSTS simplicity
+                continue
+            if ip.startswith(('10.', '172.', '192.168.')):
+                debug_hosts.add(ip)
+    except Exception:
+        pass
+    ALLOWED_HOSTS = list(dict.fromkeys([*ALLOWED_HOSTS, *sorted(debug_hosts)]))
 
 # ---------------------------------------------------------------------------
 # Application definition
@@ -130,7 +151,8 @@ else:
 # ---------------------------------------------------------------------------
 
 AUTH_USER_MODEL = 'accounts.User'
-LOGIN_URL = '/login/'
+# Match server-rendered auth URL when templates are enabled; SPA uses /login (no trailing slash)
+LOGIN_URL = '/login/' if SERVE_DJANGO_PAGES else '/login'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
@@ -172,6 +194,9 @@ LANGUAGE_COOKIE_AGE = 60 * 60 * 24 * 365
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+_react_static = REACT_BUILD_DIR / 'static'
+if _react_static.is_dir():
+    STATICFILES_DIRS.append(_react_static)
 if DEBUG:
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 else:
@@ -277,6 +302,7 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = env('CORS_ALLOWED_ORIGINS')
 CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = env('CSRF_TRUSTED_ORIGINS')
 
 # ---------------------------------------------------------------------------
 # Channels (WebSocket)

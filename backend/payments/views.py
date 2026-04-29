@@ -7,8 +7,19 @@ from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Payment, Subscription
+from .listing_package_services import (
+    activate_listing_package_purchase,
+    cancel_pending_purchase,
+)
+from .models import (
+    ListingPackage,
+    ListingPackagePurchase,
+    Payment,
+    Subscription,
+)
 from .serializers import (
+    ListingPackagePurchaseSerializer,
+    ListingPackageSerializer,
     PaymentCreateSerializer,
     PaymentSerializer,
     PaymentVerifySerializer,
@@ -16,6 +27,7 @@ from .serializers import (
     SubscriptionSerializer,
 )
 from .services import ChapaService, StripeService, TelebirrService
+from properties.permissions import IsPropertyOwner
 
 logger = logging.getLogger(__name__)
 
@@ -138,6 +150,12 @@ def _apply_post_payment_effects(payment: Payment):
             logger.info("HallBooking %s marked as paid", payment.hall_booking_id)
         except Exception:
             logger.exception("Failed to update hall booking %s", payment.hall_booking_id)
+
+    if payment.payment_type == Payment.PaymentType.LISTING_PACKAGE:
+        try:
+            activate_listing_package_purchase(payment)
+        except Exception:
+            logger.exception("Failed to activate listing package for payment %s", payment.pk)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -320,7 +338,7 @@ class PaymentHistoryView(generics.ListAPIView):
 
     def get_queryset(self):
         return Payment.objects.filter(user=self.request.user).select_related(
-            "property", "hall_booking"
+            "property", "hall_booking", "listing_package"
         )
 
 
@@ -342,6 +360,191 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         instance.deactivate()
+
+
+def _initiate_listing_package_checkout(
+    request,
+    payment: Payment,
+) -> tuple[str | None, str | None]:
+    """
+    Return (checkout_url, error_message) for Chapa / Telebirr / Stripe, or (None, None) for bank.
+    """
+    payment_method = request.data.get("payment_method", Payment.PaymentMethod.CHAPA)
+    if payment_method not in Payment.PaymentMethod.values:
+        return None, "Invalid payment method."
+    if payment_method == Payment.PaymentMethod.CHAPA:
+        result = ChapaService().initialize_payment(
+            amount=str(payment.amount),
+            email=request.user.email,
+            tx_ref=payment.transaction_id,
+            callback_url=request.data.get("callback_url", ""),
+            return_url=request.data.get("return_url", ""),
+            first_name=getattr(request.user, "first_name", ""),
+            last_name=getattr(request.user, "last_name", ""),
+        )
+        if result.success:
+            payment.payment_data = result.data
+            payment.save(update_fields=["payment_data"])
+            return result.checkout_url, None
+        return None, result.error
+
+    if payment_method == Payment.PaymentMethod.TELEBIRR:
+        result = TelebirrService().initialize_payment(
+            amount=str(payment.amount),
+            phone=request.data.get("phone", ""),
+            tx_ref=payment.transaction_id,
+            notify_url=request.data.get("callback_url", ""),
+            return_url=request.data.get("return_url", ""),
+        )
+        if result.success:
+            payment.payment_data = result.data
+            payment.save(update_fields=["payment_data"])
+            return result.checkout_url, None
+        return None, result.error
+
+    if payment_method == Payment.PaymentMethod.STRIPE:
+        amount_cents = int(payment.amount * 100)
+        result = StripeService().create_checkout_session(
+            amount=amount_cents,
+            currency=payment.currency.lower() if payment.currency else "etb",
+            metadata={
+                "payment_id": str(payment.id),
+                "tx_ref": payment.transaction_id,
+                "description": payment.description,
+            },
+            success_url=request.data.get("return_url", ""),
+            cancel_url=request.data.get("callback_url", ""),
+            customer_email=request.user.email,
+        )
+        if result.success:
+            payment.payment_data = result.data
+            payment.save(update_fields=["payment_data"])
+            return result.checkout_url, None
+        return None, result.error
+
+    return None, None  # bank transfer — no redirect
+
+
+class ListingPackageListView(generics.ListAPIView):
+    """Active listing packages (public catalog for UI pricing)."""
+
+    permission_classes = [permissions.AllowAny]
+    serializer_class = ListingPackageSerializer
+    queryset = ListingPackage.objects.filter(is_active=True)
+    filter_backends: list = []  # no filter class required
+
+
+class MyListingPackagePurchasesView(generics.ListAPIView):
+    """List current user's package purchases and slot balance."""
+
+    permission_classes = [permissions.IsAuthenticated, IsPropertyOwner]
+    serializer_class = ListingPackagePurchaseSerializer
+
+    def get_queryset(self):
+        return (
+            ListingPackagePurchase.objects.filter(user=self.request.user)
+            .select_related("package", "payment")
+            .order_by("-created_at")
+        )
+
+
+class ListingSlotSummaryView(APIView):
+    """
+    How many publish slots the user has (packages + optional legacy subscription).
+    """
+
+    permission_classes = [permissions.IsAuthenticated, IsPropertyOwner]
+
+    def get(self, request):
+        from .listing_package_services import total_slot_remaining_from_packages
+        from .models import Subscription
+        from properties.models import Property
+
+        slots_packages = total_slot_remaining_from_packages(request.user)
+        published = Property.objects.filter(
+            owner=request.user, is_published=True
+        ).count()
+        sub = (
+            Subscription.objects.filter(user=request.user, is_active=True)
+            .order_by("-created_at")
+            .first()
+        )
+        legacy_remaining = 0
+        if sub and not sub.is_expired:
+            legacy_remaining = max(0, sub.max_listings - published)
+
+        can_pub = (slots_packages > 0) or (legacy_remaining > 0)
+        return Response(
+            {
+                "package_slots_remaining": slots_packages,
+                "legacy_subscription_slots_remaining": legacy_remaining
+                if sub and not sub.is_expired
+                else 0,
+                "published_listings_count": published,
+                "can_publish": can_pub,
+            }
+        )
+
+
+class InitiateListingPackagePurchaseView(APIView):
+    """
+    Buy a listing slot bundle. Creates a pending purchase + payment, returns checkout_url.
+    """
+
+    permission_classes = [permissions.IsAuthenticated, IsPropertyOwner]
+
+    def post(self, request, package_id: int):
+        try:
+            pkg = ListingPackage.objects.get(pk=package_id, is_active=True)
+        except ListingPackage.DoesNotExist:
+            return Response(
+                {"error": "Package not found or inactive."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        payment_method = request.data.get("payment_method", Payment.PaymentMethod.CHAPA)
+        if payment_method not in Payment.PaymentMethod.values:
+            return Response(
+                {"error": "Invalid payment method."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        payment = Payment.objects.create(
+            user=request.user,
+            payment_type=Payment.PaymentType.LISTING_PACKAGE,
+            amount=pkg.price,
+            currency=pkg.currency,
+            payment_method=payment_method,
+            listing_package=pkg,
+            description=f"Listing package: {pkg.name}",
+        )
+        purchase = ListingPackagePurchase.objects.create(
+            user=request.user,
+            package=pkg,
+            status=ListingPackagePurchase.Status.PENDING,
+            slots_total=pkg.listing_quota,
+            slots_used=0,
+            payment=payment,
+        )
+
+        checkout_url, error = _initiate_listing_package_checkout(request, payment)
+        if error:
+            payment.mark_failed({"error": error})
+            cancel_pending_purchase(purchase)
+            return Response(
+                {"error": error, "transaction_id": payment.transaction_id},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response(
+            {
+                "transaction_id": payment.transaction_id,
+                "purchase_id": purchase.id,
+                "checkout_url": checkout_url,
+                "payment": PaymentSerializer(payment).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class FeatureListingView(APIView):

@@ -55,7 +55,7 @@
           </div>
           <div>
             <h3 class="text-white font-semibold text-sm">{% trans "Direct Communication" %}</h3>
-            <p class="text-primary-200 text-xs mt-0.5">{% trans "Message landlords directly through the platform" %}</p>
+            <p class="text-primary-200 text-xs mt-0.5">{% trans "Message property owners directly through the platform" %}</p>
           </div>
         </div>
       </div>
@@ -74,7 +74,7 @@
             <path d="M8 22V14L16 8L24 14V22H19V17H13V22H8Z" fill="white"/>
             <circle cx="16" cy="14" r="2" fill="#FACC15"/>
           </svg>
-          <span class="text-2xl font-extrabold text-primary-700">Bet<span class="text-secondary-500">Rent</span></span>
+          <span class="text-2xl font-extrabold text-primary-700">Bet<span class="text-secondary-500">Net</span></span>
         </a>
       </div>
 
@@ -105,7 +105,7 @@
       <form
         method="POST"
         action="{% url 'register' %}"
-        class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 space-y-5"
+        class="surface-card p-6 sm:p-8 space-y-5"
         x-data="{
           role: 'RENTER',
           showPass: false,
@@ -293,7 +293,7 @@
               </div>
             </button>
 
-            <!-- Landlord Card -->
+            <!-- Property Owner Card -->
             <button
               type="button"
               @click="role = 'LANDLORD'"
