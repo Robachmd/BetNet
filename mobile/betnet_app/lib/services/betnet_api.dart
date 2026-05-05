@@ -60,7 +60,8 @@ class BetNetApi {
           final path = err.requestOptions.path;
           if (path.contains('/accounts/token/refresh/') ||
               path.contains('/accounts/login/') ||
-              path.contains('/accounts/register/')) {
+              path.contains('/accounts/register/') ||
+              path.contains('/accounts/password-reset/')) {
             return handler.next(err);
           }
           final ok = await _tryRefresh();
@@ -205,6 +206,56 @@ class BetNetApi {
   Future<void> requestOtp(String phoneE164) async {
     try {
       await _dio.post('/api/accounts/otp/request/', data: {'phone_number': phoneE164});
+    } on DioException catch (e) {
+      throw ApiException(_msgFromDio(e), statusCode: e.response?.statusCode);
+    }
+  }
+
+  /// Same as [requestOtp] but uses the password-reset URL (identical backend behavior).
+  Future<void> requestPasswordResetOtp(String phoneE164) async {
+    try {
+      await _dio.post(
+        '/api/accounts/password-reset/request/',
+        data: {'phone_number': phoneE164},
+      );
+    } on DioException catch (e) {
+      throw ApiException(_msgFromDio(e), statusCode: e.response?.statusCode);
+    }
+  }
+
+  /// Completes password reset and stores JWTs (same shape as login response).
+  Future<({BetNetUser user, String access, String refresh})> confirmPasswordReset({
+    required String phoneE164,
+    required String otp,
+    required String newPassword,
+    required String newPasswordConfirm,
+  }) async {
+    try {
+      final res = await _dio.post(
+        '/api/accounts/password-reset/confirm/',
+        data: {
+          'phone_number': phoneE164,
+          'otp': otp,
+          'new_password': newPassword,
+          'new_password_confirm': newPasswordConfirm,
+        },
+      );
+      final data = res.data as Map<String, dynamic>;
+      final tokens = data['tokens'] as Map<String, dynamic>?;
+      if (tokens == null) {
+        throw ApiException('Password reset response missing tokens');
+      }
+      final access = tokens['access'] as String;
+      final refresh = tokens['refresh'] as String;
+      await _storage.saveTokens(access: access, refresh: refresh);
+      final userJson = data['user'] as Map<String, dynamic>?;
+      final user = userJson != null
+          ? BetNetUser.fromJson(userJson)
+          : await restoreUser();
+      if (user == null) {
+        throw ApiException('Could not load user after password reset');
+      }
+      return (user: user, access: access, refresh: refresh);
     } on DioException catch (e) {
       throw ApiException(_msgFromDio(e), statusCode: e.response?.statusCode);
     }
@@ -1197,6 +1248,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> login(String phoneE164, String password) async {
     final r = await _api.login(phoneE164: phoneE164, password: password);
+    state = AuthState.authenticated(r.user);
+    goRouterRefresh.refresh();
+  }
+
+  Future<void> completePasswordReset({
+    required String phoneE164,
+    required String otp,
+    required String newPassword,
+    required String newPasswordConfirm,
+  }) async {
+    final r = await _api.confirmPasswordReset(
+      phoneE164: phoneE164,
+      otp: otp,
+      newPassword: newPassword,
+      newPasswordConfirm: newPasswordConfirm,
+    );
     state = AuthState.authenticated(r.user);
     goRouterRefresh.refresh();
   }

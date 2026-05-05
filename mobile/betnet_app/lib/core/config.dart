@@ -11,6 +11,14 @@ class AppConfig {
   static const String _debugApiBaseOverrideKey = 'debug_api_base_override';
   static String? _runtimeApiBaseOverride;
 
+  /// Optional Chapa public key (safe to ship, not a secret).
+  /// Provide at build/run time:
+  /// `flutter run --dart-define=BETNET_CHAPA_PUBLIC_KEY=CHAPUBK_TEST-...`
+  static const String chapaPublicKey = String.fromEnvironment(
+    'BETNET_CHAPA_PUBLIC_KEY',
+    defaultValue: 'CHAPUBK_TEST-Xu1cl1yGUpEnkTAq8tjO1YtNe8m47EVu',
+  );
+
   static String _normalizeBaseUrl(String raw) {
     return raw.trim().replaceAll(RegExp(r'/$'), '');
   }

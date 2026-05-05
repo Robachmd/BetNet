@@ -97,6 +97,29 @@ class OTPVerifySerializer(serializers.Serializer):
         return value
 
 
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    phone_number = PhoneNumberField(region="ET")
+    otp = serializers.CharField(max_length=6, min_length=6)
+    new_password = serializers.CharField(
+        write_only=True,
+        min_length=8,
+        validators=[validate_password],
+    )
+    new_password_confirm = serializers.CharField(write_only=True)
+
+    def validate_otp(self, value):
+        if not re.fullmatch(r"\d{6}", value):
+            raise serializers.ValidationError("OTP must be exactly 6 digits.")
+        return value
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["new_password_confirm"]:
+            raise serializers.ValidationError(
+                {"new_password_confirm": "New passwords do not match."}
+            )
+        return attrs
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     phone_number = PhoneNumberField(read_only=True)
 

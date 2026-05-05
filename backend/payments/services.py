@@ -23,11 +23,20 @@ class ChapaService:
     BASE_URL = "https://api.chapa.co/v1"
 
     def __init__(self):
-        self.secret_key = settings.CHAPA_SECRET_KEY
+        self.secret_key = (settings.CHAPA_SECRET_KEY or "").strip()
         self.headers = {
             "Authorization": f"Bearer {self.secret_key}",
             "Content-Type": "application/json",
         }
+
+    def _ensure_key(self) -> PaymentResult | None:
+        if not self.secret_key:
+            return PaymentResult(
+                success=False,
+                data={},
+                error="CHAPA_SECRET_KEY is empty on the server.",
+            )
+        return None
 
     def initialize_payment(
         self,
@@ -42,6 +51,10 @@ class ChapaService:
         currency: str = "ETB",
         customization: dict | None = None,
     ) -> PaymentResult:
+        missing = self._ensure_key()
+        if missing:
+            return missing
+
         payload = {
             "amount": str(amount),
             "currency": currency,
@@ -83,6 +96,10 @@ class ChapaService:
             return PaymentResult(success=False, data={}, error=str(exc))
 
     def verify_payment(self, tx_ref: str) -> PaymentResult:
+        missing = self._ensure_key()
+        if missing:
+            return missing
+
         try:
             resp = requests.get(
                 f"{self.BASE_URL}/transaction/verify/{tx_ref}",

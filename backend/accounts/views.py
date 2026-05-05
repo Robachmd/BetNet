@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
@@ -14,6 +15,7 @@ from .serializers import (
     OwnerProfileSerializer,
     OTPRequestSerializer,
     OTPVerifySerializer,
+    PasswordResetConfirmSerializer,
     UserLoginSerializer,
     UserProfileSerializer,
     UserRegistrationSerializer,
@@ -148,6 +150,61 @@ class VerifyOTPView(APIView):
         return Response(
             {"detail": "Invalid or expired OTP."},
             status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+def _otp_valid_for_password_reset(user, code: str) -> bool:
+    """Same window and match rules as User.verify_otp, without side effects."""
+    if not user.otp or not user.otp_created_at:
+        return False
+    if user.otp != code:
+        return False
+    elapsed = (timezone.now() - user.otp_created_at).total_seconds()
+    if elapsed > 300:  # 5 minutes
+        return False
+    return True
+
+
+# ──────────────────────────────────────────────
+#  Password reset (phone + OTP; confirm only — request reuses RequestOTPView)
+# ──────────────────────────────────────────────
+class PasswordResetConfirmView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        phone_number = serializer.validated_data["phone_number"]
+        otp = serializer.validated_data["otp"]
+        new_password = serializer.validated_data["new_password"]
+
+        try:
+            user = User.objects.get(phone_number=phone_number)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "No account with this phone number."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not _otp_valid_for_password_reset(user, otp):
+            return Response(
+                {"detail": "Invalid or expired OTP."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.set_password(new_password)
+        user.otp = ""
+        user.otp_created_at = None
+        user.save(update_fields=["password", "otp", "otp_created_at"])
+
+        tokens = _get_tokens_for_user(user)
+        return Response(
+            {
+                "detail": "Password reset successful.",
+                "user": UserProfileSerializer(user, context={"request": request}).data,
+                "tokens": tokens,
+            },
+            status=status.HTTP_200_OK,
         )
 
 

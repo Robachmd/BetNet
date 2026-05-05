@@ -11,6 +11,7 @@ import 'services/betnet_api.dart';
 import 'ui/screens/add_listing_screen.dart';
 import 'ui/screens/chat_list_screen.dart';
 import 'ui/screens/edit_profile_screen.dart';
+import 'ui/screens/forgot_password_screen.dart';
 import 'ui/screens/halls_rental_screen.dart';
 import 'ui/screens/home_shell.dart';
 import 'ui/screens/login_screen.dart';
@@ -56,6 +57,10 @@ final betNetRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
       ),
       GoRoute(
         path: '/otp',

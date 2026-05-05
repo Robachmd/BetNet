@@ -170,6 +170,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       : const Text('Register'),
                 ),
               ),
+              TextButton(
+                onPressed: () {
+                  final from = GoRouterState.of(context).uri.queryParameters['from'];
+                  final q = from != null && from.isNotEmpty
+                      ? '?from=${Uri.encodeComponent(from)}'
+                      : '';
+                  context.push('/forgot-password$q');
+                },
+                child: const Text('Forgot password?'),
+              ),
             ],
           ),
         ),

@@ -85,7 +85,7 @@ LOCAL_APPS = [
     'bookings',
     'reviews',
     'chat',
-    'payments',
+    'payments.apps.PaymentsConfig',
     'notifications',
     'analytics',
 ]
@@ -193,7 +193,10 @@ LANGUAGE_COOKIE_AGE = 60 * 60 * 24 * 365
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = []
+_project_static = BASE_DIR / 'static'
+if _project_static.is_dir():
+    STATICFILES_DIRS.append(_project_static)
 _react_static = REACT_BUILD_DIR / 'static'
 if _react_static.is_dir():
     STATICFILES_DIRS.append(_react_static)
@@ -204,6 +207,11 @@ else:
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Silence "No directory at .../staticfiles" in tests and first local runs;
+# keeps upload paths available in dev without extra setup steps.
+STATIC_ROOT.mkdir(parents=True, exist_ok=True)
+MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # Cloudinary (remote media storage)
@@ -360,7 +368,7 @@ CELERY_BEAT_SCHEDULE = {
 # ---------------------------------------------------------------------------
 
 # Chapa (Ethiopian payment gateway)
-CHAPA_SECRET_KEY = env('CHAPA_SECRET_KEY', default='')
+CHAPA_SECRET_KEY = env('CHAPA_SECRET_KEY', default='').strip()
 
 # Telebirr (Ethio Telecom mobile money)
 TELEBIRR_APP_ID = env('TELEBIRR_APP_ID', default='')

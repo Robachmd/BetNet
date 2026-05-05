@@ -86,6 +86,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   labelText: 'Password',
                 ),
               ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    final from = GoRouterState.of(context).uri.queryParameters['from'];
+                    final q = from != null && from.isNotEmpty
+                        ? '?from=${Uri.encodeComponent(from)}'
+                        : '';
+                    context.push('/forgot-password$q');
+                  },
+                  child: const Text('Forgot password?'),
+                ),
+              ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),

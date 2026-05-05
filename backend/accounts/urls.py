@@ -13,7 +13,17 @@ urlpatterns = [
     path("login/", views.LoginView.as_view(), name="login"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
     path("otp/request/", views.RequestOTPView.as_view(), name="otp-request"),
+    path(
+        "password-reset/request/",
+        views.RequestOTPView.as_view(),
+        name="password-reset-request",
+    ),
     path("otp/verify/", views.VerifyOTPView.as_view(), name="otp-verify"),
+    path(
+        "password-reset/confirm/",
+        views.PasswordResetConfirmView.as_view(),
+        name="password-reset-confirm",
+    ),
     path("profile/", views.UserProfileView.as_view(), name="profile"),
     path(
         "enable-property-owner/",

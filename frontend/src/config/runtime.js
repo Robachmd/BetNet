@@ -21,3 +21,5 @@ export const WS_BASE_URL = stripTrailingSlash(
 export const UPLOADS_BASE_URL = stripTrailingSlash(
   process.env.REACT_APP_UPLOADS_URL || API_ORIGIN
 );
+
+export const CHAPA_PUBLIC_KEY = String(process.env.REACT_APP_CHAPA_PUBLIC_KEY || '').trim();
