@@ -37,6 +37,12 @@ DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 SERVE_DJANGO_PAGES = env('SERVE_DJANGO_PAGES', default=DEBUG)
 
+# Render sets RENDER_EXTERNAL_HOSTNAME. Auto-allow it to avoid DisallowedHost
+# when ALLOWED_HOSTS isn't configured correctly.
+_render_host = (os.environ.get("RENDER_EXTERNAL_HOSTNAME") or "").strip()
+if _render_host:
+    ALLOWED_HOSTS = list(dict.fromkeys([*ALLOWED_HOSTS, _render_host]))
+
 if DEBUG:
     # Make local mobile-device testing easier (e.g. http://192.168.x.x:8000).
     debug_hosts = {'localhost', '127.0.0.1', '0.0.0.0'}

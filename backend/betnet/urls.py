@@ -137,6 +137,18 @@ if settings.DEBUG:
 
 # React SPA: must be last so /api/, /admin/, /media/ (DEBUG), etc. match first
 if not settings.SERVE_DJANGO_PAGES:
-    urlpatterns += [
-        re_path(r'^.*$', views.spa_index, name='spa'),
-    ]
+    # If the frontend bundle hasn't been built/deployed (common on API-only deploys),
+    # fall back to the API root instead of returning a confusing 404 for "/".
+    try:
+        _has_react_index = (settings.REACT_BUILD_DIR / 'index.html').is_file()
+    except Exception:
+        _has_react_index = False
+
+    if _has_react_index:
+        urlpatterns += [
+            re_path(r'^.*$', views.spa_index, name='spa'),
+        ]
+    else:
+        urlpatterns = [
+            path('', RedirectView.as_view(url='/api/', permanent=False), name='root'),
+        ] + urlpatterns
