@@ -251,6 +251,13 @@ if (
 ):
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
+# Django 4.2+ storage config. Some deployments ignore DEFAULT_FILE_STORAGE unless STORAGES is set.
+# Ensure uploads use DEFAULT_FILE_STORAGE (Cloudinary on Render when configured).
+STORAGES = {
+    "default": {"BACKEND": DEFAULT_FILE_STORAGE},
+    "staticfiles": {"BACKEND": STATICFILES_STORAGE},
+}
+
 # ---------------------------------------------------------------------------
 # Django REST Framework
 # ---------------------------------------------------------------------------
