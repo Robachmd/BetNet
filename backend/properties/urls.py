@@ -32,6 +32,11 @@ urlpatterns = [
     ),
     path("reports/", views.PropertyReportView.as_view(), name="property-report"),
     path("price-insights/", views.PriceInsightView.as_view(), name="price-insights"),
+    path(
+        "price-estimate/",
+        views.PriceEstimateView.as_view(),
+        name="price-estimate",
+    ),
     path("featured/", views.FeaturedPropertiesView.as_view(), name="featured-properties"),
     path("nearby/", views.NearbyPropertiesView.as_view(), name="nearby-properties"),
     path("my-properties/", views.MyPropertiesView.as_view(), name="my-properties"),

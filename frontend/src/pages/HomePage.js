@@ -410,7 +410,7 @@ export default function HomePage() {
                 {t('home.priceIntelBody')}
               </p>
               <Link
-                to="/search"
+                to="/price-insights"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-white text-green-800 font-semibold rounded-xl hover:bg-green-50 transition-colors"
               >
                 {t('home.priceIntelCta')}

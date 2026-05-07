@@ -241,6 +241,15 @@ class _MainShellScaffoldState extends ConsumerState<MainShellScaffold> {
                 },
               ),
               DrawerNavTile(
+                icon: Icons.trending_up,
+                label: 'Price insights',
+                selected: false,
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/price-insights');
+                },
+              ),
+              DrawerNavTile(
                 icon: Icons.chat_bubble_outline,
                 label: l10n?.chat ?? 'Chat',
                 selected: false,

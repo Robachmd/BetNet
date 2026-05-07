@@ -37,6 +37,13 @@ DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 SERVE_DJANGO_PAGES = env('SERVE_DJANGO_PAGES', default=DEBUG)
 
+# Optional AI-assisted rent/sale estimates (never expose keys to frontend)
+PRICE_AI_PROVIDER = env('PRICE_AI_PROVIDER', default='').strip().lower()  # openai | gemini | ''
+OPENAI_API_KEY = env('OPENAI_API_KEY', default='').strip()
+GEMINI_API_KEY = env('GEMINI_API_KEY', default='').strip()
+PRICE_AI_MODEL = env('PRICE_AI_MODEL', default='').strip()
+PRICE_ESTIMATE_CACHE_TTL = env.int('PRICE_ESTIMATE_CACHE_TTL', default=300)
+
 # Render sets RENDER_EXTERNAL_HOSTNAME. Auto-allow it to avoid DisallowedHost
 # when ALLOWED_HOSTS isn't configured correctly.
 _render_host = (os.environ.get("RENDER_EXTERNAL_HOSTNAME") or "").strip()
@@ -260,6 +267,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '60/minute',
         'user': '120/minute',
+        'price_estimate': '30/hour',
     },
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',

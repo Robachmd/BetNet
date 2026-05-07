@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   FiMapPin, FiShare2, FiFlag, FiPhone, FiMessageSquare, FiCalendar,
   FiChevronRight, FiCheck, FiClock, FiUsers, FiMusic, FiMaximize,
-  FiHeart, FiArrowLeft, FiStar, FiHome,
+  FiHeart, FiArrowLeft, FiStar, FiHome, FiTrendingUp,
 } from 'react-icons/fi';
 import PropertyImageGallery from '../components/property/PropertyImageGallery';
 import AmenitiesList from '../components/property/AmenitiesList';
@@ -29,6 +30,7 @@ import { chatService } from '../services/chat';
 import toast from 'react-hot-toast';
 
 export default function PropertyDetailPage() {
+  const { t } = useTranslation();
   const { slug } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
@@ -415,6 +417,28 @@ export default function PropertyDetailPage() {
                 maxPrice={priceInsight.maxPrice}
                 areaName={location.subCity || locationStr}
               />
+            )}
+            {location.city && location.subCity && (
+              <div className="flex justify-center mt-4">
+                <Link
+                  to={`/price-insights?${(() => {
+                    const q = new URLSearchParams();
+                    q.set('city', location.city);
+                    q.set('sub_city', location.subCity);
+                    if (rawPtypeForFloor) q.set('property_type', String(rawPtypeForFloor));
+                    q.set('listing_type', listingType);
+                    if (property.bedrooms) q.set('bedrooms', String(property.bedrooms));
+                    if (bathrooms != null && bathrooms !== '') {
+                      q.set('bathrooms', String(bathrooms));
+                    }
+                    return q.toString();
+                  })()}`}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-green-700 hover:text-green-900 hover:underline"
+                >
+                  <FiTrendingUp className="w-4 h-4" />
+                  {t('property.aiPriceCheck')}
+                </Link>
+              </div>
             )}
 
             {/* Hall Availability Calendar */}

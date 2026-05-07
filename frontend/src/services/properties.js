@@ -187,6 +187,11 @@ export const propertyService = {
     return data;
   },
 
+  async postPriceEstimate(body) {
+    const { data } = await api.post(`${BASE}/price-estimate/`, body);
+    return data;
+  },
+
   async getPriceInsight(subCity, city = 'Addis Ababa', propertyType) {
     const params = { sub_city: subCity, city };
     if (propertyType) params.property_type = propertyType;

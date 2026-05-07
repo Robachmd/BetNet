@@ -41,6 +41,7 @@ const ChatDetailPage = lazy(() => import('./pages/ChatDetailPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
 const VerifyIdentityPage = lazy(() => import('./pages/VerifyIdentityPage'));
+const PriceInsightsPage = lazy(() => import('./pages/PriceInsightsPage'));
 
 function LoadingSpinner() {
   return (
@@ -103,6 +104,7 @@ export default function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/price-insights" element={<PriceInsightsPage />} />
           <Route path="/property/:slug" element={<PropertyDetailPage />} />
           <Route path="/halls" element={<HallRentalPage />} />
           <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />

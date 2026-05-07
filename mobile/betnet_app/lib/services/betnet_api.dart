@@ -917,7 +917,14 @@ class BetNetApi {
     return Map<String, dynamic>.from(res.data as Map);
   }
 
+  /// Aggregate neighborhood stats plus optional AI band (requires server-side keys).
+  Future<Map<String, dynamic>> postPriceEstimate(Map<String, dynamic> body) async {
+    final res = await _dio.post('/api/properties/price-estimate/', data: body);
+    return Map<String, dynamic>.from(res.data as Map);
+  }
+
   Future<List<ListingPackageItem>> fetchListingPackages() async {
+
     final res = await _dio.get('/api/payments/listing-packages/');
     return _unwrapMapList(res.data).map(ListingPackageItem.fromJson).toList();
   }

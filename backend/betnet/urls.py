@@ -72,6 +72,8 @@ def api_root(request):
             'notifications': '/api/notifications/',
             'location_alerts': '/api/notifications/location-alerts/',
             'analytics': '/api/analytics/',
+            'price_insights': '/api/properties/price-insights/',
+            'price_estimate': '/api/properties/price-estimate/',
         },
     })
 

@@ -19,6 +19,7 @@ import 'ui/screens/my_listings_screen.dart';
 import 'ui/screens/notifications_screen.dart';
 import 'ui/screens/otp_verification_screen.dart';
 import 'ui/screens/payment_screen.dart';
+import 'ui/screens/price_estimate_screen.dart';
 import 'ui/screens/property_detail_screen.dart';
 import 'ui/screens/register_screen.dart';
 
@@ -72,6 +73,10 @@ final betNetRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/halls',
         builder: (context, state) => const HallsRentalScreen(),
+      ),
+      GoRoute(
+        path: '/price-insights',
+        builder: (context, state) => const PriceEstimateScreen(),
       ),
       GoRoute(
         path: '/property/:slug',

@@ -1,12 +1,13 @@
 from decimal import Decimal
 
-from django.db.models import Avg, Min, Max, Count, Q, F
+from django.db.models import Q, F
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.throttling import ScopedRateThrottle
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
@@ -31,8 +32,11 @@ from .serializers import (
     FavoritePropertySerializer,
     PropertyReportSerializer,
     PriceInsightSerializer,
+    PriceEstimateRequestSerializer,
     HallDetailSerializer,
 )
+from .price_ai import build_estimate_response_bundle
+from .price_insight import get_price_insight_aggregate
 from .filters import PropertyFilter, HallFilter
 from .permissions import IsPropertyOwner, IsOwnerOrAdmin, IsOwnerOrReadOnly
 
@@ -218,32 +222,62 @@ class PriceInsightView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        qs = Property.objects.filter(
-            location__sub_city__iexact=sub_city,
-            location__city__iexact=city,
-            is_available=True,
+        data = get_price_insight_aggregate(
+            city=city,
+            sub_city=sub_city,
+            property_type=property_type or None,
         )
-        if property_type:
-            qs = qs.filter(property_type=property_type)
-
-        stats = qs.aggregate(
-            avg_price=Avg("price_monthly"),
-            min_price=Min("price_monthly"),
-            max_price=Max("price_monthly"),
-            listing_count=Count("id"),
-        )
-
-        data = {
-            "sub_city": sub_city,
-            "city": city,
-            "property_type": property_type,
-            "avg_price": stats["avg_price"] or Decimal("0.00"),
-            "min_price": stats["min_price"] or Decimal("0.00"),
-            "max_price": stats["max_price"] or Decimal("0.00"),
-            "listing_count": stats["listing_count"],
-        }
         serializer = PriceInsightSerializer(data)
         return Response(serializer.data)
+
+
+class PriceEstimateView(APIView):
+    """
+    POST area + property features; returns DB aggregate plus optional AI band.
+    Requires PRICE_AI_PROVIDER + API key on the server for non-null `ai`.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "price_estimate"
+
+    def post(self, request):
+        ser = PriceEstimateRequestSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        d = ser.validated_data
+
+        aggregate = get_price_insight_aggregate(
+            city=d.get("city") or "Addis Ababa",
+            sub_city=d["sub_city"],
+            property_type=d.get("property_type"),
+            listing_type=d.get("listing_type"),
+        )
+
+        features = {
+            "city": d.get("city") or "Addis Ababa",
+            "sub_city": d["sub_city"],
+            "property_type": d.get("property_type"),
+            "listing_type": d.get("listing_type"),
+            "bedrooms": (d.get("bedrooms") or "").strip(),
+            "bathrooms": d.get("bathrooms"),
+            "is_furnished": d.get("is_furnished"),
+            "has_parking": d.get("has_parking"),
+            "has_wifi": d.get("has_wifi"),
+            "has_security": d.get("has_security"),
+            "has_generator": d.get("has_generator"),
+            "specific_location": (d.get("specific_location") or "").strip(),
+            "latitude": str(d["latitude"]) if d.get("latitude") is not None else None,
+            "longitude": str(d["longitude"]) if d.get("longitude") is not None else None,
+            "area_sqm": str(d["area_sqm"]) if d.get("area_sqm") is not None else None,
+            "asking_price_etb": str(d["asking_price"])
+            if d.get("asking_price") is not None
+            else None,
+        }
+
+        bundle = build_estimate_response_bundle(aggregate, features)
+        agg_ser = PriceInsightSerializer(bundle["aggregate"])
+        bundle["aggregate"] = agg_ser.data
+        return Response(bundle)
 
 
 # ── Featured Properties ──────────────────────────────────────────────────────

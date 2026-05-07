@@ -404,7 +404,10 @@ class PriceInsightSerializer(serializers.Serializer):
     sub_city = serializers.CharField()
     city = serializers.CharField(required=False, default="Addis Ababa")
     property_type = serializers.ChoiceField(
-        choices=Property.PropertyType.choices, required=False
+        choices=Property.PropertyType.choices, required=False, allow_null=True
+    )
+    listing_type = serializers.ChoiceField(
+        choices=Property.ListingType.choices, required=False, allow_null=True
     )
     avg_price = serializers.DecimalField(
         max_digits=12, decimal_places=2, read_only=True
@@ -416,6 +419,65 @@ class PriceInsightSerializer(serializers.Serializer):
         max_digits=12, decimal_places=2, read_only=True
     )
     listing_count = serializers.IntegerField(read_only=True)
+
+
+class PriceEstimateRequestSerializer(serializers.Serializer):
+    """Structured property description for AI-assisted estimates."""
+
+    city = serializers.CharField(required=False, default="Addis Ababa", max_length=100)
+    sub_city = serializers.CharField(max_length=100)
+    property_type = serializers.ChoiceField(
+        choices=Property.PropertyType.choices,
+        required=False,
+        allow_null=True,
+    )
+    listing_type = serializers.ChoiceField(
+        choices=Property.ListingType.choices,
+        required=False,
+        default=Property.ListingType.RENT,
+    )
+    bedrooms = serializers.ChoiceField(
+        choices=Property.BedroomCount.choices,
+        required=False,
+        allow_blank=True,
+        default="",
+    )
+    bathrooms = serializers.IntegerField(required=False, min_value=0, max_value=99, default=1)
+    is_furnished = serializers.BooleanField(required=False, default=False)
+    has_parking = serializers.BooleanField(required=False, default=False)
+    has_wifi = serializers.BooleanField(required=False, default=False)
+    has_security = serializers.BooleanField(required=False, default=False)
+    has_generator = serializers.BooleanField(required=False, default=False)
+    specific_location = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+        max_length=255,
+    )
+    latitude = serializers.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        required=False,
+        allow_null=True,
+    )
+    longitude = serializers.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        required=False,
+        allow_null=True,
+    )
+    area_sqm = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        allow_null=True,
+    )
+    asking_price = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        allow_null=True,
+    )
 
 
 # ── Hall rental filter (query param validation) ──────────────────────────────
