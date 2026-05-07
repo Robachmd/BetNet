@@ -1,7 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import OwnerProfile, User
+from django.utils import timezone
+
+from .models import IdentityVerificationSubmission, OwnerProfile, User
 
 
 @admin.register(User)
@@ -102,3 +104,34 @@ class OwnerProfileAdmin(admin.ModelAdmin):
     )
     search_fields = ("display_name", "company_legal_name", "trade_license_number", "user__phone_number")
     raw_id_fields = ("user",)
+
+
+@admin.register(IdentityVerificationSubmission)
+class IdentityVerificationSubmissionAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "status",
+        "created_at",
+        "reviewed_at",
+    )
+    list_filter = ("status", "created_at", "reviewed_at")
+    search_fields = ("user__phone_number", "user__first_name", "user__last_name", "user__email")
+    raw_id_fields = ("user",)
+    actions = ("approve_and_verify_user", "reject_submission")
+
+    @admin.action(description="Approve submission and set user.id_verified=True")
+    def approve_and_verify_user(self, request, queryset):
+        now = timezone.now()
+        for sub in queryset:
+            sub.status = IdentityVerificationSubmission.Status.APPROVED
+            sub.reviewed_at = now
+            sub.review_notes = ""
+            sub.save(update_fields=["status", "reviewed_at", "review_notes", "updated_at"])
+            if sub.user and not sub.user.id_verified:
+                sub.user.id_verified = True
+                sub.user.save(update_fields=["id_verified"])
+
+    @admin.action(description="Reject submission")
+    def reject_submission(self, request, queryset):
+        now = timezone.now()
+        queryset.update(status=IdentityVerificationSubmission.Status.REJECTED, reviewed_at=now)

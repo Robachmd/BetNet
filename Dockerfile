@@ -1,5 +1,10 @@
 FROM node:20-alpine AS frontend_builder
 WORKDIR /app/frontend
+
+# Same-origin API during Docker/Render deploy (override in `docker build --build-arg` if needed)
+ARG REACT_APP_API_URL=/api
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+
 COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm ci
 COPY frontend/ ./

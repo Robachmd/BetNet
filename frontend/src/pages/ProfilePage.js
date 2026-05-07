@@ -79,10 +79,10 @@ export default function ProfilePage() {
     }
     if (user) {
       setProfile({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
+        firstName: user.first_name || user.firstName || '',
+        lastName: user.last_name || user.lastName || '',
         email: user.email || '',
-        phone: user.phone || '',
+        phone: user.phone_number || user.phone || '',
         bio: user.bio || '',
       });
       if (user.notifications) {
@@ -166,6 +166,9 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
+  const isVerified = Boolean(user.phone_verified) && Boolean(user.id_verified);
+  const avatarSrc = avatarPreview || getAvatarUrl(user.profile_image || user.avatar);
+
   const tabs = [
     { id: 'profile', label: 'Profile', icon: FiUser },
     { id: 'password', label: 'Password', icon: FiLock },
@@ -189,15 +192,15 @@ export default function ProfilePage() {
             {/* Avatar */}
             <div className="relative">
               <div className="w-24 h-24 rounded-full overflow-hidden bg-green-100">
-                {avatarPreview || user.avatar ? (
+                {avatarSrc ? (
                   <img
-                    src={avatarPreview || getAvatarUrl(user.avatar)}
+                    src={avatarSrc}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-green-700">
-                    {getInitials(`${user.firstName} ${user.lastName}`)}
+                    {getInitials(`${user.first_name || user.firstName || ''} ${user.last_name || user.lastName || ''}`)}
                   </div>
                 )}
               </div>
@@ -218,9 +221,9 @@ export default function ProfilePage() {
 
             <div className="text-center sm:text-left flex-1">
               <h2 className="text-xl font-bold text-gray-900">
-                {user.firstName} {user.lastName}
+                {user.first_name || user.firstName} {user.last_name || user.lastName}
               </h2>
-              <p className="text-sm text-gray-500">{formatPhoneNumber(user.phone)}</p>
+              <p className="text-sm text-gray-500">{formatPhoneNumber(user.phone_number || user.phone)}</p>
               <div className="flex flex-wrap items-center gap-2 mt-2 justify-center sm:justify-start">
                 <Badge
                   variant={isPropertyOwner ? 'info' : isAdmin ? 'warning' : 'success'}
@@ -229,7 +232,7 @@ export default function ProfilePage() {
                 >
                   {isPropertyOwner ? 'Property Owner' : isAdmin ? 'Admin' : 'Renter'}
                 </Badge>
-                {user.isVerified && (
+                {isVerified && (
                   <Badge variant="verified" size="sm" icon>Verified</Badge>
                 )}
               </div>
@@ -361,14 +364,18 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {!user.isVerified && (
+        {!isVerified && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
             <FiShield className="w-5 h-5 text-yellow-600 flex-shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-medium text-yellow-800">Your account is not verified</p>
               <p className="text-xs text-yellow-600">Verify your identity to unlock all features and build trust.</p>
             </div>
-            <button className="px-4 py-2 bg-yellow-600 text-white text-sm font-medium rounded-lg hover:bg-yellow-700 transition-colors">
+            <button
+              type="button"
+              onClick={() => navigate('/verify-identity')}
+              className="px-4 py-2 bg-yellow-600 text-white text-sm font-medium rounded-lg hover:bg-yellow-700 transition-colors"
+            >
               Verify Now
             </button>
           </div>

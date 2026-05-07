@@ -1,4 +1,10 @@
 import api from './api';
+import {
+  CITIES,
+  ADDIS_ABABA_SUB_CITIES,
+  cityFilterKeyToFormValue,
+  cityFormValueToFilterKey,
+} from '../utils/constants';
 
 const BASE = '/properties';
 
@@ -8,6 +14,32 @@ function slugToTitle(s) {
     .split('-')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ');
+}
+
+function resolveCityForApiQuery(cityParam) {
+  if (!cityParam) return '';
+  const s = String(cityParam).trim();
+  const byLabel = CITIES.find(
+    (c) => c.label.toLowerCase() === s.toLowerCase()
+  );
+  if (byLabel) return byLabel.label;
+  const asUnderscore = cityFilterKeyToFormValue(s);
+  const byValue = CITIES.find((c) => c.value === asUnderscore);
+  if (byValue) return byValue.label;
+  return slugToTitle(s.replace(/_/g, '-'));
+}
+
+function resolveSubCityForApiQuery(subParam) {
+  if (!subParam) return '';
+  const s = String(subParam).trim();
+  const asUnderscore = cityFilterKeyToFormValue(s);
+  const sc = ADDIS_ABABA_SUB_CITIES.find(
+    (x) => x.value === asUnderscore
+      || cityFormValueToFilterKey(x.value) === s
+      || x.value === s
+  );
+  if (sc) return sc.label;
+  return slugToTitle(s.replace(/_/g, '-'));
 }
 
 function mapFrontendFilters(f = {}) {
@@ -35,8 +67,8 @@ function mapFrontendFilters(f = {}) {
   if (f.minPrice) q.price_min = f.minPrice;
   if (f.maxPrice) q.price_max = f.maxPrice;
 
-  if (f.city) q.city = slugToTitle(f.city);
-  if (f.subCity) q.sub_city = slugToTitle(f.subCity);
+  if (f.city) q.city = resolveCityForApiQuery(f.city);
+  if (f.subCity) q.sub_city = resolveSubCityForApiQuery(f.subCity);
 
   if (f.bedrooms && pt !== 'studio') {
     const bMap = {

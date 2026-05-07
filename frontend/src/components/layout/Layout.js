@@ -37,7 +37,7 @@ export default function Layout({
         />
       )}
       <main className={`flex-1 ${className}`}>{children}</main>
-      {!hideFooter && <Footer onNavigate={onNavigate} />}
+      {!hideFooter && <Footer />}
     </div>
   );
 }

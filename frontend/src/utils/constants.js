@@ -27,18 +27,51 @@ export const LISTING_TYPES = [
   { value: 'short_term', label: 'Short-term Rental', labelAm: 'ለአጭር ጊዜ ኪራይ' },
 ];
 
-export const CITIES = [
-  { value: 'addis_ababa', label: 'Addis Ababa', labelAm: 'አዲስ አበባ' },
-  { value: 'dire_dawa', label: 'Dire Dawa', labelAm: 'ድሬ ዳዋ' },
-  { value: 'hawassa', label: 'Hawassa', labelAm: 'ሀዋሳ' },
-  { value: 'bahir_dar', label: 'Bahir Dar', labelAm: 'ባህር ዳር' },
-  { value: 'adama', label: 'Adama', labelAm: 'አዳማ' },
-  { value: 'mekelle', label: 'Mekelle', labelAm: 'መቀሌ' },
-  { value: 'gondar', label: 'Gondar', labelAm: 'ጎንደር' },
-  { value: 'jimma', label: 'Jimma', labelAm: 'ጅማ' },
-  { value: 'dessie', label: 'Dessie', labelAm: 'ደሴ' },
-  { value: 'bishoftu', label: 'Bishoftu', labelAm: 'ቢሾፍቱ' },
+/** Mirrors backend `properties/ethiopian_cities.py` (ETHIOPIAN_CITIES_SEED), same order. */
+const ETHIOPIAN_CITY_LABELS = [
+  'Addis Ababa', 'Dire Dawa', 'Mekelle', 'Gondar', 'Hawassa', 'Bahir Dar', 'Jimma', 'Dessie',
+  'Jijiga', 'Shashamane', 'Arba Minch', 'Hosaena', 'Harar', 'Kombolcha', 'Debre Berhan',
+  'Asella', 'Adama', 'Nekemte', 'Debre Markos', 'Wolaita Sodo', 'Sodo', 'Mizan Teferi',
+  'Gambela', 'Assosa', 'Semera', 'Bule Hora', 'Boditi', 'Woldiya', 'Debre Tabor', 'Aksum',
+  'Adigrat', 'Bishoftu', 'Sebeta', 'Burayu', 'Holeta', 'Lalibela', 'Robe', 'Dilla',
+  'Yirgalem', 'Welkite', 'Butajira', 'Ambo', 'Negele Borana', 'Moyale', 'Mega', 'Konso',
+  'Turmi', 'Gode', 'Kelafo', 'Dembi Dollo', 'Bedele', 'Chiro', 'Fiche', 'Gimbi', 'Humera',
+  'Injibara', 'Jinka', 'Kebri Dehar', 'Korem',
 ];
+
+const CITY_LABEL_AM_OVERRIDES = {
+  'Addis Ababa': 'አዲስ አበባ',
+  'Dire Dawa': 'ድሬ ዳዋ',
+  'Hawassa': 'ሀዋሳ',
+  'Bahir Dar': 'ባህር ዳር',
+  'Adama': 'አዳማ',
+  'Mekelle': 'መቀሌ',
+  'Gondar': 'ጎንደር',
+  'Jimma': 'ጅማ',
+  'Dessie': 'ደሴ',
+  'Bishoftu': 'ቢሾፍቱ',
+};
+
+/**
+ * Stable form/URL token for a canonical city display name (matches historical underscored slugs).
+ * @param {string} name
+ * @returns {string}
+ */
+export function cityNameToFormValue(name) {
+  if (!name) return '';
+  return String(name)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/^_|_$/g, '');
+}
+
+export const CITIES = ETHIOPIAN_CITY_LABELS.map((label) => ({
+  value: cityNameToFormValue(label),
+  label,
+  labelAm: CITY_LABEL_AM_OVERRIDES[label] || label,
+}));
 
 export const ADDIS_ABABA_SUB_CITIES = [
   { value: 'bole', label: 'Bole', labelAm: 'ቦሌ' },
@@ -53,6 +86,48 @@ export const ADDIS_ABABA_SUB_CITIES = [
   { value: 'akaky_kaliti', label: 'Akaky Kaliti', labelAm: 'አቃቂ ቃሊቲ' },
   { value: 'lemi_kura', label: 'Lemi Kura', labelAm: 'ለሚ ኩራ' },
 ];
+
+/** Resolve form select value (underscore slug) to API/store city name. */
+export function cityApiLabelFromFormValue(formValue) {
+  if (!formValue) return '';
+  const c = CITIES.find((x) => x.value === formValue);
+  return c ? c.label : formValue;
+}
+
+/** Map stored/API city name back to form `value` for controlled selects. */
+export function cityFormValueFromApiLabel(apiCity) {
+  if (!apiCity) return '';
+  const s = String(apiCity).trim();
+  const c = CITIES.find((x) => x.label === s || x.value === s);
+  if (c) return c.value;
+  return cityNameToFormValue(s);
+}
+
+/** Sub-city slug (underscore) to display string for Location.sub_city. */
+export function addisSubCityApiLabelFromFormValue(formValue) {
+  if (!formValue) return '';
+  const sc = ADDIS_ABABA_SUB_CITIES.find((x) => x.value === formValue);
+  return sc ? sc.label : formValue;
+}
+
+/** Stored sub_city string → form value for Addis. */
+export function addisSubCityFormValueFromApiLabel(raw) {
+  if (!raw) return '';
+  const t = String(raw).trim();
+  const sc = ADDIS_ABABA_SUB_CITIES.find((x) => x.label === t || x.value === t);
+  return sc ? sc.value : t;
+}
+
+/** Search/UI filter tokens often use hyphens; CITIES uses underscores. */
+export function cityFormValueToFilterKey(formValue) {
+  if (!formValue) return '';
+  return String(formValue).replace(/_/g, '-');
+}
+
+export function cityFilterKeyToFormValue(filterKey) {
+  if (!filterKey) return '';
+  return String(filterKey).replace(/-/g, '_');
+}
 
 export const AMENITIES = [
   { value: 'wifi', label: 'WiFi', icon: 'FiWifi' },

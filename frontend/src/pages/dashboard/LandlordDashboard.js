@@ -180,11 +180,12 @@ export default function PropertyOwnerDashboard() {
       dashboard: '/dashboard/property-owner',
       properties: '/dashboard/property-owner',
       'add-property': '/dashboard/property-owner/add-property',
-      bookings: '/dashboard/property-owner',
+      'listing-packages': '/dashboard/property-owner/listing-packages',
+      bookings: '/dashboard/property-owner/bookings',
       messages: '/chat',
-      reviews: '/dashboard/property-owner',
-      analytics: '/dashboard/property-owner',
-      notifications: '/dashboard/property-owner',
+      reviews: '/dashboard/property-owner/reviews',
+      analytics: '/dashboard/property-owner/analytics',
+      notifications: '/dashboard/property-owner/notifications',
       settings: '/profile',
     };
     if (routes[key]) navigate(routes[key]);

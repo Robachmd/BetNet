@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FiChevronDown, FiChevronUp, FiX, FiSliders } from 'react-icons/fi';
+import {
+  CITIES,
+  ADDIS_ABABA_SUB_CITIES,
+  cityFormValueToFilterKey,
+} from '../../utils/constants';
 
 const propertyTypes = [
   { value: '', label: 'All Types' },
@@ -11,34 +16,9 @@ const propertyTypes = [
   { value: 'hall', label: 'Event Hall' },
 ];
 
-const cities = [
-  { value: '', label: 'All Cities' },
-  { value: 'addis-ababa', label: 'Addis Ababa' },
-  { value: 'hawassa', label: 'Hawassa' },
-  { value: 'bahir-dar', label: 'Bahir Dar' },
-  { value: 'adama', label: 'Adama' },
-  { value: 'dire-dawa', label: 'Dire Dawa' },
-  { value: 'mekelle', label: 'Mekelle' },
-  { value: 'jimma', label: 'Jimma' },
-  { value: 'gondar', label: 'Gondar' },
-];
-
-const subCities = {
-  'addis-ababa': [
-    { value: '', label: 'All Sub-Cities' },
-    { value: 'bole', label: 'Bole' },
-    { value: 'kirkos', label: 'Kirkos' },
-    { value: 'yeka', label: 'Yeka' },
-    { value: 'arada', label: 'Arada' },
-    { value: 'nifas-silk', label: 'Nifas Silk Lafto' },
-    { value: 'kolfe', label: 'Kolfe Keranio' },
-    { value: 'lideta', label: 'Lideta' },
-    { value: 'akaky-kaliti', label: 'Akaky Kaliti' },
-    { value: 'addis-ketema', label: 'Addis Ketema' },
-    { value: 'gulele', label: 'Gulele' },
-    { value: 'lemi-kura', label: 'Lemi Kura' },
-  ],
-};
+const ADDIS_FILTER_CITY_KEY = cityFormValueToFilterKey(
+  CITIES.find((c) => c.label === 'Addis Ababa')?.value || 'addis_ababa'
+);
 
 const amenitiesList = [
   'Water Supply', 'Electricity', 'Parking', 'WiFi', 'Security/Guard',
@@ -82,6 +62,28 @@ export default function PropertyFilters({
     amenities = [],
     verifiedOnly = false,
   } = filters;
+
+  const filterCityOptions = useMemo(
+    () => [
+      { value: '', label: 'All Cities' },
+      ...CITIES.map((c) => ({
+        value: cityFormValueToFilterKey(c.value),
+        label: c.label,
+      })),
+    ],
+    []
+  );
+
+  const addisSubFilterOptions = useMemo(
+    () => [
+      { value: '', label: 'All Sub-Cities' },
+      ...ADDIS_ABABA_SUB_CITIES.map((s) => ({
+        value: cityFormValueToFilterKey(s.value),
+        label: s.label,
+      })),
+    ],
+    []
+  );
 
   const activeCount = [
     propertyType, listingType, minPrice, maxPrice, bedrooms, city, subCity, verifiedOnly,
@@ -190,18 +192,18 @@ export default function PropertyFilters({
             }}
             className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400"
           >
-            {cities.map((c) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
+            {filterCityOptions.map((c) => (
+              <option key={c.value || 'all'} value={c.value}>{c.label}</option>
             ))}
           </select>
-          {city && subCities[city] && (
+          {city === ADDIS_FILTER_CITY_KEY && (
             <select
               value={subCity}
               onChange={(e) => handleChange('subCity', e.target.value)}
               className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400"
             >
-              {subCities[city].map((s) => (
-                <option key={s.value} value={s.value}>{s.label}</option>
+              {addisSubFilterOptions.map((s) => (
+                <option key={s.value || 'all-sub'} value={s.value}>{s.label}</option>
               ))}
             </select>
           )}

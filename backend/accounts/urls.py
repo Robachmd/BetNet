@@ -56,6 +56,11 @@ urlpatterns = [
         name="change-password",
     ),
     path(
+        "verification/",
+        views.IdentityVerificationView.as_view(),
+        name="verification",
+    ),
+    path(
         "admin/users/",
         admin_views.AdminUserListView.as_view(),
         name="admin-users-list",

@@ -8,9 +8,20 @@ export const API_BASE_URL = stripTrailingSlash(
   process.env.REACT_APP_API_URL || DEFAULT_API_BASE_URL
 );
 
-export const API_ORIGIN = stripTrailingSlash(
-  API_BASE_URL.replace(/\/?api\/?$/i, '')
-);
+function computeApiOrigin(apiBaseUrl) {
+  const stripped = String(apiBaseUrl || '').trim();
+  if (!stripped) return '';
+  if (/^https?:\/\//i.test(stripped)) {
+    return stripTrailingSlash(stripped.replace(/\/?api\/?$/i, ''));
+  }
+  // Path-only base (e.g. /api): resolve against the page origin in the browser
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  return '';
+}
+
+export const API_ORIGIN = computeApiOrigin(API_BASE_URL);
 
 const wsDefaultFromApiOrigin = API_ORIGIN.replace(/^http:/i, 'ws:').replace(/^https:/i, 'wss:');
 

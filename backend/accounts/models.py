@@ -192,3 +192,50 @@ class OwnerProfile(models.Model):
 
     def __str__(self):
         return f"OwnerProfile({self.user_id})"
+
+
+class IdentityVerificationSubmission(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        APPROVED = "APPROVED", "Approved"
+        REJECTED = "REJECTED", "Rejected"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="identity_verifications",
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    id_document_front = models.ImageField(
+        upload_to="verification/id_front/%Y/%m/",
+        blank=True,
+        default="",
+    )
+    id_document_back = models.ImageField(
+        upload_to="verification/id_back/%Y/%m/",
+        blank=True,
+        default="",
+    )
+    selfie = models.ImageField(
+        upload_to="verification/selfie/%Y/%m/",
+        blank=True,
+        default="",
+    )
+    review_notes = models.TextField(blank=True, default="")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "status"]),
+        ]
+
+    def __str__(self):
+        return f"IdentityVerificationSubmission({self.user_id}, {self.status})"

@@ -1,7 +1,7 @@
 services:
   - type: web
     name: betnet
-    env: docker
+    runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
     dockerContext: .
@@ -11,9 +11,20 @@ services:
         value: "False"
       - key: SERVE_DJANGO_PAGES
         value: "False"
-      # Set these in the Render dashboard as "Secret" values:
+      # Baked into the SPA at image build time (must match how the browser reaches Django)
+      - key: REACT_APP_API_URL
+        value: "/api"
+      # Secrets: set in the Render dashboard (do not commit), or use fromDatabase below.
       # - SECRET_KEY
-      # - DATABASE_URL (use Render Postgres)
+      #
+      # DATABASE_URL: safest is linking Postgres to this service in the dashboard
+      # (auto-injects), or add manually as a secret. Optional Blueprint wiring without
+      # pasting the URL into git:
+      # - key: DATABASE_URL
+      #   fromDatabase:
+      #     name: your-render-postgres-service-name
+      #     property: connectionString
+      # See docs/render-database-url.md
       # - REDIS_URL (optional; without it Channels/Celery will fall back)
       # - ALLOWED_HOSTS (optional; Render hostname is auto-added by settings.py)
       # - CORS_ALLOWED_ORIGINS / CSRF_TRUSTED_ORIGINS (set to your Render URL)

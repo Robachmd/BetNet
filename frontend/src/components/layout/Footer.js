@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FiFacebook, FiInstagram, FiTwitter, FiYoutube, FiMail, FiPhone, FiMapPin } from 'react-icons/fi';
 
@@ -9,7 +10,18 @@ const socialLinks = [
   { icon: FiYoutube, href: '#', label: 'YouTube' },
 ];
 
-export default function Footer({ onNavigate = () => {} }) {
+function FooterLink({ href, children }) {
+  return (
+    <Link
+      to={href}
+      className="text-sm text-gray-400 hover:text-green-400 transition-colors"
+    >
+      {children}
+    </Link>
+  );
+}
+
+export default function Footer() {
   const { t } = useTranslation();
 
   const footerColumns = useMemo(
@@ -74,8 +86,8 @@ export default function Footer({ onNavigate = () => {} }) {
               <a href="mailto:info@betnet.et" className="flex items-center gap-2 text-sm text-gray-400 hover:text-green-400 transition-colors">
                 <FiMail className="w-4 h-4" /> info@betnet.et
               </a>
-              <a href="tel:+251911000000" className="flex items-center gap-2 text-sm text-gray-400 hover:text-green-400 transition-colors">
-                <FiPhone className="w-4 h-4" /> +251 911 000 000
+              <a href="tel:+251941882661" className="flex items-center gap-2 text-sm text-gray-400 hover:text-green-400 transition-colors">
+                <FiPhone className="w-4 h-4" /> 0941882661
               </a>
               <p className="flex items-center gap-2 text-sm text-gray-400">
                 <FiMapPin className="w-4 h-4 flex-shrink-0" /> Bole, {t('home.addisAbaba')}, Ethiopia
@@ -89,13 +101,9 @@ export default function Footer({ onNavigate = () => {} }) {
               <ul className="space-y-2.5">
                 {col.links.map((link) => (
                   <li key={link.href + (link.labelKey || link.labelPlain)}>
-                    <a
-                      href={link.href}
-                      onClick={(e) => { e.preventDefault(); onNavigate(link.href); }}
-                      className="text-sm text-gray-400 hover:text-green-400 transition-colors"
-                    >
+                    <FooterLink href={link.href}>
                       {link.labelPlain || t(link.labelKey)}
-                    </a>
+                    </FooterLink>
                   </li>
                 ))}
               </ul>

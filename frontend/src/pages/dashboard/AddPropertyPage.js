@@ -14,6 +14,8 @@ import { getListingSlotSummary } from '../../services/listingPackages';
 import {
   PROPERTY_TYPES, LISTING_TYPES, CITIES, ADDIS_ABABA_SUB_CITIES, AMENITIES,
   HALL_AMENITIES, MAX_IMAGES_PER_PROPERTY, ACCEPTED_IMAGE_TYPES,
+  cityApiLabelFromFormValue,
+  addisSubCityApiLabelFromFormValue,
 } from '../../utils/constants';
 import { validateImageFile, getErrorMessage, isHallPropertyType, formPropertyTypeSupportsFloor } from '../../utils/helpers';
 import toast from 'react-hot-toast';
@@ -120,6 +122,10 @@ export default function AddPropertyPage() {
       properties: '/dashboard/property-owner',
       'add-property': '/dashboard/property-owner/add-property',
       'listing-packages': '/dashboard/property-owner/listing-packages',
+      bookings: '/dashboard/property-owner/bookings',
+      reviews: '/dashboard/property-owner/reviews',
+      analytics: '/dashboard/property-owner/analytics',
+      notifications: '/dashboard/property-owner/notifications',
       messages: '/chat',
       settings: '/profile',
     };
@@ -245,9 +251,11 @@ export default function AddPropertyPage() {
         bathrooms: isHall ? undefined : (data.bathrooms ? Number(data.bathrooms) : undefined),
         area: data.area ? Number(data.area) : undefined,
         location: {
-          city: data.city,
-          subCity: data.subCity,
-          specificLocation: data.specificLocation,
+          city: cityApiLabelFromFormValue(data.city),
+          sub_city: data.city === 'addis_ababa'
+            ? addisSubCityApiLabelFromFormValue(data.subCity)
+            : (data.subCity || ''),
+          specific_location: data.specificLocation || '',
         },
         amenities: data.amenities,
         price: isHall ? undefined : Number(data.monthlyRent),

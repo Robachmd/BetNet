@@ -281,11 +281,13 @@ Services will be available at:
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | `my-cloud` |
 | `CLOUDINARY_API_KEY` | Cloudinary API key | `123456789` |
 | `CLOUDINARY_API_SECRET` | Cloudinary API secret | `abc123` |
-| `CHAPA_SECRET_KEY` | Chapa payment gateway key | `CHASECK_TEST-xxx` |
+| `CHAPA_SECRET_KEY` | Chapa **secret** key (never use CHAPUBK here) | `CHASECK_TEST-xxx` |
 | `TELEBIRR_APP_ID` | Telebirr app ID | `app-id` |
 | `STRIPE_SECRET_KEY` | Stripe secret key | `sk_test_xxx` |
 | `CORS_ALLOWED_ORIGINS` | Allowed frontend origins | `http://localhost:3000` |
 | `CSRF_TRUSTED_ORIGINS` | Trusted browser origins for CSRF | `http://localhost` |
+
+**Production (Render):** add `SECRET_KEY` and `DATABASE_URL` in the Render dashboard as secrets, or link Postgres to the web service so `DATABASE_URL` is injected automatically. Never commit real database URLs. Details: [`docs/render-database-url.md`](docs/render-database-url.md).
 
 #### Frontend (`frontend/.env`)
 
@@ -377,6 +379,20 @@ All endpoints are prefixed with `/api/`.
 | POST | `/webhooks/chapa/` | Chapa webhook callback |
 | POST | `/webhooks/telebirr/` | Telebirr webhook callback |
 | POST | `/webhooks/stripe/` | Stripe webhook callback |
+
+### Payment Troubleshooting (Chapa)
+
+- If you see `Invalid API Key or the business can't accept payments at the moment`, verify:
+  - `CHAPA_SECRET_KEY` on backend is a **secret key** (`CHASECK_...`), not public (`CHAPUBK_...`)
+  - key environment matches account mode (test vs live)
+  - merchant/business account is active and allowed to collect payments
+- For Render deployment:
+  - open your backend service environment variables
+  - set/update `CHAPA_SECRET_KEY`
+  - redeploy service
+- Backend now returns structured payment init errors with:
+  - `provider`, `reason`, `actionable_hint`, `transaction_id`
+  - use `transaction_id` when checking payment history/logs.
 
 ### Notifications (`/api/notifications/`)
 

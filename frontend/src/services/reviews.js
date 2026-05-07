@@ -17,6 +17,14 @@ export const reviewService = {
     return data;
   },
 
+  /** Reviews received by a specific user (property owner or renter). */
+  async getReviewsForUser(userId, params = {}) {
+    const { data } = await api.get(`${R}/reviews/`, {
+      params: { page_size: 20, user: userId, ...params },
+    });
+    return data;
+  },
+
   async createReview(reviewData) {
     const { data } = await api.post(`${R}/reviews/`, reviewData);
     return data;

@@ -25,6 +25,25 @@ function methodToApi(frontend) {
   return m.toUpperCase();
 }
 
+function mapPaymentInitError(err) {
+  const payload = err?.response?.data || {};
+  const reason = String(payload?.reason || '').toLowerCase();
+  const provider = String(payload?.provider || '').toUpperCase();
+  const hint = payload?.actionable_hint || '';
+  const generic = getErrorMessage(err);
+
+  if (provider === 'CHAPA') {
+    if (reason === 'missing_server_key' || reason === 'wrong_key_type' || reason === 'invalid_api_key') {
+      return 'Chapa is not configured correctly right now. Please contact support while we update the server payment key.';
+    }
+    if (reason === 'merchant_inactive') {
+      return 'Payments are temporarily unavailable because the Chapa merchant account is not active for collections.';
+    }
+  }
+  if (hint) return `${generic} ${hint}`.trim();
+  return generic;
+}
+
 function packagePreferenceScore(pkg) {
   let score = 0;
   if (pkg?.badge_label) score += 3;
@@ -85,6 +104,7 @@ export default function PropertyOwnerListingPackagesPage() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [purchasingId, setPurchasingId] = useState(null);
+  const [paymentError, setPaymentError] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('chapa');
   const [phone, setPhone] = useState('');
@@ -221,6 +241,10 @@ export default function PropertyOwnerListingPackagesPage() {
       properties: '/dashboard/property-owner',
       'add-property': '/dashboard/property-owner/add-property',
       'listing-packages': '/dashboard/property-owner/listing-packages',
+      bookings: '/dashboard/property-owner/bookings',
+      reviews: '/dashboard/property-owner/reviews',
+      analytics: '/dashboard/property-owner/analytics',
+      notifications: '/dashboard/property-owner/notifications',
       messages: '/chat',
       settings: '/profile',
     };
@@ -229,6 +253,7 @@ export default function PropertyOwnerListingPackagesPage() {
 
   const buy = async (pkg) => {
     if (purchasingId != null) return;
+    setPaymentError('');
     if (methodToApi(paymentMethod) === 'TELEBIRR' && !phone.trim()) {
       toast.error('Enter your Telebirr phone number');
       return;
@@ -266,7 +291,9 @@ export default function PropertyOwnerListingPackagesPage() {
         await loadData();
       }
     } catch (e) {
-      toast.error(getErrorMessage(e));
+      const friendly = mapPaymentInitError(e);
+      setPaymentError(friendly);
+      toast.error(friendly);
     } finally {
       setPurchasingId(null);
     }
@@ -343,10 +370,15 @@ export default function PropertyOwnerListingPackagesPage() {
 
               <div className="bg-white rounded-xl border border-gray-100 p-4 mb-6">
                 <p className="text-sm font-medium text-gray-700 mb-3">Pay with</p>
+                {paymentError && (
+                  <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {paymentError}
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-3">
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod('chapa')}
+                    onClick={() => { setPaymentMethod('chapa'); setPaymentError(''); }}
                     className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors ${
                       paymentMethod === 'chapa'
                         ? 'border-green-700 bg-green-50 text-green-800'
@@ -358,7 +390,7 @@ export default function PropertyOwnerListingPackagesPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod('telebirr')}
+                    onClick={() => { setPaymentMethod('telebirr'); setPaymentError(''); }}
                     className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors ${
                       paymentMethod === 'telebirr'
                         ? 'border-green-700 bg-green-50 text-green-800'

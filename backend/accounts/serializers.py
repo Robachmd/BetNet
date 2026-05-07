@@ -5,7 +5,7 @@ from django.contrib.auth.password_validation import validate_password
 from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework import serializers
 
-from .models import OwnerProfile, User
+from .models import IdentityVerificationSubmission, OwnerProfile, User
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -290,3 +290,37 @@ class OwnerProfileSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ("verified_badge", "verified_at", "created_at", "updated_at")
+
+
+class IdentityVerificationStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IdentityVerificationSubmission
+        fields = [
+            "id",
+            "status",
+            "review_notes",
+            "reviewed_at",
+            "created_at",
+            "updated_at",
+            "id_document_front",
+            "id_document_back",
+            "selfie",
+        ]
+        read_only_fields = fields
+
+
+class IdentityVerificationSubmitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IdentityVerificationSubmission
+        fields = [
+            "id_document_front",
+            "id_document_back",
+            "selfie",
+        ]
+
+    def validate(self, attrs):
+        if not attrs.get("id_document_front") and not attrs.get("selfie"):
+            raise serializers.ValidationError(
+                "Upload at least an ID document front photo and a selfie."
+            )
+        return attrs

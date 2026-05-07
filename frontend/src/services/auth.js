@@ -93,6 +93,32 @@ export const authService = {
     return data;
   },
 
+  async updateProfilePhoto(file) {
+    const form = new FormData();
+    form.append('profile_image', file);
+    const { data } = await api.patch(`${AUTH}/profile/`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    localStorage.setItem('user', JSON.stringify(data));
+    return data;
+  },
+
+  async getIdentityVerification() {
+    const { data } = await api.get(`${AUTH}/verification/`);
+    return data;
+  },
+
+  async submitIdentityVerification({ idFront, idBack, selfie }) {
+    const form = new FormData();
+    if (idFront) form.append('id_document_front', idFront);
+    if (idBack) form.append('id_document_back', idBack);
+    if (selfie) form.append('selfie', selfie);
+    const { data } = await api.post(`${AUTH}/verification/`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+  },
+
   async enablePropertyOwner() {
     let data;
     try {

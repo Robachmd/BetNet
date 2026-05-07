@@ -13,6 +13,10 @@ import { propertyService } from '../../services/properties';
 import {
   PROPERTY_TYPES, LISTING_TYPES, CITIES, ADDIS_ABABA_SUB_CITIES, AMENITIES,
   HALL_AMENITIES, MAX_IMAGES_PER_PROPERTY, ACCEPTED_IMAGE_TYPES,
+  cityApiLabelFromFormValue,
+  addisSubCityApiLabelFromFormValue,
+  cityFormValueFromApiLabel,
+  addisSubCityFormValueFromApiLabel,
 } from '../../utils/constants';
 import {
   validateImageFile, getImageUrl, getErrorMessage,
@@ -103,9 +107,9 @@ export default function EditPropertyPage() {
           bedrooms: property.bedrooms || '',
           bathrooms: property.bathrooms || '',
           area: property.area || '',
-          city: property.location?.city || '',
-          subCity: property.location?.subCity || '',
-          specificLocation: property.location?.specificLocation || '',
+          city: cityFormValueFromApiLabel(property.location?.city || ''),
+          subCity: addisSubCityFormValueFromApiLabel(property.location?.subCity || property.location?.sub_city || ''),
+          specificLocation: property.location?.specificLocation || property.location?.specific_location || '',
           amenities: property.amenities || [],
           hallAmenities: property.hallDetails?.amenities || [],
           monthlyRent: property.price || '',
@@ -146,6 +150,10 @@ export default function EditPropertyPage() {
       properties: '/dashboard/property-owner',
       'add-property': '/dashboard/property-owner/add-property',
       'listing-packages': '/dashboard/property-owner/listing-packages',
+      bookings: '/dashboard/property-owner/bookings',
+      reviews: '/dashboard/property-owner/reviews',
+      analytics: '/dashboard/property-owner/analytics',
+      notifications: '/dashboard/property-owner/notifications',
       messages: '/chat',
       settings: '/profile',
     };
@@ -282,9 +290,11 @@ export default function EditPropertyPage() {
         area: data.area ? Number(data.area) : undefined,
         status: availabilityStatus,
         location: {
-          city: data.city,
-          subCity: data.subCity,
-          specificLocation: data.specificLocation,
+          city: cityApiLabelFromFormValue(data.city),
+          sub_city: data.city === 'addis_ababa'
+            ? addisSubCityApiLabelFromFormValue(data.subCity)
+            : (data.subCity || ''),
+          specific_location: data.specificLocation || '',
         },
         amenities: data.amenities,
         price: isHall ? undefined : Number(data.monthlyRent),

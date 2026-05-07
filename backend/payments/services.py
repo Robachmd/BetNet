@@ -17,10 +17,15 @@ class PaymentResult:
     data: dict
     checkout_url: str | None = None
     error: str | None = None
+    provider: str | None = None
+    reason: str | None = None
+    hint: str | None = None
+    provider_code: str | None = None
 
 
 class ChapaService:
     BASE_URL = "https://api.chapa.co/v1"
+    PUBLIC_KEY_PREFIXES = ("CHAPUBK_", "CHAPUBK-", "CHAPUBK")
 
     def __init__(self):
         self.secret_key = (settings.CHAPA_SECRET_KEY or "").strip()
@@ -28,13 +33,86 @@ class ChapaService:
             "Authorization": f"Bearer {self.secret_key}",
             "Content-Type": "application/json",
         }
+        self.key_fingerprint = self._fingerprint_key(self.secret_key)
+
+    @staticmethod
+    def _fingerprint_key(key: str) -> str:
+        if not key:
+            return "empty"
+        digest = hashlib.sha256(key.encode()).hexdigest()[:10]
+        return f"len={len(key)} sha256={digest}"
+
+    @staticmethod
+    def _extract_provider_code(payload: dict) -> str | None:
+        code = payload.get("code")
+        if code is None and isinstance(payload.get("data"), dict):
+            code = payload["data"].get("code")
+        if code is None:
+            return None
+        return str(code)
+
+    @staticmethod
+    def _classify_provider_failure(message: str) -> tuple[str, str]:
+        msg = (message or "").lower()
+        if "invalid api key" in msg or "api key" in msg:
+            return (
+                "invalid_api_key",
+                "Server payment key is invalid. Set a valid CHAPA_SECRET_KEY for the active environment.",
+            )
+        if "can't accept payments" in msg or "cannot accept payments" in msg:
+            return (
+                "merchant_inactive",
+                "Chapa merchant account is not active for collections. Activate business/account in Chapa dashboard.",
+            )
+        if "unauthorized" in msg or "forbidden" in msg:
+            return (
+                "auth_failed",
+                "Payment gateway rejected credentials. Recheck CHAPA_SECRET_KEY and account mode (test/live).",
+            )
+        return (
+            "provider_error",
+            "Payment provider rejected initialization. Verify key/account status in Chapa dashboard.",
+        )
+
+    def _failure_result(
+        self,
+        *,
+        error: str,
+        reason: str,
+        hint: str,
+        data: dict | None = None,
+        provider_code: str | None = None,
+    ) -> PaymentResult:
+        return PaymentResult(
+            success=False,
+            data=data or {},
+            error=error,
+            provider="CHAPA",
+            reason=reason,
+            hint=hint,
+            provider_code=provider_code,
+        )
 
     def _ensure_key(self) -> PaymentResult | None:
         if not self.secret_key:
-            return PaymentResult(
-                success=False,
-                data={},
+            logger.error(
+                "Chapa key validation failed: empty key (%s)",
+                self.key_fingerprint,
+            )
+            return self._failure_result(
                 error="CHAPA_SECRET_KEY is empty on the server.",
+                reason="missing_server_key",
+                hint="Set CHAPA_SECRET_KEY on the backend environment and restart the service.",
+            )
+        if self.secret_key.upper().startswith(self.PUBLIC_KEY_PREFIXES):
+            logger.error(
+                "Chapa key validation failed: public key used as secret (%s)",
+                self.key_fingerprint,
+            )
+            return self._failure_result(
+                error="CHAPA_SECRET_KEY appears to be a public key.",
+                reason="wrong_key_type",
+                hint="Use the Chapa SECRET key (not CHAPUBK public key) in CHAPA_SECRET_KEY.",
             )
         return None
 
@@ -84,16 +162,34 @@ class ChapaService:
                     success=True,
                     data=data,
                     checkout_url=data["data"]["checkout_url"],
+                    provider="CHAPA",
                 )
-            logger.warning("Chapa init failed: %s", data)
-            return PaymentResult(
-                success=False,
+            message = data.get("message", "Payment initialization failed")
+            reason, hint = self._classify_provider_failure(message)
+            provider_code = self._extract_provider_code(data)
+            logger.warning(
+                "Chapa init failed (%s): code=%s msg=%s fingerprint=%s",
+                reason,
+                provider_code,
+                message,
+                self.key_fingerprint,
+            )
+            return self._failure_result(
+                error=message,
+                reason=reason,
+                hint=hint,
                 data=data,
-                error=data.get("message", "Payment initialization failed"),
+                provider_code=provider_code,
             )
         except requests.RequestException as exc:
-            logger.exception("Chapa request error")
-            return PaymentResult(success=False, data={}, error=str(exc))
+            logger.exception(
+                "Chapa request error (%s) while initializing payment", self.key_fingerprint
+            )
+            return self._failure_result(
+                error=str(exc),
+                reason="provider_network_error",
+                hint="Could not reach Chapa. Check network/connectivity and retry.",
+            )
 
     def verify_payment(self, tx_ref: str) -> PaymentResult:
         missing = self._ensure_key()
@@ -109,15 +205,33 @@ class ChapaService:
             data = resp.json()
 
             if resp.status_code == 200 and data.get("status") == "success":
-                return PaymentResult(success=True, data=data)
-            return PaymentResult(
-                success=False,
+                return PaymentResult(success=True, data=data, provider="CHAPA")
+            message = data.get("message", "Verification failed")
+            reason, hint = self._classify_provider_failure(message)
+            provider_code = self._extract_provider_code(data)
+            logger.warning(
+                "Chapa verify failed (%s): code=%s msg=%s fingerprint=%s",
+                reason,
+                provider_code,
+                message,
+                self.key_fingerprint,
+            )
+            return self._failure_result(
+                error=message,
+                reason=reason,
+                hint=hint,
                 data=data,
-                error=data.get("message", "Verification failed"),
+                provider_code=provider_code,
             )
         except requests.RequestException as exc:
-            logger.exception("Chapa verify error")
-            return PaymentResult(success=False, data={}, error=str(exc))
+            logger.exception(
+                "Chapa request error (%s) while verifying payment", self.key_fingerprint
+            )
+            return self._failure_result(
+                error=str(exc),
+                reason="provider_network_error",
+                hint="Could not reach Chapa while verifying payment.",
+            )
 
 
 class TelebirrService:

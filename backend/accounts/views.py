@@ -13,6 +13,8 @@ from .serializers import (
     ChangePasswordSerializer,
     PropertyOwnerPublicProfileSerializer,
     OwnerProfileSerializer,
+    IdentityVerificationStatusSerializer,
+    IdentityVerificationSubmitSerializer,
     OTPRequestSerializer,
     OTPVerifySerializer,
     PasswordResetConfirmSerializer,
@@ -308,6 +310,60 @@ class ChangePasswordView(APIView):
         return Response(
             {"detail": "Password changed successfully."},
             status=status.HTTP_200_OK,
+        )
+
+
+# ──────────────────────────────────────────────
+#  Identity verification (KYC submission)
+# ──────────────────────────────────────────────
+class IdentityVerificationView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+    def get(self, request):
+        latest = (
+            request.user.identity_verifications.order_by("-created_at").first()
+        )
+        return Response(
+            {
+                "phone_verified": bool(getattr(request.user, "phone_verified", False)),
+                "id_verified": bool(getattr(request.user, "id_verified", False)),
+                "submission": IdentityVerificationStatusSerializer(latest, context={"request": request}).data
+                if latest
+                else None,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request):
+        serializer = IdentityVerificationSubmitSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Only keep one pending submission per user, replace if exists.
+        latest_pending = request.user.identity_verifications.filter(
+            status="PENDING"
+        ).order_by("-created_at").first()
+
+        if latest_pending:
+            for field, value in serializer.validated_data.items():
+                setattr(latest_pending, field, value)
+            latest_pending.status = "PENDING"
+            latest_pending.review_notes = ""
+            latest_pending.reviewed_at = None
+            latest_pending.save()
+            submission = latest_pending
+        else:
+            submission = request.user.identity_verifications.create(
+                status="PENDING",
+                **serializer.validated_data,
+            )
+
+        return Response(
+            {
+                "detail": "Verification submitted. We'll review your documents soon.",
+                "submission": IdentityVerificationStatusSerializer(submission, context={"request": request}).data,
+            },
+            status=status.HTTP_201_CREATED,
         )
 
 

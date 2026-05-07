@@ -32,6 +32,23 @@ from properties.permissions import IsPropertyOwner
 logger = logging.getLogger(__name__)
 
 
+def _payment_error_payload(payment: Payment, result) -> dict:
+    provider = getattr(result, "provider", None) or str(payment.payment_method or "").upper()
+    reason = getattr(result, "reason", None) or "provider_error"
+    payload = {
+        "error": getattr(result, "error", None) or "Payment initialization failed.",
+        "provider": provider,
+        "reason": reason,
+        "actionable_hint": getattr(result, "hint", None)
+        or "Verify payment key/account status and try again.",
+        "transaction_id": payment.transaction_id,
+    }
+    provider_code = getattr(result, "provider_code", None)
+    if provider_code:
+        payload["provider_code"] = provider_code
+    return payload
+
+
 class InitiatePaymentView(APIView):
     """Create a Payment record and redirect the client to the provider checkout."""
 
@@ -54,7 +71,7 @@ class InitiatePaymentView(APIView):
         )
 
         checkout_url = None
-        error = None
+        failed_result = None
 
         if data["payment_method"] == Payment.PaymentMethod.CHAPA:
             result = ChapaService().initialize_payment(
@@ -71,7 +88,7 @@ class InitiatePaymentView(APIView):
                 payment.payment_data = result.data
                 payment.save(update_fields=["payment_data"])
             else:
-                error = result.error
+                failed_result = result
 
         elif data["payment_method"] == Payment.PaymentMethod.TELEBIRR:
             result = TelebirrService().initialize_payment(
@@ -86,7 +103,7 @@ class InitiatePaymentView(APIView):
                 payment.payment_data = result.data
                 payment.save(update_fields=["payment_data"])
             else:
-                error = result.error
+                failed_result = result
 
         elif data["payment_method"] == Payment.PaymentMethod.STRIPE:
             amount_cents = int(payment.amount * 100)
@@ -107,15 +124,16 @@ class InitiatePaymentView(APIView):
                 payment.payment_data = result.data
                 payment.save(update_fields=["payment_data"])
             else:
-                error = result.error
+                failed_result = result
 
         elif data["payment_method"] == Payment.PaymentMethod.BANK_TRANSFER:
             checkout_url = None
 
-        if error:
-            payment.mark_failed({"error": error})
+        if failed_result:
+            error_payload = _payment_error_payload(payment, failed_result)
+            payment.mark_failed(error_payload)
             return Response(
-                {"error": error, "transaction_id": payment.transaction_id},
+                error_payload,
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
@@ -365,13 +383,23 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
 def _initiate_listing_package_checkout(
     request,
     payment: Payment,
-) -> tuple[str | None, str | None]:
+) -> tuple[str | None, object | None]:
     """
-    Return (checkout_url, error_message) for Chapa / Telebirr / Stripe, or (None, None) for bank.
+    Return (checkout_url, failure_result) for Chapa / Telebirr / Stripe, or (None, None) for bank.
     """
     payment_method = request.data.get("payment_method", Payment.PaymentMethod.CHAPA)
     if payment_method not in Payment.PaymentMethod.values:
-        return None, "Invalid payment method."
+        return None, type(
+            "Fail",
+            (),
+            {
+                "error": "Invalid payment method.",
+                "provider": str(payment_method or "").upper(),
+                "reason": "invalid_payment_method",
+                "hint": "Choose one of the supported payment methods and retry.",
+                "provider_code": None,
+            },
+        )()
     if payment_method == Payment.PaymentMethod.CHAPA:
         result = ChapaService().initialize_payment(
             amount=str(payment.amount),
@@ -386,7 +414,7 @@ def _initiate_listing_package_checkout(
             payment.payment_data = result.data
             payment.save(update_fields=["payment_data"])
             return result.checkout_url, None
-        return None, result.error
+        return None, result
 
     if payment_method == Payment.PaymentMethod.TELEBIRR:
         result = TelebirrService().initialize_payment(
@@ -400,7 +428,7 @@ def _initiate_listing_package_checkout(
             payment.payment_data = result.data
             payment.save(update_fields=["payment_data"])
             return result.checkout_url, None
-        return None, result.error
+        return None, result
 
     if payment_method == Payment.PaymentMethod.STRIPE:
         amount_cents = int(payment.amount * 100)
@@ -420,7 +448,7 @@ def _initiate_listing_package_checkout(
             payment.payment_data = result.data
             payment.save(update_fields=["payment_data"])
             return result.checkout_url, None
-        return None, result.error
+        return None, result
 
     return None, None  # bank transfer — no redirect
 
@@ -527,12 +555,13 @@ class InitiateListingPackagePurchaseView(APIView):
             payment=payment,
         )
 
-        checkout_url, error = _initiate_listing_package_checkout(request, payment)
-        if error:
-            payment.mark_failed({"error": error})
+        checkout_url, failed_result = _initiate_listing_package_checkout(request, payment)
+        if failed_result:
+            error_payload = _payment_error_payload(payment, failed_result)
+            payment.mark_failed(error_payload)
             cancel_pending_purchase(purchase)
             return Response(
-                {"error": error, "transaction_id": payment.transaction_id},
+                error_payload,
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
@@ -588,7 +617,7 @@ class FeatureListingView(APIView):
         )
 
         checkout_url = None
-        error = None
+        failed_result = None
 
         if payment_method == Payment.PaymentMethod.CHAPA:
             result = ChapaService().initialize_payment(
@@ -605,7 +634,7 @@ class FeatureListingView(APIView):
                 payment.payment_data = result.data
                 payment.save(update_fields=["payment_data"])
             else:
-                error = result.error
+                failed_result = result
 
         elif payment_method == Payment.PaymentMethod.TELEBIRR:
             result = TelebirrService().initialize_payment(
@@ -620,7 +649,7 @@ class FeatureListingView(APIView):
                 payment.payment_data = result.data
                 payment.save(update_fields=["payment_data"])
             else:
-                error = result.error
+                failed_result = result
 
         elif payment_method == Payment.PaymentMethod.STRIPE:
             amount_cents = int(payment.amount * 100)
@@ -641,12 +670,13 @@ class FeatureListingView(APIView):
                 payment.payment_data = result.data
                 payment.save(update_fields=["payment_data"])
             else:
-                error = result.error
+                failed_result = result
 
-        if error:
-            payment.mark_failed({"error": error})
+        if failed_result:
+            error_payload = _payment_error_payload(payment, failed_result)
+            payment.mark_failed(error_payload)
             return Response(
-                {"error": error, "transaction_id": payment.transaction_id},
+                error_payload,
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
