@@ -155,32 +155,6 @@ class ChapaService:
                 headers=self.headers,
                 timeout=30,
             )
-            data = resp.json()
-
-            if resp.status_code == 200 and data.get("status") == "success":
-                return PaymentResult(
-                    success=True,
-                    data=data,
-                    checkout_url=data["data"]["checkout_url"],
-                    provider="CHAPA",
-                )
-            message = data.get("message", "Payment initialization failed")
-            reason, hint = self._classify_provider_failure(message)
-            provider_code = self._extract_provider_code(data)
-            logger.warning(
-                "Chapa init failed (%s): code=%s msg=%s fingerprint=%s",
-                reason,
-                provider_code,
-                message,
-                self.key_fingerprint,
-            )
-            return self._failure_result(
-                error=message,
-                reason=reason,
-                hint=hint,
-                data=data,
-                provider_code=provider_code,
-            )
         except requests.RequestException as exc:
             logger.exception(
                 "Chapa request error (%s) while initializing payment", self.key_fingerprint
@@ -190,6 +164,62 @@ class ChapaService:
                 reason="provider_network_error",
                 hint="Could not reach Chapa. Check network/connectivity and retry.",
             )
+
+        try:
+            data = resp.json()
+        except ValueError:
+            logger.warning(
+                "Chapa init non-JSON response status=%s body_prefix=%s fingerprint=%s",
+                resp.status_code,
+                (resp.text or "")[:500],
+                self.key_fingerprint,
+            )
+            return self._failure_result(
+                error="Chapa returned an invalid response.",
+                reason="provider_response_error",
+                hint="Try again in a moment. If this persists, contact support.",
+            )
+
+        if resp.status_code == 200 and data.get("status") == "success":
+            inner = data.get("data")
+            if not isinstance(inner, dict):
+                inner = {}
+            checkout_url = inner.get("checkout_url")
+            if not checkout_url:
+                logger.warning(
+                    "Chapa success payload missing checkout_url fingerprint=%s raw_keys=%s",
+                    self.key_fingerprint,
+                    list(data.keys()) if isinstance(data, dict) else type(data),
+                )
+                return self._failure_result(
+                    error="Chapa response missing checkout URL.",
+                    reason="provider_response_error",
+                    hint="Try again or contact support if this persists.",
+                )
+            return PaymentResult(
+                success=True,
+                data=data,
+                checkout_url=checkout_url,
+                provider="CHAPA",
+            )
+
+        message = data.get("message", "Payment initialization failed")
+        reason, hint = self._classify_provider_failure(message)
+        provider_code = self._extract_provider_code(data)
+        logger.warning(
+            "Chapa init failed (%s): code=%s msg=%s fingerprint=%s",
+            reason,
+            provider_code,
+            message,
+            self.key_fingerprint,
+        )
+        return self._failure_result(
+            error=message,
+            reason=reason,
+            hint=hint,
+            data=data,
+            provider_code=provider_code,
+        )
 
     def verify_payment(self, tx_ref: str) -> PaymentResult:
         missing = self._ensure_key()

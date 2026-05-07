@@ -26,11 +26,30 @@ function methodToApi(frontend) {
 }
 
 function mapPaymentInitError(err) {
+  const status = err?.response?.status;
   const payload = err?.response?.data || {};
   const reason = String(payload?.reason || '').toLowerCase();
   const provider = String(payload?.provider || '').toUpperCase();
   const hint = payload?.actionable_hint || '';
   const generic = getErrorMessage(err);
+  const correlationId = payload?.correlation_id;
+
+  if (process.env.NODE_ENV === 'development' && err?.response) {
+    const cfg = err.response.config;
+    const url = cfg?.url ? `${cfg.baseURL || ''}${cfg.url}` : '';
+    // eslint-disable-next-line no-console
+    console.warn('[listing-package purchase]', { status, url, payload });
+  }
+
+  if (status === 500 && correlationId) {
+    return `Something went wrong on our server. Reference: ${correlationId}. Please try again or contact support with this reference.`;
+  }
+  if (status === 500) {
+    return 'Something went wrong on our server while starting checkout. Please try again. If it keeps failing, contact support so they can match the time with server logs.';
+  }
+  if (status === 502 && provider !== 'CHAPA' && !payload?.error) {
+    return "Payment provider returned an error (HTTP 502). Check that payment keys are set correctly on the server.";
+  }
 
   if (provider === 'CHAPA') {
     if (reason === 'missing_server_key' || reason === 'wrong_key_type' || reason === 'invalid_api_key') {

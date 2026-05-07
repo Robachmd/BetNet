@@ -382,15 +382,16 @@ All endpoints are prefixed with `/api/`.
 
 ### Payment Troubleshooting (Chapa)
 
+- If the **Listing packages** page shows “Chapa is not configured correctly…”, the API returned a credential error (`missing_server_key`, `wrong_key_type`, or `invalid_api_key`). Fix `CHAPA_SECRET_KEY` and rebuild the frontend with `REACT_APP_CHAPA_PUBLIC_KEY` if needed. See [`docs/chapa-production.md`](docs/chapa-production.md).
 - If you see `Invalid API Key or the business can't accept payments at the moment`, verify:
   - `CHAPA_SECRET_KEY` on backend is a **secret key** (`CHASECK_...`), not public (`CHAPUBK_...`)
   - key environment matches account mode (test vs live)
   - merchant/business account is active and allowed to collect payments
 - For Render deployment:
-  - open your backend service environment variables
-  - set/update `CHAPA_SECRET_KEY`
-  - redeploy service
-- Backend now returns structured payment init errors with:
+  - open your web service **Environment**
+  - set **`CHAPA_SECRET_KEY`** (secret) and **`REACT_APP_CHAPA_PUBLIC_KEY`** (for Docker/CRA build; same mode as secret)
+  - redeploy so the new image includes both server env and built SPA
+- Backend returns structured payment init errors with:
   - `provider`, `reason`, `actionable_hint`, `transaction_id`
   - use `transaction_id` when checking payment history/logs.
 

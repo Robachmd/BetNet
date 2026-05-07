@@ -5,6 +5,10 @@ WORKDIR /app/frontend
 ARG REACT_APP_API_URL=/api
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
+# Chapa checkout (listing packages): public key is baked at build time — set REACT_APP_CHAPA_PUBLIC_KEY on Render or pass --build-arg
+ARG REACT_APP_CHAPA_PUBLIC_KEY=
+ENV REACT_APP_CHAPA_PUBLIC_KEY=$REACT_APP_CHAPA_PUBLIC_KEY
+
 COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm ci
 COPY frontend/ ./

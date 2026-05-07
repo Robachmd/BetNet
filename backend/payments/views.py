@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -522,58 +523,103 @@ class InitiateListingPackagePurchaseView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsPropertyOwner]
 
     def post(self, request, package_id: int):
+        correlation_id = str(uuid.uuid4())
+        payment = None
+        purchase = None
         try:
-            pkg = ListingPackage.objects.get(pk=package_id, is_active=True)
-        except ListingPackage.DoesNotExist:
-            return Response(
-                {"error": "Package not found or inactive."},
-                status=status.HTTP_404_NOT_FOUND,
+            try:
+                pkg = ListingPackage.objects.get(pk=package_id, is_active=True)
+            except ListingPackage.DoesNotExist:
+                return Response(
+                    {"error": "Package not found or inactive."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            payment_method = request.data.get("payment_method", Payment.PaymentMethod.CHAPA)
+            if payment_method not in Payment.PaymentMethod.values:
+                return Response(
+                    {"error": "Invalid payment method."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            payment = Payment.objects.create(
+                user=request.user,
+                payment_type=Payment.PaymentType.LISTING_PACKAGE,
+                amount=pkg.price,
+                currency=pkg.currency,
+                payment_method=payment_method,
+                listing_package=pkg,
+                description=f"Listing package: {pkg.name}",
+            )
+            purchase = ListingPackagePurchase.objects.create(
+                user=request.user,
+                package=pkg,
+                status=ListingPackagePurchase.Status.PENDING,
+                slots_total=pkg.listing_quota,
+                slots_used=0,
+                payment=payment,
             )
 
-        payment_method = request.data.get("payment_method", Payment.PaymentMethod.CHAPA)
-        if payment_method not in Payment.PaymentMethod.values:
+            checkout_url, failed_result = _initiate_listing_package_checkout(request, payment)
+            if failed_result:
+                error_payload = _payment_error_payload(payment, failed_result)
+                payment.mark_failed(error_payload)
+                cancel_pending_purchase(purchase)
+                return Response(
+                    error_payload,
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+
             return Response(
-                {"error": "Invalid payment method."},
-                status=status.HTTP_400_BAD_REQUEST,
+                {
+                    "transaction_id": payment.transaction_id,
+                    "purchase_id": purchase.id,
+                    "checkout_url": checkout_url,
+                    "payment": PaymentSerializer(payment).data,
+                },
+                status=status.HTTP_201_CREATED,
             )
-
-        payment = Payment.objects.create(
-            user=request.user,
-            payment_type=Payment.PaymentType.LISTING_PACKAGE,
-            amount=pkg.price,
-            currency=pkg.currency,
-            payment_method=payment_method,
-            listing_package=pkg,
-            description=f"Listing package: {pkg.name}",
-        )
-        purchase = ListingPackagePurchase.objects.create(
-            user=request.user,
-            package=pkg,
-            status=ListingPackagePurchase.Status.PENDING,
-            slots_total=pkg.listing_quota,
-            slots_used=0,
-            payment=payment,
-        )
-
-        checkout_url, failed_result = _initiate_listing_package_checkout(request, payment)
-        if failed_result:
-            error_payload = _payment_error_payload(payment, failed_result)
-            payment.mark_failed(error_payload)
-            cancel_pending_purchase(purchase)
+        except Exception:
+            logger.exception(
+                "InitiateListingPackagePurchase failed correlation_id=%s package_id=%s user_id=%s",
+                correlation_id,
+                package_id,
+                getattr(request.user, "id", None),
+            )
+            if purchase is not None:
+                try:
+                    cancel_pending_purchase(purchase)
+                except Exception:
+                    logger.exception(
+                        "cancel_pending_purchase failed during InitiateListingPackagePurchase rollback "
+                        "correlation_id=%s",
+                        correlation_id,
+                    )
+            if payment is not None:
+                try:
+                    payment.mark_failed(
+                        {
+                            "error": "Unexpected server error during listing package checkout.",
+                            "reason": "unexpected_error",
+                            "correlation_id": correlation_id,
+                        }
+                    )
+                except Exception:
+                    logger.exception(
+                        "mark_failed failed during InitiateListingPackagePurchase rollback "
+                        "correlation_id=%s",
+                        correlation_id,
+                    )
             return Response(
-                error_payload,
-                status=status.HTTP_502_BAD_GATEWAY,
+                {
+                    "error": "Listing package checkout failed unexpectedly.",
+                    "provider": "SERVER",
+                    "reason": "unexpected_error",
+                    "actionable_hint": "Please try again. If it repeats, contact support with the reference below.",
+                    "correlation_id": correlation_id,
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-        return Response(
-            {
-                "transaction_id": payment.transaction_id,
-                "purchase_id": purchase.id,
-                "checkout_url": checkout_url,
-                "payment": PaymentSerializer(payment).data,
-            },
-            status=status.HTTP_201_CREATED,
-        )
 
 
 class FeatureListingView(APIView):

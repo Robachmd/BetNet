@@ -14,6 +14,8 @@ services:
       # Baked into the SPA at image build time (must match how the browser reaches Django)
       - key: REACT_APP_API_URL
         value: "/api"
+      # Chapa: set REACT_APP_CHAPA_PUBLIC_KEY (CHAPUBK_...) in the dashboard so Docker build
+      # receives it (must match test/live mode of CHAPA_SECRET_KEY on the server). See docs/chapa-production.md
       # Secrets: set in the Render dashboard (do not commit), or use fromDatabase below.
       # - SECRET_KEY
       #
