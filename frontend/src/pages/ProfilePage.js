@@ -28,6 +28,7 @@ export default function ProfilePage() {
     user,
     isAuthenticated,
     updateProfile,
+    refreshUser,
     isLoading: authLoading,
     isOwnerMode,
     switchAppMode,
@@ -99,10 +100,12 @@ export default function ProfilePage() {
     try {
       if (avatarFile) {
         await authService.updateProfilePhoto(avatarFile);
+        // Ensure the navbar/avatar and profile page reflect the uploaded photo immediately.
+        await refreshUser();
       }
       await updateProfile({
-        firstName: profile.firstName.trim(),
-        lastName: profile.lastName.trim(),
+        first_name: profile.firstName.trim(),
+        last_name: profile.lastName.trim(),
         email: profile.email.trim(),
         bio: profile.bio.trim(),
       });
