@@ -241,6 +241,16 @@ DEFAULT_FILE_STORAGE = env(
     default='django.core.files.storage.FileSystemStorage',
 )
 
+# If Cloudinary credentials are set but DEFAULT_FILE_STORAGE wasn't, prefer Cloudinary.
+# This prevents "works until refresh" issues on Render where local /media/ isn't persistent/served.
+if (
+    DEFAULT_FILE_STORAGE == 'django.core.files.storage.FileSystemStorage'
+    and CLOUDINARY_STORAGE.get('CLOUD_NAME')
+    and CLOUDINARY_STORAGE.get('API_KEY')
+    and CLOUDINARY_STORAGE.get('API_SECRET')
+):
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
 # ---------------------------------------------------------------------------
 # Django REST Framework
 # ---------------------------------------------------------------------------
