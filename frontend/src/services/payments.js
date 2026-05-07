@@ -69,7 +69,7 @@ export const paymentService = {
   },
 
   async getPropertyOwnerEarnings(params = {}) {
-    const { data } = await api.get(`${PAYMENTS_PREFIX}/earnings`, { params });
+    const { data } = await api.get(`${PAYMENTS_PREFIX}/earnings/`, { params });
     return data;
   },
 

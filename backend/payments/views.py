@@ -2,12 +2,16 @@ import json
 import logging
 import uuid
 
+from django.db.models import Sum
+from django.db.models.functions import TruncMonth
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from bookings.models import HallBooking
 from .listing_package_services import (
     activate_listing_package_purchase,
     cancel_pending_purchase,
@@ -358,6 +362,62 @@ class PaymentHistoryView(generics.ListAPIView):
     def get_queryset(self):
         return Payment.objects.filter(user=self.request.user).select_related(
             "property", "hall_booking", "listing_package"
+        )
+
+
+class PropertyOwnerEarningsView(APIView):
+    """
+    Earnings for property-owner dashboards.
+
+    We currently use paid HallBookings on properties owned by the user.
+    Query params:
+      - period=month|year (default: month)
+    """
+
+    permission_classes = [permissions.IsAuthenticated, IsPropertyOwner]
+
+    def get(self, request):
+        period = (request.query_params.get("period") or "month").strip().lower()
+        now = timezone.localtime(timezone.now())
+
+        if period == "year":
+            start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        else:
+            start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        qs = HallBooking.objects.filter(
+            property__owner=request.user,
+            is_paid=True,
+            created_at__gte=start,
+        )
+
+        total = qs.aggregate(total=Sum("total_price"))["total"] or 0
+
+        by_month = list(
+            qs.annotate(month=TruncMonth("created_at"))
+            .values("month")
+            .annotate(amount=Sum("total_price"))
+            .order_by("month")
+        )
+        monthly = []
+        for row in by_month:
+            m = row.get("month")
+            amt = row.get("amount") or 0
+            month_label = ""
+            if m:
+                try:
+                    month_label = m.date().strftime("%Y-%m")
+                except Exception:
+                    month_label = str(m)[:7]
+            monthly.append({"month": month_label, "amount": str(amt)})
+
+        return Response(
+            {
+                "currency": "ETB",
+                "period": period,
+                "total": str(total),
+                "monthly": monthly,
+            }
         )
 
 

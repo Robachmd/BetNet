@@ -32,6 +32,7 @@ urlpatterns = [
     path("initiate/", views.InitiatePaymentView.as_view(), name="initiate"),
     path("verify/", views.VerifyPaymentView.as_view(), name="verify"),
     path("history/", views.PaymentHistoryView.as_view(), name="history"),
+    path("earnings/", views.PropertyOwnerEarningsView.as_view(), name="earnings"),
     path(
         "feature/<int:property_id>/",
         views.FeatureListingView.as_view(),
