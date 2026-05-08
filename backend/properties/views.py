@@ -92,19 +92,7 @@ class PropertyViewSet(viewsets.ModelViewSet):
         return qs
 
     def create(self, request, *args, **kwargs):
-        from payments.listing_package_services import has_listing_capacity
-
-        if not has_listing_capacity(request.user):
-            return Response(
-                {
-                    "detail": (
-                        "No listing slots available. Purchase a listing package in Payments "
-                        "or use an active subscription."
-                    ),
-                    "code": "no_listing_slots",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # Draft creation is always allowed for owners. Slot capacity is enforced at publish time.
         return super().create(request, *args, **kwargs)
 
     @action(

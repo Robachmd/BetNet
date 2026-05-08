@@ -97,8 +97,57 @@ class PropertyCreateGatingTests(TestCase):
             landlord_eligible=True,
         )
 
-    def test_create_property_requires_listing_capacity(self):
+    def test_create_property_allows_draft_without_listing_capacity(self):
+        """
+        Draft creation should be allowed even without listing package capacity.
+        Slot capacity is enforced when publishing.
+        """
         self.client.force_authenticate(self.landlord)
-        res = self.client.post("/api/properties/properties/", {}, format="json")
-        self.assertEqual(res.status_code, 400)
-        self.assertEqual(res.data.get("code"), "no_listing_slots")
+        res = self.client.post(
+            "/api/properties/properties/",
+            {
+                "title": "Draft listing",
+                "description": "Draft listing description",
+                "property_type": "APARTMENT",
+                "listing_type": "rent",
+                "bedrooms": "ONE",
+                "bathrooms": 1,
+                "area_sqm": "50.00",
+                "price_monthly": "10000.00",
+                "price_currency": "ETB",
+                "location": {
+                    "city": "Addis Ababa",
+                    "sub_city": "Bole",
+                    "specific_location": "Near Edna Mall",
+                    "maps_url": "https://maps.google.com/?q=9.01,38.75",
+                },
+                "amenities": {
+                    "water_availability": "SOMETIMES",
+                    "electricity_stability": "MODERATE",
+                    "has_parking": False,
+                    "has_wifi": True,
+                    "has_security": False,
+                    "has_generator": False,
+                    "is_furnished": False,
+                    "has_elevator": False,
+                    "has_balcony": False,
+                    "has_garden": False,
+                    "has_cctv": False,
+                    "pets_allowed": False,
+                },
+            },
+            format="json",
+        )
+        self.assertEqual(res.status_code, 201)
+        slug = res.data.get("slug")
+        self.assertTrue(slug, msg="expected slug in create response")
+
+        # Create uses the create/update serializer, which doesn't include is_published.
+        # Verify draft status via the detail endpoint.
+        detail = self.client.get(f"/api/properties/properties/{slug}/")
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.data.get("is_published"), False)
+        self.assertEqual(
+            detail.data.get("location", {}).get("maps_url"),
+            "https://maps.google.com/?q=9.01,38.75",
+        )

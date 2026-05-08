@@ -272,21 +272,9 @@ export default function AddPropertyPage() {
     }
   };
 
-  const onSubmit = async (data) => {
+  const createDraft = async (data) => {
     setSubmitting(true);
     try {
-      const summary = await getListingSlotSummary();
-      if (!summary?.can_publish) {
-        toast.error('You need an active listing package before creating a property draft.');
-        navigate('/dashboard/property-owner/listing-packages', {
-          state: {
-            source: 'add-property',
-            intendedAction: 'create-property',
-          },
-        });
-        return;
-      }
-
       const propertyData = {
         title: data.title,
         description: data.description,
@@ -342,34 +330,33 @@ export default function AddPropertyPage() {
 
       localStorage.removeItem('betnet_property_draft');
 
-      try {
-        await propertyService.publishProperty(propertySlug);
-        toast.success('Property created and published — it is now live in search.');
-        navigate('/dashboard/property-owner');
-      } catch (pubErr) {
-        const code = pubErr?.response?.data?.code;
-        if (code === 'no_listing_slots') {
-          toast.success('Property saved as a draft. Buy a listing package to publish (one payment per package, not per post).');
-          navigate('/dashboard/property-owner/listing-packages', { state: { draftSlug: propertySlug } });
-          return;
-        }
-        toast.error(getErrorMessage(pubErr));
-        navigate('/dashboard/property-owner');
-      }
+      toast.success('Draft saved. You can publish when ready.');
+      navigate(`/dashboard/property-owner/edit-property/${propertySlug}`);
+      return { propertySlug };
     } catch (err) {
-      if (err?.response?.data?.code === 'no_listing_slots') {
-        toast.error('No listing package slots available. Buy a listing package before creating a property.');
-        navigate('/dashboard/property-owner/listing-packages', {
-          state: {
-            source: 'add-property',
-            intendedAction: 'create-property',
-          },
-        });
-        return;
-      }
       toast.error(getErrorMessage(err));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const publishNow = async () => {
+    const data = getValues();
+    const out = await createDraft(data);
+    const slug = out?.propertySlug;
+    if (!slug) return;
+    try {
+      await propertyService.publishProperty(slug);
+      toast.success('Property published — it is now live in search.');
+      navigate('/dashboard/property-owner');
+    } catch (pubErr) {
+      const code = pubErr?.response?.data?.code;
+      if (code === 'no_listing_slots') {
+        toast.error('No listing slots available. Buy a listing package to publish.');
+        navigate('/dashboard/property-owner/listing-packages', { state: { draftSlug: slug } });
+        return;
+      }
+      toast.error(getErrorMessage(pubErr));
     }
   };
 
@@ -1020,7 +1007,7 @@ export default function AddPropertyPage() {
 
           <ProgressBar currentStep={currentStep} steps={STEPS} />
 
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={(e) => e.preventDefault()}>
             <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8 mb-6">
               {renderStep()}
             </div>
@@ -1045,22 +1032,34 @@ export default function AddPropertyPage() {
                   Next <FiChevronRight className="w-4 h-4" />
                 </button>
               ) : (
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-green-700 rounded-xl hover:bg-green-800 disabled:opacity-50 transition-colors"
-                >
-                  {submitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Publishing...
-                    </>
-                  ) : (
-                    <>
-                      <FiCheck className="w-4 h-4" /> Publish Property
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => createDraft(getValues())}
+                    disabled={submitting}
+                    className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  >
+                    <FiSave className="w-4 h-4" />
+                    {submitting ? 'Saving…' : 'Save draft'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={publishNow}
+                    disabled={submitting}
+                    className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-green-700 rounded-xl hover:bg-green-800 disabled:opacity-50 transition-colors"
+                  >
+                    {submitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Publishing...
+                      </>
+                    ) : (
+                      <>
+                        <FiCheck className="w-4 h-4" /> Publish now
+                      </>
+                    )}
+                  </button>
+                </div>
               )}
             </div>
           </form>

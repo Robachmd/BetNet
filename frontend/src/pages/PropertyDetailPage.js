@@ -55,6 +55,37 @@ export default function PropertyDetailPage() {
   const isHall =
     property?.property_type === 'HALL_RENTAL' || property?.propertyType === 'hall';
 
+  const amenityLabelsFromApi = (amenitiesObj) => {
+    if (!amenitiesObj || typeof amenitiesObj !== 'object' || Array.isArray(amenitiesObj)) return [];
+    const out = [];
+    // Always show utilities if present.
+    if (amenitiesObj.water_availability) out.push('Water Supply');
+    if (amenitiesObj.electricity_stability) out.push('Electricity');
+    if (amenitiesObj.has_parking) out.push('Parking');
+    if (amenitiesObj.has_wifi) out.push('WiFi');
+    if (amenitiesObj.has_security) out.push('Security/Guard');
+    if (amenitiesObj.has_generator) out.push('Generator');
+    if (amenitiesObj.has_elevator) out.push('Elevator');
+    if (amenitiesObj.is_furnished) out.push('Furnished');
+    if (amenitiesObj.has_balcony) out.push('Balcony');
+    if (amenitiesObj.has_garden) out.push('Garden');
+    if (amenitiesObj.has_cctv) out.push('CCTV');
+    if (amenitiesObj.pets_allowed) out.push('Pet Friendly');
+    return out;
+  };
+
+  const formatBedroomText = (bedroomsValue) => {
+    if (bedroomsValue === null || bedroomsValue === undefined || bedroomsValue === '') return '';
+    const s = String(bedroomsValue).toUpperCase();
+    if (s === 'STUDIO') return 'Studio';
+    if (s === 'ONE') return '1 Bedroom';
+    if (s === 'TWO') return '2 Bedrooms';
+    if (s === 'THREE_PLUS') return '3 Bedrooms';
+    const n = Number(bedroomsValue);
+    if (Number.isFinite(n)) return `${n} ${n === 1 ? 'Bedroom' : 'Bedrooms'}`;
+    return String(bedroomsValue);
+  };
+
   const fetchProperty = useCallback(async () => {
     setLoading(true);
     try {
@@ -249,6 +280,8 @@ export default function PropertyDetailPage() {
   const floorDisplay = property.floor_number ?? property.floorNumber;
 
   const locationStr = [location.subCity, location.city].filter(Boolean).join(', ');
+  const amenitiesList = Array.isArray(amenities) ? amenities : amenityLabelsFromApi(amenities);
+  const bedroomsText = formatBedroomText(bedrooms);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24 lg:pb-8">
@@ -280,7 +313,10 @@ export default function PropertyDetailPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Image Gallery */}
         <PropertyImageGallery
-          images={images.map((img) => (typeof img === 'string' ? getImageUrl(img) : getImageUrl(img.url)))}
+          images={images.map((img) => {
+            if (typeof img === 'string') return getImageUrl(img);
+            return getImageUrl(img?.image || img?.url || img?.path);
+          })}
           alt={title}
           className="mb-6"
         />
@@ -326,7 +362,7 @@ export default function PropertyDetailPage() {
                   <span className="text-gray-400 text-sm ml-1">{priceUnit}</span>
                 </div>
                 {bedrooms != null && (
-                  <span className="text-sm text-gray-500">{bedrooms} {bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}</span>
+                  <span className="text-sm text-gray-500">{bedroomsText}</span>
                 )}
                 {bathrooms != null && (
                   <span className="text-sm text-gray-500">{bathrooms} {bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}</span>
@@ -403,7 +439,7 @@ export default function PropertyDetailPage() {
             <div className="bg-white rounded-2xl shadow-sm p-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Amenities</h2>
               <AmenitiesList
-                available={amenities}
+                available={amenitiesList}
                 columns={3}
               />
             </div>
