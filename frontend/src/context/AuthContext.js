@@ -83,9 +83,15 @@ export function AuthProvider({ children }) {
   }, []);
 
   const switchAppMode = useCallback(async (mode) => {
-    const data = await authService.setActiveAppMode(mode);
-    setUser(data);
-    return data;
+    // Prefer dedicated endpoint (cleaner authorization + audit trail).
+    let updated;
+    try {
+      updated = await authService.switchWorkspace(mode);
+    } catch {
+      updated = await authService.setActiveAppMode(mode);
+    }
+    setUser(updated);
+    return updated;
   }, []);
 
   const becomePropertyOwner = useCallback(async () => {
@@ -104,13 +110,14 @@ export function AuthProvider({ children }) {
     const isRenterRole = roleN === 'renter';
     const isAdmin = roleN === 'admin';
     const propertyOwnerEligible = user?.landlord_eligible === true;
-    // Property owner UI is only for landlord accounts (or admins). Renters must register
-    // a separate property owner account to list; no "upgrade on same account" for dashboard access.
-    const canAccessPropertyOwner = isPropertyOwnerRole || isAdmin;
+    const roles = Array.isArray(user?.roles) ? user.roles.map((r) => String(r).toLowerCase()) : [];
+    const hasOwnerRole = roles.includes('landlord');
+    const canAccessPropertyOwner = isPropertyOwnerRole || hasOwnerRole || propertyOwnerEligible || isAdmin;
     const activeApp = (user?.active_app_mode || 'RENTER').toLowerCase();
     const isOwnerMode = activeApp === 'landlord';
     return {
       user,
+      roles,
       isAuthenticated,
       isLoading,
       login,

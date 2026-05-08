@@ -25,6 +25,9 @@ import '../../ui/screens/owner_dashboard_screen.dart';
 import '../../ui/screens/renter_dashboard_screen.dart';
 import '../../ui/screens/owner_review_responses_screen.dart';
 import '../../ui/screens/admin_dashboard_screen.dart';
+import '../../ui/screens/add_listing_screen.dart';
+import '../../ui/screens/my_listings_screen.dart';
+import '../../ui/screens/chat_list_screen.dart';
 import 'profile_hub_screen.dart';
 
 /// Root shell: bottom navigation + drawer; hosts primary tabs.
@@ -111,28 +114,45 @@ class _MainShellScaffoldState extends ConsumerState<MainShellScaffold> {
     final l10n = AppLocalizations.of(context);
     final auth = ref.watch(authControllerProvider);
     final user = auth.user;
+    final ownerMode = user != null &&
+        user.canAccessPropertyOwnerTools &&
+        user.activeAppMode == 'LANDLORD';
 
-    final pages = <Widget>[
-      HomeScreen(
-        onOpenMenu: () => _scaffoldKey.currentState?.openDrawer(),
-        onOpenNotifications: _openNotifications,
-        onOpenSearchTab: () => setState(() => _index = 2),
-      ),
-      PropertyScreen(
-        onOpenMenu: () => _scaffoldKey.currentState?.openDrawer(),
-        onOpenNotifications: _openNotifications,
-      ),
-      SearchScreen(
-        onOpenMenu: () => _scaffoldKey.currentState?.openDrawer(),
-        onOpenNotifications: _openNotifications,
-      ),
-      const FavoritesScreen(),
-      ProfileHubScreen(
-        onOpenMenu: () => _scaffoldKey.currentState?.openDrawer(),
-        onOpenSearchTab: () => setState(() => _index = 2),
-        onOpenFavoritesTab: () => setState(() => _index = 3),
-      ),
-    ];
+    final pages = ownerMode
+        ? <Widget>[
+            const OwnerDashboardScreen(),
+            const MyListingsScreen(),
+            const AddListingScreen(),
+            const ChatListScreen(),
+            ProfileHubScreen(
+              onOpenMenu: () => _scaffoldKey.currentState?.openDrawer(),
+            ),
+          ]
+        : <Widget>[
+            HomeScreen(
+              onOpenMenu: () => _scaffoldKey.currentState?.openDrawer(),
+              onOpenNotifications: _openNotifications,
+              onOpenSearchTab: () => setState(() => _index = 2),
+            ),
+            PropertyScreen(
+              onOpenMenu: () => _scaffoldKey.currentState?.openDrawer(),
+              onOpenNotifications: _openNotifications,
+            ),
+            SearchScreen(
+              onOpenMenu: () => _scaffoldKey.currentState?.openDrawer(),
+              onOpenNotifications: _openNotifications,
+            ),
+            const FavoritesScreen(),
+            ProfileHubScreen(
+              onOpenMenu: () => _scaffoldKey.currentState?.openDrawer(),
+              onOpenSearchTab: () => setState(() => _index = 2),
+              onOpenFavoritesTab: () => setState(() => _index = 3),
+            ),
+          ];
+
+    if (_index >= pages.length) {
+      _index = 0;
+    }
 
     return Scaffold(
       key: _scaffoldKey,
@@ -204,24 +224,26 @@ class _MainShellScaffoldState extends ConsumerState<MainShellScaffold> {
                   Navigator.pop(context);
                 },
               ),
-              DrawerNavTile(
-                icon: Icons.add_circle_outline,
-                label: 'Add property',
-                selected: false,
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/add-property');
-                },
-              ),
-              DrawerNavTile(
-                icon: Icons.list_alt_outlined,
-                label: 'My properties',
-                selected: false,
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/my-properties');
-                },
-              ),
+              if (ownerMode) ...[
+                DrawerNavTile(
+                  icon: Icons.add_circle_outline,
+                  label: 'Add property',
+                  selected: false,
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/add-property');
+                  },
+                ),
+                DrawerNavTile(
+                  icon: Icons.list_alt_outlined,
+                  label: 'My properties',
+                  selected: false,
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/my-properties');
+                  },
+                ),
+              ],
               DrawerNavTile(
                 icon: Icons.favorite_outline,
                 label: 'Favorites',
@@ -483,33 +505,61 @@ class _MainShellScaffoldState extends ConsumerState<MainShellScaffold> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.apartment_outlined),
-            selectedIcon: Icon(Icons.apartment_rounded),
-            label: 'Property',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.search_rounded),
-            selectedIcon: Icon(Icons.manage_search_rounded),
-            label: 'Search',
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.favorite_outline),
-            selectedIcon: const Icon(Icons.favorite_rounded),
-            label: l10n?.saved ?? 'Saved',
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person_rounded),
-            label: l10n?.profile ?? 'Profile',
-          ),
-        ],
+        destinations: ownerMode
+            ? const [
+                NavigationDestination(
+                  icon: Icon(Icons.dashboard_outlined),
+                  selectedIcon: Icon(Icons.dashboard_rounded),
+                  label: 'Dashboard',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.list_alt_outlined),
+                  selectedIcon: Icon(Icons.list_alt_rounded),
+                  label: 'Properties',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.add_circle_outline),
+                  selectedIcon: Icon(Icons.add_circle_rounded),
+                  label: 'Add',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.chat_bubble_outline),
+                  selectedIcon: Icon(Icons.chat_bubble_rounded),
+                  label: 'Messages',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.person_outline),
+                  selectedIcon: Icon(Icons.person_rounded),
+                  label: 'Profile',
+                ),
+              ]
+            : [
+                const NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home_rounded),
+                  label: 'Home',
+                ),
+                const NavigationDestination(
+                  icon: Icon(Icons.apartment_outlined),
+                  selectedIcon: Icon(Icons.apartment_rounded),
+                  label: 'Property',
+                ),
+                const NavigationDestination(
+                  icon: Icon(Icons.search_rounded),
+                  selectedIcon: Icon(Icons.manage_search_rounded),
+                  label: 'Search',
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.favorite_outline),
+                  selectedIcon: const Icon(Icons.favorite_rounded),
+                  label: l10n?.saved ?? 'Saved',
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.person_outline),
+                  selectedIcon: const Icon(Icons.person_rounded),
+                  label: l10n?.profile ?? 'Profile',
+                ),
+              ],
       ),
     );
   }

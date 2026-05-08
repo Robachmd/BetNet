@@ -82,6 +82,7 @@ export default function PropertyOwnerAnalyticsPage() {
       'add-property': '/dashboard/property-owner/add-property',
       'listing-packages': '/dashboard/property-owner/listing-packages',
       bookings: '/dashboard/property-owner/bookings',
+      availability: '/dashboard/property-owner/availability',
       reviews: '/dashboard/property-owner/reviews',
       analytics: '/dashboard/property-owner/analytics',
       notifications: '/dashboard/property-owner/notifications',

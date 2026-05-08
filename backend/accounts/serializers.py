@@ -16,6 +16,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     )
     password_confirm = serializers.CharField(write_only=True)
     phone_number = PhoneNumberField(region="ET")
+    requested_roles = serializers.ListField(
+        child=serializers.ChoiceField(choices=[User.Role.RENTER, User.Role.LANDLORD]),
+        required=False,
+        allow_empty=False,
+        write_only=True,
+        help_text="Optional multi-role signup, e.g. ['RENTER','LANDLORD']. Backward-compatible with 'role'.",
+    )
 
     class Meta:
         model = User
@@ -27,6 +34,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             "last_name",
             "email",
             "role",
+            "requested_roles",
             "preferred_language",
         ]
 
@@ -46,10 +54,23 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop("password")
+        requested_roles = validated_data.pop("requested_roles", None)
         role = validated_data.get("role", User.Role.RENTER)
-        if role == User.Role.LANDLORD:
+        roles = []
+        if requested_roles:
+            roles = [str(r).upper() for r in requested_roles]
+        else:
+            roles = [str(role).upper()]
+
+        if User.Role.LANDLORD in roles:
             validated_data["landlord_eligible"] = True
             validated_data["active_app_mode"] = User.AppMode.LANDLORD
+            validated_data["role"] = User.Role.LANDLORD
+        else:
+            validated_data["active_app_mode"] = User.AppMode.RENTER
+            validated_data["role"] = User.Role.RENTER
+
+        validated_data["roles"] = roles
         return User.objects.create_user(password=password, **validated_data)
 
 
@@ -122,6 +143,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     phone_number = PhoneNumberField(read_only=True)
+    roles = serializers.ListField(child=serializers.CharField(), read_only=True)
 
     class Meta:
         model = User
@@ -132,6 +154,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "role",
+            "roles",
             "landlord_eligible",
             "active_app_mode",
             "owner_type",
@@ -196,10 +219,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     def validate_active_app_mode(self, value):
         user = self.context["request"].user
-        if value == User.AppMode.LANDLORD and not (
-            user.role == User.Role.LANDLORD
-            or getattr(user, "landlord_eligible", False)
-        ):
+        if value == User.AppMode.LANDLORD and not getattr(user, "can_access_owner_tools", lambda: False)():
             raise serializers.ValidationError(
                 "Use ‘Become a property owner’ before switching to owner mode."
             )

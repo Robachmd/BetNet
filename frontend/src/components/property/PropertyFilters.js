@@ -47,6 +47,7 @@ export default function PropertyFilters({
     price: true,
     bedrooms: true,
     location: true,
+    date: false,
     amenities: false,
     more: false,
   });
@@ -61,6 +62,7 @@ export default function PropertyFilters({
     subCity = '',
     amenities = [],
     verifiedOnly = false,
+    datePosted = '',
   } = filters;
 
   const filterCityOptions = useMemo(
@@ -208,6 +210,20 @@ export default function PropertyFilters({
             </select>
           )}
         </div>
+      </Section>
+
+      <Section title="Date posted" sectionKey="date">
+        <select
+          value={datePosted}
+          onChange={(e) => handleChange('datePosted', e.target.value)}
+          className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400"
+        >
+          <option value="">Any time</option>
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="last7">Last 7 days</option>
+          <option value="last30">Last 30 days</option>
+        </select>
       </Section>
 
       <Section title="Amenities" sectionKey="amenities">

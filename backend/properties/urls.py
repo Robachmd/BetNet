@@ -30,6 +30,16 @@ urlpatterns = [
         views.PropertyImageViewSet.as_view({"delete": "destroy"}),
         name="property-images-detail",
     ),
+    path(
+        "properties/<slug:property_slug>/videos/",
+        views.PropertyVideoViewSet.as_view({"get": "list", "post": "create"}),
+        name="property-videos-list",
+    ),
+    path(
+        "properties/<slug:property_slug>/videos/<int:pk>/",
+        views.PropertyVideoViewSet.as_view({"delete": "destroy"}),
+        name="property-videos-detail",
+    ),
     path("reports/", views.PropertyReportView.as_view(), name="property-report"),
     path("price-insights/", views.PriceInsightView.as_view(), name="price-insights"),
     path(

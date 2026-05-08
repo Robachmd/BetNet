@@ -77,12 +77,14 @@ export default function EditPropertyPage() {
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
   const [newImagePreviews, setNewImagePreviews] = useState([]);
+  const [newVideos, setNewVideos] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [deletingImage, setDeletingImage] = useState(null);
   const [availabilityStatus, setAvailabilityStatus] = useState('available');
   const [isPublished, setIsPublished] = useState(true);
   const [publishing, setPublishing] = useState(false);
   const fileInputRef = useRef(null);
+  const videoInputRef = useRef(null);
 
   const {
     register, handleSubmit, control, watch, trigger, reset, getValues,
@@ -151,6 +153,7 @@ export default function EditPropertyPage() {
       'add-property': '/dashboard/property-owner/add-property',
       'listing-packages': '/dashboard/property-owner/listing-packages',
       bookings: '/dashboard/property-owner/bookings',
+      availability: '/dashboard/property-owner/availability',
       reviews: '/dashboard/property-owner/reviews',
       analytics: '/dashboard/property-owner/analytics',
       notifications: '/dashboard/property-owner/notifications',
@@ -326,6 +329,9 @@ export default function EditPropertyPage() {
 
       if (newImages.length > 0) {
         await propertyService.uploadPropertyImages(slug, newImages);
+      }
+      if (newVideos.length > 0) {
+        await propertyService.uploadPropertyVideos(slug, newVideos);
       }
 
       toast.success('Property updated successfully!');
@@ -611,6 +617,23 @@ export default function EditPropertyPage() {
             <div>
               <label className={labelClass}>Video URL (optional)</label>
               <input {...register('videoUrl')} className={inputClass} placeholder="https://youtube.com/watch?v=..." />
+            </div>
+
+            <div>
+              <label className={labelClass}>Upload video (optional)</label>
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  setNewVideos(file ? [file] : []);
+                }}
+                className={inputClass}
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Upload a short walkthrough clip. You can also paste a Video URL above.
+              </p>
             </div>
           </div>
         );

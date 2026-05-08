@@ -31,6 +31,11 @@ urlpatterns = [
         name="enable-property-owner",
     ),
     path(
+        "switch-workspace/",
+        views.SwitchWorkspaceView.as_view(),
+        name="switch-workspace",
+    ),
+    path(
         "enable-landlord/",
         views.EnableLandlordView.as_view(),
         name="enable-landlord",

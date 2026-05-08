@@ -71,6 +71,11 @@ class User(AbstractUser):
         choices=Role.choices,
         default=Role.RENTER,
     )
+    roles = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Multi-role membership, e.g. ['RENTER','LANDLORD']. Backward-compatible with role/landlord_eligible.",
+    )
     landlord_eligible = models.BooleanField(
         default=False,
         help_text="True if the user may list properties: registered as a property owner or completed owner opt-in.",
@@ -124,6 +129,71 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.get_full_name() or self.phone_number} ({self.role})"
+
+    def normalized_roles(self) -> list[str]:
+        raw = getattr(self, "roles", None)
+        if not isinstance(raw, list):
+            raw = []
+        out: list[str] = []
+        for r in raw:
+            if not isinstance(r, str):
+                continue
+            v = r.strip().upper()
+            if v and v not in out:
+                out.append(v)
+
+        legacy_role = (getattr(self, "role", "") or "").strip().upper()
+        legacy_landlord = bool(getattr(self, "landlord_eligible", False)) or legacy_role == self.Role.LANDLORD
+
+        # Backward-compatible: treat legacy fields as authoritative for core roles.
+        if legacy_role == self.Role.ADMIN or bool(getattr(self, "is_staff", False)) or bool(getattr(self, "is_superuser", False)):
+            if self.Role.ADMIN not in out:
+                out.append(self.Role.ADMIN)
+        if legacy_landlord and self.Role.LANDLORD not in out:
+            out.append(self.Role.LANDLORD)
+        if legacy_role == self.Role.RENTER and self.Role.RENTER not in out:
+            out.append(self.Role.RENTER)
+        return out
+
+    def has_role(self, role: str) -> bool:
+        if not role:
+            return False
+        return role.strip().upper() in self.normalized_roles()
+
+    def can_access_owner_tools(self) -> bool:
+        return self.has_role(self.Role.LANDLORD) or self.has_role(self.Role.ADMIN)
+
+    def save(self, *args, **kwargs):
+        roles = self.normalized_roles()
+        # Keep legacy fields authoritative, but preserve multi-role membership when compatible.
+        if self.role == self.Role.RENTER and not bool(self.landlord_eligible):
+            roles = [r for r in roles if r != self.Role.LANDLORD]
+            if self.Role.RENTER not in roles:
+                roles.append(self.Role.RENTER)
+        if self.role == self.Role.LANDLORD or bool(self.landlord_eligible):
+            if self.Role.LANDLORD not in roles:
+                roles.append(self.Role.LANDLORD)
+
+        self.roles = roles
+
+        # Keep single legacy role consistent for old clients/admin.
+        if self.Role.ADMIN in roles:
+            self.role = self.Role.ADMIN
+        elif self.Role.LANDLORD in roles:
+            self.role = self.Role.LANDLORD
+        else:
+            self.role = self.Role.RENTER
+
+        self.landlord_eligible = self.Role.LANDLORD in roles or bool(self.landlord_eligible)
+
+        if (
+            self.active_app_mode == self.AppMode.LANDLORD
+            and self.Role.LANDLORD not in roles
+            and self.Role.ADMIN not in roles
+        ):
+            self.active_app_mode = self.AppMode.RENTER
+
+        return super().save(*args, **kwargs)
 
     def generate_otp(self) -> str:
         """Generate a 6-digit OTP and persist it."""

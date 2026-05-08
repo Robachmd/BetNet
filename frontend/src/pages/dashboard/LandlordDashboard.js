@@ -187,6 +187,7 @@ export default function PropertyOwnerDashboard() {
       'add-property': '/dashboard/property-owner/add-property',
       'listing-packages': '/dashboard/property-owner/listing-packages',
       bookings: '/dashboard/property-owner/bookings',
+      availability: '/dashboard/property-owner/availability',
       messages: '/chat',
       reviews: '/dashboard/property-owner/reviews',
       analytics: '/dashboard/property-owner/analytics',

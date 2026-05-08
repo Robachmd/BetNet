@@ -44,6 +44,15 @@ final betNetRouterProvider = Provider<GoRouter>((ref) {
         final from = state.uri.toString();
         return '/login?from=${Uri.encodeComponent(from)}';
       }
+
+      // Owner workspace-only routes.
+      if (auth.isAuthenticated && (path == '/add-property' || path == '/my-properties')) {
+        final u = auth.user;
+        final ok = u != null &&
+            u.canAccessPropertyOwnerTools &&
+            u.activeAppMode == 'LANDLORD';
+        if (!ok) return '/';
+      }
       return null;
     },
     routes: [

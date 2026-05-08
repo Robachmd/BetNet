@@ -9,6 +9,7 @@ export default function Dashboard() {
     isLoading,
     isAdmin,
     isPropertyOwner,
+    isOwnerMode,
   } = useAuth();
   const navigate = useNavigate();
 
@@ -19,12 +20,12 @@ export default function Dashboard() {
       navigate('/dashboard/admin', { replace: true });
       return;
     }
-    if (isPropertyOwner) {
+    if (isPropertyOwner && isOwnerMode) {
       navigate('/dashboard/property-owner', { replace: true });
       return;
     }
     navigate('/dashboard/renter', { replace: true });
-  }, [user, isLoading, isAdmin, isPropertyOwner, navigate]);
+  }, [user, isLoading, isAdmin, isPropertyOwner, isOwnerMode, navigate]);
 
   return <LoadingSpinner page text="Redirecting to your dashboard..." />;
 }

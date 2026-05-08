@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import OwnerProfile
+from .permissions import can_access_owner_workspace
 from .serializers import (
     ChangePasswordSerializer,
     PropertyOwnerPublicProfileSerializer,
@@ -375,7 +376,7 @@ class EnablePropertyOwnerView(APIView):
 
     def post(self, request):
         user = request.user
-        if user.landlord_eligible:
+        if can_access_owner_workspace(user):
             return Response(
                 {
                     "detail": "You already have property owner access.",
@@ -388,9 +389,13 @@ class EnablePropertyOwnerView(APIView):
                 {"detail": "This action is for renter or property owner accounts."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        # Grant owner membership on the same login (multi-role account).
         user.landlord_eligible = True
+        current_roles = getattr(user, "normalized_roles", lambda: [])()
+        if User.Role.LANDLORD not in current_roles:
+            user.roles = current_roles + [User.Role.LANDLORD]
         user.active_app_mode = User.AppMode.LANDLORD
-        user.save(update_fields=["landlord_eligible", "active_app_mode"])
+        user.save()
         OwnerProfile.objects.get_or_create(user=user, defaults={})
         return Response(
             {
@@ -399,6 +404,35 @@ class EnablePropertyOwnerView(APIView):
                     user, context={"request": request}
                 ).data,
             },
+            status=status.HTTP_200_OK,
+        )
+
+
+# ──────────────────────────────────────────────
+#  Switch active workspace (renter vs owner)
+# ──────────────────────────────────────────────
+class SwitchWorkspaceView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        mode = (request.data.get("mode") or request.data.get("active_app_mode") or "").strip().upper()
+        if mode not in (User.AppMode.RENTER, User.AppMode.LANDLORD):
+            return Response(
+                {"detail": "mode must be RENTER or LANDLORD."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if mode == User.AppMode.LANDLORD and not can_access_owner_workspace(request.user):
+            return Response(
+                {"detail": "You don't have property owner access on this account."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        request.user.active_app_mode = mode
+        request.user.save(update_fields=["active_app_mode"])
+        request.user.refresh_from_db()
+        return Response(
+            {"detail": "Workspace switched.", "user": UserProfileSerializer(request.user, context={"request": request}).data},
             status=status.HTTP_200_OK,
         )
 

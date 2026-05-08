@@ -56,6 +56,8 @@ final listingsProvider = FutureProvider.autoDispose<ListingsResult>((ref) async 
       search: filters.searchQuery,
       listingType: filters.listingType,
       ordering: filters.ordering,
+      createdAfter: filters.createdAfter,
+      createdBefore: filters.createdBefore,
       hasParking: filters.hasParking,
       hasWifi: filters.hasWifi,
       hasSecurity: filters.hasSecurity,

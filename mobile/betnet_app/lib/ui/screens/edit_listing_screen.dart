@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../data/models/property.dart';
 import '../../l10n/app_localizations.dart';
@@ -33,6 +34,7 @@ class _EditListingScreenState extends ConsumerState<EditListingScreen> {
   bool _loading = true;
   bool _saving = false;
   String? _error;
+  int? _propertyId;
   String _apiPropertyType = '';
   String? _mapsUrl;
   String _listingType = ListingTypeValues.rent;
@@ -58,6 +60,11 @@ class _EditListingScreenState extends ConsumerState<EditListingScreen> {
   bool _hallDecoration = true;
   bool _hallCatering = false;
   bool _hallIndoor = true;
+  String? _videoPath;
+  bool _loadingDates = false;
+  List<Map<String, dynamic>> _unavailableDates = const [];
+  DateTime? _newUnavailableDate;
+  final _unavailableReason = TextEditingController();
 
   @override
   void initState() {
@@ -79,6 +86,7 @@ class _EditListingScreenState extends ConsumerState<EditListingScreen> {
     _hallHour.dispose();
     _hallDay.dispose();
     _cityField.dispose();
+    _unavailableReason.dispose();
     super.dispose();
   }
 
@@ -160,6 +168,7 @@ class _EditListingScreenState extends ConsumerState<EditListingScreen> {
       final detail =
           await ref.read(betNetApiProvider).fetchPropertyDetail(widget.propertySlug);
       _hydrateFromDetail(detail);
+      await _loadUnavailableDates();
     } catch (e) {
       _error = '$e';
     } finally {
@@ -169,6 +178,7 @@ class _EditListingScreenState extends ConsumerState<EditListingScreen> {
 
   void _hydrateFromDetail(PropertyDetail detail) {
     final s = detail.summary;
+    _propertyId = s.id;
     _title.text = s.title;
     _description.text = detail.description;
     _price.text = s.priceMonthly;
@@ -187,6 +197,23 @@ class _EditListingScreenState extends ConsumerState<EditListingScreen> {
     }
     _applyAmenitiesFrom(detail.amenitiesMap);
     _applyHallFrom(detail.hallDetailMap);
+  }
+
+  Future<void> _loadUnavailableDates() async {
+    final pid = _propertyId;
+    if (pid == null) return;
+    if (mounted) setState(() => _loadingDates = true);
+    try {
+      final rows =
+          await ref.read(betNetApiProvider).fetchUnavailableDates(propertyId: pid);
+      if (!mounted) return;
+      setState(() => _unavailableDates = rows);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _unavailableDates = const []);
+    } finally {
+      if (mounted) setState(() => _loadingDates = false);
+    }
   }
 
   String get _priceFieldLabel {
@@ -300,10 +327,17 @@ class _EditListingScreenState extends ConsumerState<EditListingScreen> {
       _error = null;
     });
     try {
-      await ref.read(betNetApiProvider).updateProperty(
+      final api = ref.read(betNetApiProvider);
+      await api.updateProperty(
             propertySlug: widget.propertySlug,
             payload: payload,
           );
+      if (_videoPath != null && _videoPath!.isNotEmpty) {
+        await api.uploadPropertyVideo(
+          propertySlug: widget.propertySlug,
+          filePath: _videoPath!,
+        );
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Listing updated.')),
@@ -313,6 +347,43 @@ class _EditListingScreenState extends ConsumerState<EditListingScreen> {
       setState(() => _error = '$e');
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _addUnavailable() async {
+    final pid = _propertyId;
+    final d = _newUnavailableDate;
+    if (pid == null || d == null) return;
+    try {
+      final iso = d.toIso8601String().split('T').first;
+      await ref.read(betNetApiProvider).addUnavailableDate(
+            propertyId: pid,
+            dateIso: iso,
+            reason: _unavailableReason.text.trim(),
+          );
+      _newUnavailableDate = null;
+      _unavailableReason.clear();
+      await _loadUnavailableDates();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Date blocked')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      }
+    }
+  }
+
+  Future<void> _removeUnavailable(int id) async {
+    try {
+      await ref.read(betNetApiProvider).deleteUnavailableDate(id);
+      await _loadUnavailableDates();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      }
     }
   }
 
@@ -637,6 +708,113 @@ class _EditListingScreenState extends ConsumerState<EditListingScreen> {
                     ),
                   ),
                 ],
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _saving
+                      ? null
+                      : () async {
+                          final picker = ImagePicker();
+                          final v = await picker.pickVideo(
+                            source: ImageSource.gallery,
+                            maxDuration: const Duration(minutes: 2),
+                          );
+                          if (v == null) return;
+                          setState(() => _videoPath = v.path);
+                        },
+                  icon: const Icon(Icons.video_library_outlined),
+                  label: Text(
+                    _videoPath == null
+                        ? 'Add/replace video (optional)'
+                        : 'Video selected (will upload on save)',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Unavailable dates',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _saving
+                            ? null
+                            : () async {
+                                final now = DateTime.now();
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  firstDate: DateTime(now.year, now.month, now.day),
+                                  lastDate: DateTime(now.year + 2, 12, 31),
+                                  initialDate: _newUnavailableDate ??
+                                      DateTime(now.year, now.month, now.day),
+                                );
+                                if (picked == null) return;
+                                setState(() => _newUnavailableDate = picked);
+                              },
+                        icon: const Icon(Icons.event_busy_outlined),
+                        label: Text(
+                          _newUnavailableDate == null
+                              ? 'Pick date'
+                              : _newUnavailableDate!
+                                  .toIso8601String()
+                                  .split('T')
+                                  .first,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    FilledButton(
+                      onPressed: (_saving || _newUnavailableDate == null)
+                          ? null
+                          : _addUnavailable,
+                      child: const Text('Block'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _unavailableReason,
+                  decoration: const InputDecoration(
+                    labelText: 'Reason (optional)',
+                    hintText: 'e.g. Maintenance',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (_loadingDates)
+                  const LinearProgressIndicator()
+                else if (_unavailableDates.isEmpty)
+                  Text(
+                    'No blocked dates yet.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  )
+                else
+                  Card(
+                    elevation: 0,
+                    child: Column(
+                      children: [
+                        for (final row in _unavailableDates.take(12))
+                          ListTile(
+                            dense: true,
+                            title: Text('${row['date'] ?? ''}'),
+                            subtitle: (row['reason'] != null &&
+                                    '${row['reason']}'.trim().isNotEmpty)
+                                ? Text('${row['reason']}')
+                                : null,
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: _saving
+                                  ? null
+                                  : () => _removeUnavailable(row['id'] as int),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
                   Text(

@@ -1,5 +1,6 @@
 import django_filters
 from django.db.models import Q
+from django.utils import timezone
 
 from .models import Property, HallDetail
 
@@ -43,6 +44,8 @@ class PropertyFilter(django_filters.FilterSet):
     )
 
     keyword = django_filters.CharFilter(method="filter_keyword")
+    created_after = django_filters.DateFilter(method="filter_created_after")
+    created_before = django_filters.DateFilter(method="filter_created_before")
 
     class Meta:
         model = Property
@@ -63,6 +66,24 @@ class PropertyFilter(django_filters.FilterSet):
             | Q(location__sub_city__icontains=value)
             | Q(location__specific_location__icontains=value)
         )
+
+    def filter_created_after(self, queryset, name, value):
+        if not value:
+            return queryset
+        # Treat as a date boundary in server local time.
+        start = timezone.make_aware(
+            timezone.datetime.combine(value, timezone.datetime.min.time())
+        )
+        return queryset.filter(created_at__gte=start)
+
+    def filter_created_before(self, queryset, name, value):
+        if not value:
+            return queryset
+        # Inclusive end-of-day.
+        end = timezone.make_aware(
+            timezone.datetime.combine(value, timezone.datetime.max.time())
+        )
+        return queryset.filter(created_at__lte=end)
 
 
 class HallFilter(django_filters.FilterSet):

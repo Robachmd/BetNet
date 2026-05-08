@@ -298,6 +298,23 @@ class BetNetApi {
     }
   }
 
+  Future<BetNetUser> switchWorkspace(String mode) async {
+    try {
+      final res = await _dio.post(
+        '/api/accounts/switch-workspace/',
+        data: {'mode': mode},
+      );
+      final data = res.data;
+      if (data is Map && data['user'] is Map) {
+        return BetNetUser.fromJson(Map<String, dynamic>.from(data['user'] as Map));
+      }
+      if (data is Map) return BetNetUser.fromJson(Map<String, dynamic>.from(data));
+      throw ApiException('Unexpected switch-workspace response');
+    } on DioException catch (e) {
+      throw ApiException(_msgFromDio(e), statusCode: e.response?.statusCode);
+    }
+  }
+
   Future<BetNetUser> patchProfileWithAvatar({
     required Map<String, String> fields,
     required String filePath,
@@ -460,6 +477,8 @@ class BetNetApi {
     String? search,
     String? listingType,
     String? ordering,
+    String? createdAfter,
+    String? createdBefore,
     bool? hasParking,
     bool? hasWifi,
     bool? hasSecurity,
@@ -482,6 +501,12 @@ class BetNetApi {
       q['listing_type'] = listingType;
     }
     if (ordering != null && ordering.isNotEmpty) q['ordering'] = ordering;
+    if (createdAfter != null && createdAfter.isNotEmpty) {
+      q['created_after'] = createdAfter;
+    }
+    if (createdBefore != null && createdBefore.isNotEmpty) {
+      q['created_before'] = createdBefore;
+    }
     if (hasParking != null) q['has_parking'] = hasParking;
     if (hasWifi != null) q['has_wifi'] = hasWifi;
     if (hasSecurity != null) q['has_security'] = hasSecurity;
@@ -700,6 +725,20 @@ class BetNetApi {
     );
   }
 
+  Future<void> uploadPropertyVideo({
+    required String propertySlug,
+    required String filePath,
+  }) async {
+    final name = filePath.split(RegExp(r'[/\\]')).last;
+    final form = FormData.fromMap({
+      'video': await MultipartFile.fromFile(filePath, filename: name),
+    });
+    await _dio.post(
+      '/api/properties/properties/$propertySlug/videos/',
+      data: form,
+    );
+  }
+
   Future<List<ConversationListItem>> fetchConversations() async {
     final res = await _dio.get(
       '/api/chat/conversations/',
@@ -802,6 +841,32 @@ class BetNetApi {
       queryParameters: q,
     );
     return Map<String, dynamic>.from(res.data as Map);
+  }
+
+  Future<List<Map<String, dynamic>>> fetchUnavailableDates({
+    required int propertyId,
+  }) async {
+    final res = await _dio.get(
+      '/api/bookings/unavailable-dates/',
+      queryParameters: {'page_size': 200, 'property': propertyId},
+    );
+    return _unwrapMapList(res.data);
+  }
+
+  Future<Map<String, dynamic>> addUnavailableDate({
+    required int propertyId,
+    required String dateIso,
+    String reason = '',
+  }) async {
+    final res = await _dio.post(
+      '/api/bookings/unavailable-dates/',
+      data: {'property': propertyId, 'date': dateIso, 'reason': reason},
+    );
+    return Map<String, dynamic>.from(res.data as Map);
+  }
+
+  Future<void> deleteUnavailableDate(int id) async {
+    await _dio.delete('/api/bookings/unavailable-dates/$id/');
   }
 
   Future<BookingItem> createVisitBooking({
@@ -939,6 +1004,16 @@ class BetNetApi {
     return _unwrapMapList(res.data)
         .map(ListingPackagePurchaseItem.fromJson)
         .toList();
+  }
+
+  Future<ListingPackagePurchaseItem?> fetchMyActiveListingPackagePurchase() async {
+    final res = await _dio.get('/api/payments/listing-packages/my-active/');
+    final data = res.data;
+    if (data is! Map) throw ApiException('Unexpected active purchase response');
+    final ap = data['active_purchase'];
+    if (ap == null) return null;
+    if (ap is! Map) throw ApiException('Unexpected active purchase payload');
+    return ListingPackagePurchaseItem.fromJson(Map<String, dynamic>.from(ap));
   }
 
   Future<Map<String, dynamic>> initiateListingPackagePurchase({
@@ -1287,6 +1362,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> refreshProfile() async {
     final u = await _api.restoreUser();
     if (u != null) state = AuthState.authenticated(u);
+  }
+
+  Future<void> switchWorkspace(String mode) async {
+    final u = await _api.switchWorkspace(mode);
+    state = AuthState.authenticated(u);
+    goRouterRefresh.refresh();
   }
 
   void replaceUser(BetNetUser user) {

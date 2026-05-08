@@ -21,12 +21,12 @@ import { validateImageFile, getErrorMessage, isHallPropertyType, formPropertyTyp
 import toast from 'react-hot-toast';
 
 const STEPS = [
-  { id: 1, label: 'Basic Info', icon: FiHome },
+  { id: 1, label: 'Type', icon: FiHome },
   { id: 2, label: 'Location', icon: FiMapPin },
-  { id: 3, label: 'Amenities', icon: FiGrid },
-  { id: 4, label: 'Pricing', icon: FiDollarSign },
-  { id: 5, label: 'Media', icon: FiImage },
-  { id: 6, label: 'Review', icon: FiCheck },
+  { id: 3, label: 'Details', icon: FiGrid },
+  { id: 4, label: 'Media', icon: FiImage },
+  { id: 5, label: 'Pricing & Availability', icon: FiDollarSign },
+  { id: 6, label: 'Preview & Publish', icon: FiCheck },
 ];
 
 function ProgressBar({ currentStep, steps }) {
@@ -71,10 +71,14 @@ export default function AddPropertyPage() {
   const [savingDraft, setSavingDraft] = useState(false);
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [coverIndex, setCoverIndex] = useState(0);
+  const [draggingIndex, setDraggingIndex] = useState(null);
+  const [videos, setVideos] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [remainingSlots, setRemainingSlots] = useState(null);
   const [loadingSlots, setLoadingSlots] = useState(true);
   const fileInputRef = useRef(null);
+  const videoInputRef = useRef(null);
 
   const {
     register, handleSubmit, control, watch, setValue, trigger,
@@ -123,6 +127,7 @@ export default function AddPropertyPage() {
       'add-property': '/dashboard/property-owner/add-property',
       'listing-packages': '/dashboard/property-owner/listing-packages',
       bookings: '/dashboard/property-owner/bookings',
+      availability: '/dashboard/property-owner/availability',
       reviews: '/dashboard/property-owner/reviews',
       analytics: '/dashboard/property-owner/analytics',
       notifications: '/dashboard/property-owner/notifications',
@@ -134,11 +139,11 @@ export default function AddPropertyPage() {
 
   const validateStep = async (step) => {
     const fieldsByStep = {
-      1: ['title', 'description', 'propertyType'],
+      1: ['propertyType', 'listingType'],
       2: ['city'],
-      3: [],
-      4: isHall ? [] : ['monthlyRent'],
-      5: [],
+      3: ['title', 'description'],
+      4: [],
+      5: isHall ? [] : ['monthlyRent'],
     };
     const fields = fieldsByStep[step];
     if (!fields || fields.length === 0) return true;
@@ -193,7 +198,46 @@ export default function AddPropertyPage() {
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    setCoverIndex((prev) => {
+      if (prev === index) return 0;
+      if (prev > index) return prev - 1;
+      return prev;
+    });
   };
+
+  const moveImage = (from, to) => {
+    if (from === to) return;
+    setImages((prev) => {
+      const next = [...prev];
+      const [picked] = next.splice(from, 1);
+      next.splice(to, 0, picked);
+      return next;
+    });
+    setImagePreviews((prev) => {
+      const next = [...prev];
+      const [picked] = next.splice(from, 1);
+      next.splice(to, 0, picked);
+      return next;
+    });
+    setCoverIndex((prev) => {
+      if (prev === from) return to;
+      if (from < prev && to >= prev) return prev - 1;
+      if (from > prev && to <= prev) return prev + 1;
+      return prev;
+    });
+  };
+
+  const onImageDragStart = (index) => setDraggingIndex(index);
+  const onImageDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+  const onImageDrop = (index) => {
+    if (draggingIndex == null) return;
+    moveImage(draggingIndex, index);
+    setDraggingIndex(null);
+  };
+  const onImageDragEnd = () => setDraggingIndex(null);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -250,6 +294,7 @@ export default function AddPropertyPage() {
         bedrooms: isHall ? undefined : (data.bedrooms ? Number(data.bedrooms) : undefined),
         bathrooms: isHall ? undefined : (data.bathrooms ? Number(data.bathrooms) : undefined),
         area: data.area ? Number(data.area) : undefined,
+        status: data.status || 'available',
         location: {
           city: cityApiLabelFromFormValue(data.city),
           sub_city: data.city === 'addis_ababa'
@@ -286,7 +331,11 @@ export default function AddPropertyPage() {
       const propertySlug = created.slug;
 
       if (images.length > 0 && propertySlug) {
-        await propertyService.uploadPropertyImages(propertySlug, images);
+        const cover = Number.isFinite(coverIndex) ? coverIndex : 0;
+        await propertyService.uploadPropertyImages(propertySlug, images, { primaryIndex: cover });
+      }
+      if (videos.length > 0 && propertySlug) {
+        await propertyService.uploadPropertyVideos(propertySlug, videos);
       }
 
       localStorage.removeItem('betnet_property_draft');
@@ -331,29 +380,8 @@ export default function AddPropertyPage() {
       case 1:
         return (
           <div className="space-y-5">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Basic Information</h2>
-            <p className="text-sm text-gray-500 mb-6">Tell us about your property.</p>
-
-            <div>
-              <label className={labelClass}>Property Title *</label>
-              <input
-                {...register('title', { required: 'Title is required', minLength: { value: 5, message: 'At least 5 characters' } })}
-                className={inputClass}
-                placeholder="e.g., Modern 2-Bedroom Apartment in Bole"
-              />
-              {errors.title && <p className={errorClass}>{errors.title.message}</p>}
-            </div>
-
-            <div>
-              <label className={labelClass}>Description *</label>
-              <textarea
-                {...register('description', { required: 'Description is required', minLength: { value: 20, message: 'At least 20 characters' } })}
-                rows={5}
-                className={inputClass}
-                placeholder="Describe your property in detail..."
-              />
-              {errors.description && <p className={errorClass}>{errors.description.message}</p>}
-            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Listing Type</h2>
+            <p className="text-sm text-gray-500 mb-6">Choose what you’re listing and how it will be offered.</p>
 
             <div>
               <label className={labelClass}>Property Type *</label>
@@ -372,53 +400,13 @@ export default function AddPropertyPage() {
             <div>
               <label className={labelClass}>Offer as *</label>
               <p className="text-xs text-gray-500 mb-2">Choose whether you are renting out the property or selling it.</p>
-              <select {...register('listingType')} className={inputClass}>
+              <select {...register('listingType', { required: 'Offer type is required' })} className={inputClass}>
                 {LISTING_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
               </select>
+              {errors.listingType && <p className={errorClass}>{errors.listingType.message}</p>}
             </div>
-
-            {!isHall && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className={labelClass}>Bedrooms</label>
-                  <input {...register('bedrooms')} type="number" min="0" className={inputClass} placeholder="0" />
-                </div>
-                <div>
-                  <label className={labelClass}>Bathrooms</label>
-                  <input {...register('bathrooms')} type="number" min="0" className={inputClass} placeholder="0" />
-                </div>
-                <div>
-                  <label className={labelClass}>Area (m²)</label>
-                  <input {...register('area')} type="number" min="0" className={inputClass} placeholder="0" />
-                </div>
-              </div>
-            )}
-
-            {!isHall && formPropertyTypeSupportsFloor(propertyType) && (
-              <div className="max-w-md">
-                <label className={labelClass}>Floor number</label>
-                <input
-                  {...register('floorNumber')}
-                  type="number"
-                  min="0"
-                  max="200"
-                  className={inputClass}
-                  placeholder="e.g. 3 (ground = 0)"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Optional. Shown for apartment, condominium, office, shop, or commercial space (0–200).
-                </p>
-              </div>
-            )}
-
-            {isHall && (
-              <div>
-                <label className={labelClass}>Capacity (people)</label>
-                <input {...register('capacity')} type="number" min="0" className={inputClass} placeholder="e.g., 500" />
-              </div>
-            )}
           </div>
         );
 
@@ -465,8 +453,74 @@ export default function AddPropertyPage() {
       case 3:
         return (
           <div className="space-y-5">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Amenities</h2>
-            <p className="text-sm text-gray-500 mb-6">Select the amenities your property offers.</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Property Details</h2>
+            <p className="text-sm text-gray-500 mb-6">Write a great title, then add the important details and amenities.</p>
+
+            <div>
+              <label className={labelClass}>Property Title *</label>
+              <input
+                {...register('title', { required: 'Title is required', minLength: { value: 5, message: 'At least 5 characters' } })}
+                className={inputClass}
+                placeholder="e.g., Modern 2-Bedroom Apartment in Bole"
+              />
+              {errors.title && <p className={errorClass}>{errors.title.message}</p>}
+            </div>
+
+            <div>
+              <label className={labelClass}>Description *</label>
+              <textarea
+                {...register('description', { required: 'Description is required', minLength: { value: 20, message: 'At least 20 characters' } })}
+                rows={5}
+                className={inputClass}
+                placeholder="Describe the property, what’s included, and what’s nearby..."
+              />
+              {errors.description && <p className={errorClass}>{errors.description.message}</p>}
+            </div>
+
+            {!isHall && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className={labelClass}>Bedrooms</label>
+                  <input {...register('bedrooms')} type="number" min="0" className={inputClass} placeholder="0" />
+                </div>
+                <div>
+                  <label className={labelClass}>Bathrooms</label>
+                  <input {...register('bathrooms')} type="number" min="0" className={inputClass} placeholder="0" />
+                </div>
+                <div>
+                  <label className={labelClass}>Area (m²)</label>
+                  <input {...register('area')} type="number" min="0" className={inputClass} placeholder="0" />
+                </div>
+              </div>
+            )}
+
+            {!isHall && formPropertyTypeSupportsFloor(propertyType) && (
+              <div className="max-w-md">
+                <label className={labelClass}>Floor number</label>
+                <input
+                  {...register('floorNumber')}
+                  type="number"
+                  min="0"
+                  max="200"
+                  className={inputClass}
+                  placeholder="e.g. 3 (ground = 0)"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Optional. Shown for apartment, condominium, office, shop, or commercial space (0–200).
+                </p>
+              </div>
+            )}
+
+            {isHall && (
+              <div className="max-w-md">
+                <label className={labelClass}>Capacity (people)</label>
+                <input {...register('capacity')} type="number" min="0" className={inputClass} placeholder="e.g., 500" />
+              </div>
+            )}
+
+            <div className="pt-2">
+              <h3 className="text-base font-semibold text-gray-900 mb-2">Amenities</h3>
+              <p className="text-sm text-gray-500 mb-4">Select the amenities your property offers.</p>
 
             <Controller
               name="amenities"
@@ -536,13 +590,158 @@ export default function AddPropertyPage() {
                 />
               </>
             )}
+            </div>
           </div>
         );
 
       case 4:
         return (
           <div className="space-y-5">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Pricing</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Media</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Add photos that clearly show rooms, outside, and key features. Drag to reorder, and pick a cover photo.
+            </p>
+
+            <div
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
+                dragActive
+                  ? 'border-green-500 bg-green-50'
+                  : 'border-gray-300 hover:border-green-400 hover:bg-gray-50'
+              }`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept={ACCEPTED_IMAGE_TYPES.join(',')}
+                onChange={(e) => handleImageFiles(e.target.files)}
+                className="hidden"
+              />
+              <FiUpload className={`w-10 h-10 mx-auto mb-3 ${dragActive ? 'text-green-500' : 'text-gray-400'}`} />
+              <p className="text-sm font-medium text-gray-700 mb-1">
+                {dragActive ? 'Drop images here' : 'Drag & drop images here, or click to browse'}
+              </p>
+              <p className="text-xs text-gray-400">JPEG, PNG, WebP up to 5MB each</p>
+            </div>
+
+            {imagePreviews.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {imagePreviews.map((preview, i) => (
+                  <div
+                    key={i}
+                    className={`relative group rounded-xl overflow-hidden aspect-[4/3] bg-gray-100 border ${
+                      draggingIndex === i ? 'border-green-500' : 'border-transparent'
+                    }`}
+                    draggable
+                    onDragStart={() => onImageDragStart(i)}
+                    onDragOver={onImageDragOver}
+                    onDrop={() => onImageDrop(i)}
+                    onDragEnd={onImageDragEnd}
+                    title="Drag to reorder"
+                  >
+                    <img
+                      src={preview.url}
+                      alt={preview.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCoverIndex(i);
+                        }}
+                        className="px-3 py-2 bg-white rounded-full text-gray-800 hover:bg-gray-50 text-xs font-medium"
+                      >
+                        {coverIndex === i ? 'Cover' : 'Set cover'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeImage(i);
+                        }}
+                        className="p-2 bg-white rounded-full text-red-500 hover:bg-red-50"
+                      >
+                        <FiTrash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    {coverIndex === i && (
+                      <span className="absolute top-2 left-2 px-2 py-0.5 bg-green-600 text-white text-xs rounded-full font-medium">
+                        Cover
+                      </span>
+                    )}
+                    <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          moveImage(i, Math.max(0, i - 1));
+                        }}
+                        disabled={i === 0}
+                        className="px-2 py-1 bg-white/90 rounded-lg text-xs text-gray-700 disabled:opacity-40"
+                        title="Move left"
+                      >
+                        ←
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          moveImage(i, Math.min(imagePreviews.length - 1, i + 1));
+                        }}
+                        disabled={i === imagePreviews.length - 1}
+                        className="px-2 py-1 bg-white/90 rounded-lg text-xs text-gray-700 disabled:opacity-40"
+                        title="Move right"
+                      >
+                        →
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div>
+              <label className={labelClass}>Video URL (optional)</label>
+              <div className="relative">
+                <FiPlayCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  {...register('videoUrl')}
+                  className={`${inputClass} pl-12`}
+                  placeholder="https://youtube.com/watch?v=..."
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Upload video (optional)</label>
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  setVideos(file ? [file] : []);
+                }}
+                className={inputClass}
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Optional short walkthrough clip. If you upload a file, it will be attached to the listing.
+              </p>
+            </div>
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="space-y-5">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Pricing & Availability</h2>
             <p className="text-sm text-gray-500 mb-6">
               {listingType === 'sale'
                 ? 'Enter the total sale price. Buyers pay this amount to own the property, not a monthly rent.'
@@ -607,84 +806,17 @@ export default function AddPropertyPage() {
                 </div>
               </div>
             )}
-          </div>
-        );
 
-      case 5:
-        return (
-          <div className="space-y-5">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Media</h2>
-            <p className="text-sm text-gray-500 mb-6">
-              Upload multiple photos of your property (up to {MAX_IMAGES_PER_PROPERTY}; {images.length} selected).
-            </p>
-
-            {/* Drag & Drop Upload */}
-            <div
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-                dragActive
-                  ? 'border-green-500 bg-green-50'
-                  : 'border-gray-300 hover:border-green-400 hover:bg-gray-50'
-              }`}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept={ACCEPTED_IMAGE_TYPES.join(',')}
-                onChange={(e) => handleImageFiles(e.target.files)}
-                className="hidden"
-              />
-              <FiUpload className={`w-10 h-10 mx-auto mb-3 ${dragActive ? 'text-green-500' : 'text-gray-400'}`} />
-              <p className="text-sm font-medium text-gray-700 mb-1">
-                {dragActive ? 'Drop images here' : 'Drag & drop images here, or click to browse'}
+            <div className="max-w-md">
+              <label className={labelClass}>Availability status</label>
+              <select {...register('status')} className={inputClass} defaultValue="available">
+                <option value="available">Available</option>
+                <option value="rented">Rented</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <p className="text-xs text-gray-400 mt-1">
+                You can keep the listing inactive while you finish details, then publish when ready.
               </p>
-              <p className="text-xs text-gray-400">JPEG, PNG, WebP up to 5MB each</p>
-            </div>
-
-            {/* Image Previews */}
-            {imagePreviews.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {imagePreviews.map((preview, i) => (
-                  <div key={i} className="relative group rounded-xl overflow-hidden aspect-[4/3] bg-gray-100">
-                    <img
-                      src={preview.url}
-                      alt={preview.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <button
-                        type="button"
-                        onClick={() => removeImage(i)}
-                        className="p-2 bg-white rounded-full text-red-500 hover:bg-red-50"
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                    {i === 0 && (
-                      <span className="absolute top-2 left-2 px-2 py-0.5 bg-green-600 text-white text-xs rounded-full font-medium">
-                        Primary
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div>
-              <label className={labelClass}>Video URL (optional)</label>
-              <div className="relative">
-                <FiPlayCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  {...register('videoUrl')}
-                  className={`${inputClass} pl-12`}
-                  placeholder="https://youtube.com/watch?v=..."
-                />
-              </div>
             </div>
           </div>
         );
@@ -705,12 +837,14 @@ export default function AddPropertyPage() {
 
         return (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Review & Submit</h2>
-            <p className="text-sm text-gray-500 mb-6">Review your property details before submitting.</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Preview & Publish</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Double-check everything. When you publish, this listing becomes visible in search.
+            </p>
 
             {[
               {
-                title: 'Basic Info', items: [
+                title: 'Type & Details', items: [
                   { label: 'Title', value: values.title },
                   { label: 'Type', value: selectedType?.label },
                   { label: 'Offer', value: selectedListing?.label || values.listingType },
@@ -735,11 +869,14 @@ export default function AddPropertyPage() {
                 ],
               },
               {
-                title: 'Pricing', items: isHall ? [
-                  { label: 'Hourly Rate', value: values.hourlyRate ? `${values.hourlyRate} ETB` : '-' },
-                  { label: 'Daily Rate', value: values.dailyRate ? `${values.dailyRate} ETB` : '-' },
-                ] : [
-                  { label: priceReviewLabel, value: values.monthlyRent ? `${values.monthlyRent} ETB` : '-' },
+                title: 'Pricing & Availability', items: [
+                  { label: 'Status', value: values.status || 'available' },
+                  ...(isHall ? [
+                    { label: 'Hourly Rate', value: values.hourlyRate ? `${values.hourlyRate} ETB` : '-' },
+                    { label: 'Daily Rate', value: values.dailyRate ? `${values.dailyRate} ETB` : '-' },
+                  ] : [
+                    { label: priceReviewLabel, value: values.monthlyRent ? `${values.monthlyRent} ETB` : '-' },
+                  ]),
                 ],
               },
             ].map((section) => (
@@ -779,7 +916,14 @@ export default function AddPropertyPage() {
                 <h3 className="text-sm font-semibold text-gray-900 mb-3">Images ({imagePreviews.length})</h3>
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                   {imagePreviews.map((preview, i) => (
-                    <img key={i} src={preview.url} alt="" className="w-full aspect-square object-cover rounded-lg" />
+                    <div key={i} className="relative">
+                      <img src={preview.url} alt="" className="w-full aspect-square object-cover rounded-lg" />
+                      {coverIndex === i && (
+                        <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-green-700 text-white text-[10px] rounded">
+                          Cover
+                        </span>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>

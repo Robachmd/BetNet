@@ -65,12 +65,26 @@ def activate_listing_package_purchase(payment: Payment) -> None:
     if purchase.status != ListingPackagePurchase.Status.PENDING:
         return
     now = timezone.now()
-    purchase.status = ListingPackagePurchase.Status.ACTIVE
-    purchase.starts_at = now
-    purchase.expires_at = now + timedelta(days=purchase.package.validity_days)
-    purchase.save(
-        update_fields=["status", "starts_at", "expires_at", "updated_at"]
-    )
+    with transaction.atomic():
+        # Ensure a single active package per user. We intentionally do NOT stack credits.
+        (
+            ListingPackagePurchase.objects.select_for_update()
+            .filter(
+                user_id=purchase.user_id,
+                status=ListingPackagePurchase.Status.ACTIVE,
+            )
+            .exclude(pk=purchase.pk)
+            .update(
+                status=ListingPackagePurchase.Status.EXPIRED,
+                expires_at=now,
+                updated_at=now,
+            )
+        )
+
+        purchase.status = ListingPackagePurchase.Status.ACTIVE
+        purchase.starts_at = now
+        purchase.expires_at = now + timedelta(days=purchase.package.validity_days)
+        purchase.save(update_fields=["status", "starts_at", "expires_at", "updated_at"])
 
 
 def _active_package_qs_for_user(user_id: int):

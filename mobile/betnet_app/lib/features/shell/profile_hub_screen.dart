@@ -166,6 +166,63 @@ class ProfileHubScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: BetNetSpacing.lg),
+            if (user.canAccessPropertyOwnerTools) ...[
+              Card(
+                elevation: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(BetNetSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Account Center',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      const SizedBox(height: BetNetSpacing.xs),
+                      Text(
+                        'Switch between browsing and owner tools. Same login.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                      ),
+                      const SizedBox(height: BetNetSpacing.md),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: user.activeAppMode == 'RENTER'
+                                  ? null
+                                  : () async {
+                                      await ref
+                                          .read(authControllerProvider.notifier)
+                                          .switchWorkspace('RENTER');
+                                    },
+                              child: const Text('Renter'),
+                            ),
+                          ),
+                          const SizedBox(width: BetNetSpacing.sm),
+                          Expanded(
+                            child: FilledButton(
+                              onPressed: user.activeAppMode == 'LANDLORD'
+                                  ? null
+                                  : () async {
+                                      await ref
+                                          .read(authControllerProvider.notifier)
+                                          .switchWorkspace('LANDLORD');
+                                    },
+                              child: const Text('Owner'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: BetNetSpacing.lg),
+            ],
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,

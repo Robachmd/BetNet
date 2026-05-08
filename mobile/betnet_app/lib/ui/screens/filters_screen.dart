@@ -35,6 +35,7 @@ class _FiltersScreenState extends ConsumerState<FiltersScreen> {
   String? _typeKey;
   bool _studioOnly = false;
   RangeValues _priceRange = const RangeValues(3000, 80000);
+  String _datePosted = '';
 
   @override
   void initState() {
@@ -45,6 +46,7 @@ class _FiltersScreenState extends ConsumerState<FiltersScreen> {
       setState(() {
         _city = f.city;
         if (f.bedrooms == 'STUDIO') _studioOnly = true;
+        _datePosted = (f.createdAfter != null && f.createdAfter!.isNotEmpty) ? 'custom' : '';
         if (f.propertyType != null) {
           for (final e in kPropertyTypeChoices.entries) {
             if (e.value == f.propertyType) _typeKey = e.key;
@@ -120,6 +122,35 @@ class _FiltersScreenState extends ConsumerState<FiltersScreen> {
             ],
           ),
           const SizedBox(height: 24),
+          Text('Date posted', style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('Any'),
+                selected: _datePosted.isEmpty,
+                onSelected: (_) => setState(() => _datePosted = ''),
+              ),
+              ChoiceChip(
+                label: const Text('Today'),
+                selected: _datePosted == 'today',
+                onSelected: (_) => setState(() => _datePosted = 'today'),
+              ),
+              ChoiceChip(
+                label: const Text('Last 7 days'),
+                selected: _datePosted == 'last7',
+                onSelected: (_) => setState(() => _datePosted = 'last7'),
+              ),
+              ChoiceChip(
+                label: const Text('Last 30 days'),
+                selected: _datePosted == 'last30',
+                onSelected: (_) => setState(() => _datePosted = 'last30'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
           Text(
             'Monthly rent (ETB)',
             style: Theme.of(context).textTheme.titleSmall,
@@ -158,6 +189,18 @@ class _FiltersScreenState extends ConsumerState<FiltersScreen> {
                 child: FilledButton(
                   onPressed: () {
                     final prev = ref.read(browseFiltersProvider);
+                    String? createdAfter;
+                    if (_datePosted.isNotEmpty) {
+                      final now = DateTime.now();
+                      final today = DateTime(now.year, now.month, now.day);
+                      DateTime start = today;
+                      if (_datePosted == 'last7') {
+                        start = today.subtract(const Duration(days: 7));
+                      } else if (_datePosted == 'last30') {
+                        start = today.subtract(const Duration(days: 30));
+                      }
+                      createdAfter = start.toIso8601String().split('T').first;
+                    }
                     ref.read(browseFiltersProvider.notifier).state =
                         BrowseFilters(
                       city: _city,
@@ -173,6 +216,8 @@ class _FiltersScreenState extends ConsumerState<FiltersScreen> {
                       searchQuery: prev.searchQuery,
                       listingType: prev.listingType,
                       ordering: prev.ordering,
+                      createdAfter: createdAfter,
+                      createdBefore: null,
                       hasParking: prev.hasParking,
                       hasWifi: prev.hasWifi,
                       hasSecurity: prev.hasSecurity,

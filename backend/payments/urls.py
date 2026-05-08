@@ -20,6 +20,11 @@ urlpatterns = [
         name="my-listing-purchases",
     ),
     path(
+        "listing-packages/my-active/",
+        views.MyActiveListingPackagePurchaseView.as_view(),
+        name="my-active-listing-purchase",
+    ),
+    path(
         "listing-packages/<int:package_id>/purchase/",
         views.InitiateListingPackagePurchaseView.as_view(),
         name="listing-package-purchase",

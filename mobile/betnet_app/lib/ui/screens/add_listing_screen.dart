@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 import '../../core/config.dart';
 import '../../l10n/app_localizations.dart';
@@ -59,6 +60,8 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
   bool _hallIndoor = true;
 
   final List<String> _imagePaths = [];
+  int _coverPhotoIndex = 0;
+  String? _videoPath;
   bool _busy = false;
   late Future<Map<String, dynamic>> _slotSummaryFuture;
 
@@ -252,7 +255,20 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
           _imagePaths.add(x.path);
         }
       }
+      if (_coverPhotoIndex >= _imagePaths.length) {
+        _coverPhotoIndex = 0;
+      }
     });
+  }
+
+  Future<void> _pickVideo() async {
+    final picker = ImagePicker();
+    final v = await picker.pickVideo(
+      source: ImageSource.gallery,
+      maxDuration: const Duration(minutes: 2),
+    );
+    if (v == null) return;
+    setState(() => _videoPath = v.path);
   }
 
   Future<void> _submit() async {
@@ -365,13 +381,19 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
       );
       final slug = body['slug'] as String?;
       if (slug != null && _imagePaths.isNotEmpty) {
+        final cover = _coverPhotoIndex >= 0 && _coverPhotoIndex < _imagePaths.length
+            ? _coverPhotoIndex
+            : 0;
         for (var i = 0; i < _imagePaths.length; i++) {
           await api.uploadPropertyImage(
             propertySlug: slug,
             filePath: _imagePaths[i],
-            isPrimary: i == 0,
+            isPrimary: i == cover,
           );
         }
+      }
+      if (slug != null && _videoPath != null && _videoPath!.isNotEmpty) {
+        await api.uploadPropertyVideo(propertySlug: slug, filePath: _videoPath!);
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -835,6 +857,117 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
               icon: const Icon(Icons.photo_library_outlined),
               label: Text(
                   'Photos (${_imagePaths.length}) — up to $kMaxListingPhotos'),
+            ),
+            if (_imagePaths.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                'Reorder photos and choose a cover',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                buildDefaultDragHandles: false,
+                itemCount: _imagePaths.length,
+                onReorder: (oldIndex, newIndex) {
+                  setState(() {
+                    var ni = newIndex;
+                    if (ni > oldIndex) ni -= 1;
+                    final moved = _imagePaths.removeAt(oldIndex);
+                    _imagePaths.insert(ni, moved);
+
+                    if (_coverPhotoIndex == oldIndex) {
+                      _coverPhotoIndex = ni;
+                    } else if (oldIndex < _coverPhotoIndex && ni >= _coverPhotoIndex) {
+                      _coverPhotoIndex -= 1;
+                    } else if (oldIndex > _coverPhotoIndex && ni <= _coverPhotoIndex) {
+                      _coverPhotoIndex += 1;
+                    }
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final path = _imagePaths[index];
+                  return Card(
+                    key: ValueKey('photo-$path'),
+                    elevation: 0,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          File(path),
+                          width: 52,
+                          height: 52,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: 52,
+                            height: 52,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                            child: const Icon(Icons.broken_image_outlined),
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        index == _coverPhotoIndex ? 'Cover photo' : 'Photo ${index + 1}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: index == _coverPhotoIndex ? FontWeight.w700 : null,
+                            ),
+                      ),
+                      subtitle: Text(
+                        path.split(RegExp(r'[\\/]+')).last,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: 'Set as cover',
+                            onPressed: () => setState(() => _coverPhotoIndex = index),
+                            icon: Icon(
+                              index == _coverPhotoIndex
+                                  ? Icons.star_rounded
+                                  : Icons.star_border_rounded,
+                            ),
+                          ),
+                          ReorderableDragStartListener(
+                            index: index,
+                            child: const Icon(Icons.drag_handle_rounded),
+                          ),
+                          IconButton(
+                            tooltip: 'Remove',
+                            onPressed: () {
+                              setState(() {
+                                _imagePaths.removeAt(index);
+                                if (_coverPhotoIndex == index) {
+                                  _coverPhotoIndex = 0;
+                                } else if (_coverPhotoIndex > index) {
+                                  _coverPhotoIndex -= 1;
+                                }
+                                if (_coverPhotoIndex >= _imagePaths.length) {
+                                  _coverPhotoIndex = 0;
+                                }
+                              });
+                            },
+                            icon: const Icon(Icons.delete_outline_rounded),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: _pickVideo,
+              icon: const Icon(Icons.video_library_outlined),
+              label: Text(_videoPath == null ? 'Add video (optional)' : 'Video selected'),
             ),
             const SizedBox(height: 24),
             FilledButton(

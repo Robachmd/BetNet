@@ -24,6 +24,11 @@ export async function getMyListingPurchases() {
   return { results: [] };
 }
 
+export async function getMyActiveListingPurchase() {
+  const { data } = await api.get(`${PAYMENTS}/listing-packages/my-active/`);
+  return data;
+}
+
 /**
  * @param {number} packageId
  * @param {object} opts

@@ -1,6 +1,7 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 from accounts.models import User as AccountUser
+from accounts.permissions import can_access_owner_workspace
 
 
 class IsPropertyOwner(BasePermission):
@@ -12,10 +13,7 @@ class IsPropertyOwner(BasePermission):
         u = request.user
         if not u or not u.is_authenticated:
             return False
-        role = (getattr(u, "role", None) or "").strip().upper()
-        if role in (AccountUser.Role.LANDLORD, AccountUser.Role.ADMIN):
-            return True
-        return bool(getattr(u, "landlord_eligible", False))
+        return can_access_owner_workspace(u)
 
 
 # Backward-compatible alias.

@@ -138,11 +138,21 @@ export const authService = {
   },
 
   async setActiveAppMode(mode) {
+    // Backward compatible: PATCH profile still supported.
     const { data } = await api.patch(`${AUTH}/profile/`, {
       active_app_mode: mode,
     });
     localStorage.setItem('user', JSON.stringify(data));
     return data;
+  },
+
+  async switchWorkspace(mode) {
+    const { data } = await api.post(`${AUTH}/switch-workspace/`, {
+      mode,
+    });
+    const u = data.user || data;
+    localStorage.setItem('user', JSON.stringify(u));
+    return u;
   },
 
   async changePassword(oldPassword, newPassword, newPasswordConfirm) {

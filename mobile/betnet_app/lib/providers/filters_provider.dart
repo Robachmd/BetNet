@@ -12,6 +12,8 @@ class BrowseFilters {
     this.searchQuery,
     this.listingType,
     this.ordering,
+    this.createdAfter,
+    this.createdBefore,
     this.hasParking,
     this.hasWifi,
     this.hasSecurity,
@@ -32,6 +34,9 @@ class BrowseFilters {
   final String? listingType;
   /// DRF ordering, e.g. `-created_at`, `price_monthly`, `-price_monthly`
   final String? ordering;
+  /// Date filters (YYYY-MM-DD), mapped to `PropertyFilter` created_after/created_before.
+  final String? createdAfter;
+  final String? createdBefore;
   final bool? hasParking;
   final bool? hasWifi;
   final bool? hasSecurity;
@@ -50,6 +55,8 @@ class BrowseFilters {
     String? searchQuery,
     String? listingType,
     String? ordering,
+    String? createdAfter,
+    String? createdBefore,
     bool? hasParking,
     bool? hasWifi,
     bool? hasSecurity,
@@ -65,6 +72,7 @@ class BrowseFilters {
     bool clearSearch = false,
     bool clearListingType = false,
     bool clearOrdering = false,
+    bool clearCreatedRange = false,
   }) {
     return BrowseFilters(
       city: clearCity ? null : (city ?? this.city),
@@ -76,6 +84,8 @@ class BrowseFilters {
       searchQuery: clearSearch ? null : (searchQuery ?? this.searchQuery),
       listingType: clearListingType ? null : (listingType ?? this.listingType),
       ordering: clearOrdering ? null : (ordering ?? this.ordering),
+      createdAfter: clearCreatedRange ? null : (createdAfter ?? this.createdAfter),
+      createdBefore: clearCreatedRange ? null : (createdBefore ?? this.createdBefore),
       hasParking: hasParking ?? this.hasParking,
       hasWifi: hasWifi ?? this.hasWifi,
       hasSecurity: hasSecurity ?? this.hasSecurity,

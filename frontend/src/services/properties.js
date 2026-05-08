@@ -94,6 +94,32 @@ function mapFrontendFilters(f = {}) {
   if (f.sort === 'price_desc') q.ordering = '-price_monthly';
   if (f.page) q.page = f.page;
 
+  const datePosted = (f.datePosted || '').toString().toLowerCase();
+  if (f.created_after) q.created_after = f.created_after;
+  if (f.created_before) q.created_before = f.created_before;
+  if (datePosted) {
+    const today = new Date();
+    const asIso = (d) => d.toISOString().slice(0, 10);
+    const startOf = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const t0 = startOf(today);
+    if (datePosted === 'today') {
+      q.created_after = asIso(t0);
+    } else if (datePosted === 'yesterday') {
+      const y = new Date(t0);
+      y.setDate(y.getDate() - 1);
+      q.created_after = asIso(y);
+      q.created_before = asIso(y);
+    } else if (datePosted === 'last7' || datePosted === '7d') {
+      const d = new Date(t0);
+      d.setDate(d.getDate() - 7);
+      q.created_after = asIso(d);
+    } else if (datePosted === 'last30' || datePosted === '30d') {
+      const d = new Date(t0);
+      d.setDate(d.getDate() - 30);
+      q.created_after = asIso(d);
+    }
+  }
+
   return q;
 }
 
@@ -147,12 +173,15 @@ export const propertyService = {
     return data;
   },
 
-  async uploadPropertyImages(slug, files) {
+  async uploadPropertyImages(slug, files, options = {}) {
+    const primaryIndex = Number.isFinite(options?.primaryIndex)
+      ? Math.max(0, Number(options.primaryIndex))
+      : 0;
     const out = [];
     for (let i = 0; i < files.length; i += 1) {
       const formData = new FormData();
       formData.append('image', files[i]);
-      formData.append('is_primary', i === 0 ? 'true' : 'false');
+      formData.append('is_primary', i === primaryIndex ? 'true' : 'false');
       const { data } = await api.post(
         `${BASE}/properties/${slug}/images/`,
         formData,
@@ -166,6 +195,28 @@ export const propertyService = {
   async deletePropertyImage(slug, imageId) {
     const { data } = await api.delete(
       `${BASE}/properties/${slug}/images/${imageId}/`
+    );
+    return data;
+  },
+
+  async uploadPropertyVideos(slug, files) {
+    const out = [];
+    for (let i = 0; i < files.length; i += 1) {
+      const formData = new FormData();
+      formData.append('video', files[i]);
+      const { data } = await api.post(
+        `${BASE}/properties/${slug}/videos/`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      out.push(data);
+    }
+    return out;
+  },
+
+  async deletePropertyVideo(slug, videoId) {
+    const { data } = await api.delete(
+      `${BASE}/properties/${slug}/videos/${videoId}/`
     );
     return data;
   },

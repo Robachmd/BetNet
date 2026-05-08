@@ -45,6 +45,7 @@ export const propertyOwnerGroups = [
       { key: 'add-property', label: 'Add Property', icon: FiPlusCircle },
       { key: 'listing-packages', label: 'Listing Packages', icon: FiLayers },
       { key: 'bookings', label: 'Bookings', icon: FiCalendar },
+      { key: 'availability', label: 'Availability', icon: FiCalendar },
     ],
   },
   {

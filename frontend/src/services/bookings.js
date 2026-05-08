@@ -67,6 +67,26 @@ export const bookingService = {
     return data;
   },
 
+  async listUnavailableDates(propertyId) {
+    const { data } = await api.get(`${B}/unavailable-dates/`, {
+      params: { page_size: 200, property: propertyId },
+    });
+    return data;
+  },
+
+  async addUnavailableDate({ propertyId, date, reason = '' }) {
+    const { data } = await api.post(`${B}/unavailable-dates/`, {
+      property: propertyId,
+      date,
+      reason,
+    });
+    return data;
+  },
+
+  async deleteUnavailableDate(id) {
+    await api.delete(`${B}/unavailable-dates/${id}/`);
+  },
+
   async getMyBookings(params = {}) {
     const { data } = await api.get(`${B}/bookings/`, {
       params: { page_size: 50, ...params },

@@ -2,6 +2,7 @@ import json
 import logging
 import uuid
 
+from django.db import models
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
@@ -534,6 +535,33 @@ class MyListingPackagePurchasesView(generics.ListAPIView):
             ListingPackagePurchase.objects.filter(user=self.request.user)
             .select_related("package", "payment")
             .order_by("-created_at")
+        )
+
+
+class MyActiveListingPackagePurchaseView(APIView):
+    """Return the single active listing package purchase for the current user (or null)."""
+
+    permission_classes = [permissions.IsAuthenticated, IsPropertyOwner]
+
+    def get(self, request):
+        now = timezone.now()
+        purchase = (
+            ListingPackagePurchase.objects.filter(
+                user=request.user,
+                status=ListingPackagePurchase.Status.ACTIVE,
+            )
+            .filter(models.Q(expires_at__isnull=True) | models.Q(expires_at__gte=now))
+            .select_related("package", "payment")
+            .order_by("-created_at")
+            .first()
+        )
+        return Response(
+            {
+                "active_purchase": ListingPackagePurchaseSerializer(purchase).data
+                if purchase
+                else None
+            },
+            status=status.HTTP_200_OK,
         )
 
 

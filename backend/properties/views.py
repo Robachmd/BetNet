@@ -175,6 +175,37 @@ class PropertyImageViewSet(
         instance.delete()
 
 
+# ── Property Video uploads ────────────────────────────────────────────────────
+
+class PropertyVideoViewSet(
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
+    serializer_class = PropertyVideoSerializer
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return PropertyVideo.objects.filter(
+            property__slug=self.kwargs["property_slug"]
+        )
+
+    def perform_create(self, serializer):
+        prop = get_object_or_404(
+            Property, slug=self.kwargs["property_slug"], owner=self.request.user
+        )
+        serializer.save(property=prop)
+
+    def perform_destroy(self, instance):
+        if instance.property.owner != self.request.user and not self.request.user.is_staff:
+            from rest_framework.exceptions import PermissionDenied
+
+            raise PermissionDenied("You can only delete videos of your own properties.")
+        instance.delete()
+
+
 # ── Favorites ─────────────────────────────────────────────────────────────────
 
 class FavoriteViewSet(

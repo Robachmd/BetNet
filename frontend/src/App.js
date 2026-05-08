@@ -29,6 +29,7 @@ const RenterDashboard = lazy(() => import('./pages/dashboard/RenterDashboard'));
 const PropertyOwnerDashboard = lazy(() => import('./pages/dashboard/LandlordDashboard'));
 const PropertyOwnerListingPackagesPage = lazy(() => import('./pages/dashboard/LandlordListingPackagesPage'));
 const PropertyOwnerBookingsPage = lazy(() => import('./pages/dashboard/PropertyOwnerBookingsPage'));
+const PropertyOwnerAvailabilityPage = lazy(() => import('./pages/dashboard/PropertyOwnerAvailabilityPage'));
 const PropertyOwnerReviewsPage = lazy(() => import('./pages/dashboard/PropertyOwnerReviewsPage'));
 const PropertyOwnerAnalyticsPage = lazy(() => import('./pages/dashboard/PropertyOwnerAnalyticsPage'));
 const PropertyOwnerNotificationsPage = lazy(() => import('./pages/dashboard/PropertyOwnerNotificationsPage'));
@@ -61,7 +62,12 @@ function ProtectedRoute({ children, allowedRoles }) {
     const allowedNorm = allowedRoles.map((r) => r.toLowerCase());
     const ok = allowedNorm.some((allowed) => {
       if (allowed === 'landlord' || allowed === 'property_owner') {
-        return canAccessPropertyOwner;
+        const active = (user?.active_app_mode || 'RENTER').toLowerCase();
+        return canAccessPropertyOwner && active === 'landlord';
+      }
+      if (allowed === 'renter') {
+        const active = (user?.active_app_mode || 'RENTER').toLowerCase();
+        return active === 'renter';
       }
       return roleNorm === allowed;
     });
@@ -160,6 +166,14 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['property_owner']}>
               <PropertyOwnerBookingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/property-owner/availability"
+          element={
+            <ProtectedRoute allowedRoles={['property_owner']}>
+              <PropertyOwnerAvailabilityPage />
             </ProtectedRoute>
           }
         />

@@ -251,6 +251,13 @@ class PropertyCreateUpdateSerializer(serializers.ModelSerializer):
     location = LocationSerializer()
     amenities = AmenitiesSerializer()
     hall_detail = HallDetailSerializer(required=False, allow_null=True)
+    video_url = serializers.URLField(required=False, allow_blank=True)
+    videoUrl = serializers.URLField(
+        required=False,
+        allow_blank=True,
+        write_only=True,
+        help_text="Backward-compatible alias for video_url (web clients).",
+    )
 
     class Meta:
         model = Property
@@ -271,6 +278,8 @@ class PropertyCreateUpdateSerializer(serializers.ModelSerializer):
             "location",
             "amenities",
             "hall_detail",
+            "video_url",
+            "videoUrl",
         ]
         read_only_fields = ["id", "slug"]
 
@@ -316,6 +325,10 @@ class PropertyCreateUpdateSerializer(serializers.ModelSerializer):
         location_data = validated_data.pop("location")
         amenities_data = validated_data.pop("amenities")
         hall_data = validated_data.pop("hall_detail", None)
+        video_url = (
+            (validated_data.pop("video_url", "") or "").strip()
+            or (validated_data.pop("videoUrl", "") or "").strip()
+        )
 
         location = Location.objects.create(**location_data)
         amenities = Amenities.objects.create(**amenities_data)
@@ -330,6 +343,9 @@ class PropertyCreateUpdateSerializer(serializers.ModelSerializer):
         if hall_data and prop.property_type == Property.PropertyType.HALL_RENTAL:
             HallDetail.objects.create(property=prop, **hall_data)
 
+        if video_url:
+            PropertyVideo.objects.create(property=prop, video_url=video_url)
+
         return prop
 
     @transaction.atomic
@@ -337,6 +353,12 @@ class PropertyCreateUpdateSerializer(serializers.ModelSerializer):
         location_data = validated_data.pop("location", None)
         amenities_data = validated_data.pop("amenities", None)
         hall_data = validated_data.pop("hall_detail", None)
+        video_url = None
+        if "video_url" in validated_data or "videoUrl" in validated_data:
+            video_url = (
+                (validated_data.pop("video_url", "") or "").strip()
+                or (validated_data.pop("videoUrl", "") or "").strip()
+            )
 
         if location_data:
             for attr, value in location_data.items():
@@ -360,6 +382,14 @@ class PropertyCreateUpdateSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
+
+        if video_url is not None:
+            # Replace URL-based video entry. File uploads are managed via /videos/ endpoints.
+            PropertyVideo.objects.filter(property=instance, video__isnull=True).exclude(
+                video_url=""
+            ).delete()
+            if video_url:
+                PropertyVideo.objects.create(property=instance, video_url=video_url)
 
         return instance
 

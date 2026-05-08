@@ -37,6 +37,11 @@ final _myPurchasesProvider =
   return ref.watch(betNetApiProvider).fetchMyListingPackagePurchases();
 });
 
+final _activePurchaseProvider =
+    FutureProvider.autoDispose<ListingPackagePurchaseItem?>((ref) async {
+  return ref.watch(betNetApiProvider).fetchMyActiveListingPackagePurchase();
+});
+
 class ListingPackagesScreen extends ConsumerStatefulWidget {
   const ListingPackagesScreen({super.key});
 
@@ -141,6 +146,7 @@ class _ListingPackagesScreenState extends ConsumerState<ListingPackagesScreen> {
     final packagesAsync = ref.watch(_listingPackagesProvider);
     final summaryAsync = ref.watch(_slotSummaryProvider);
     final purchasesAsync = ref.watch(_myPurchasesProvider);
+    final activeAsync = ref.watch(_activePurchaseProvider);
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -194,6 +200,36 @@ class _ListingPackagesScreenState extends ConsumerState<ListingPackagesScreen> {
               ),
             ),
             const SizedBox(height: 8),
+            SectionCard(
+              title: 'Current plan',
+              child: activeAsync.when(
+                data: (p) {
+                  if (p == null) {
+                    return const EmptyState(title: 'No active package. Buy a plan to publish.');
+                  }
+                  return Card(
+                    child: ListTile(
+                      title: Text(p.packageName ?? 'Package'),
+                      subtitle: Text(
+                        '${p.statusDisplay} · ${p.slotsRemaining}/${p.slotsTotal} slots left',
+                      ),
+                      trailing: p.expiresAt == null
+                          ? null
+                          : Text(
+                              'Expires\n${p.expiresAt!.toLocal().toString().split(' ').first}',
+                              textAlign: TextAlign.right,
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                  ),
+                            ),
+                    ),
+                  );
+                },
+                loading: () => const LoadingState(),
+                error: (e, _) => ErrorState(message: '$e'),
+              ),
+            ),
+            const SizedBox(height: 8),
             Text(
               'Choose a plan',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -239,7 +275,7 @@ class _ListingPackagesScreenState extends ConsumerState<ListingPackagesScreen> {
             ),
             const SizedBox(height: 12),
             SectionCard(
-              title: 'My purchases',
+              title: 'Purchase history',
               child: purchasesAsync.when(
                 data: (rows) {
                   if (rows.isEmpty) {
