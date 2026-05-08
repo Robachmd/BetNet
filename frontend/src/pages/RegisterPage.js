@@ -161,7 +161,7 @@ export default function RegisterPage() {
 
       {/* Right Panel */}
       <div className="flex-1 flex items-center justify-center p-6 md:p-12">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md animate-scale-in">
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <Link to="/" className="text-2xl font-bold text-green-800">{APP_NAME}</Link>

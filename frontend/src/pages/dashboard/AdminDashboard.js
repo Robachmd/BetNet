@@ -7,6 +7,9 @@ import {
 } from 'react-icons/fi';
 import useAuth from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
+import MobileNavDrawer from '../../components/layout/MobileNavDrawer';
+import DashboardMobileHeader from '../../components/layout/DashboardMobileHeader';
+import SurfaceCard from '../../components/common/SurfaceCard';
 import Badge from '../../components/common/Badge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { propertyService } from '../../services/properties';
@@ -103,6 +106,7 @@ export default function AdminDashboard() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -194,6 +198,15 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
+      <MobileNavDrawer
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        role="admin"
+        activeKey="admin-dashboard"
+        user={user}
+        onNavigate={handleNavigation}
+        onLogout={logout}
+      />
       <Sidebar
         role="admin"
         activeKey="admin-dashboard"
@@ -202,14 +215,19 @@ export default function AdminDashboard() {
         onLogout={logout}
       />
 
-      <main className="flex-1 min-w-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <main className="flex-1 min-w-0 min-h-screen">
+        <DashboardMobileHeader
+          title="Admin"
+          onOpenMenu={() => setMobileMenuOpen(true)}
+          right={<Badge variant="verified" size="sm" icon>Admin</Badge>}
+        />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+              <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Admin Dashboard</h1>
               <p className="text-gray-500 mt-1">Overview of the BetNet platform</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               <Badge variant="verified" size="sm" icon>Admin</Badge>
             </div>
           </div>
@@ -223,13 +241,13 @@ export default function AdminDashboard() {
               {/* Metric Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
                 {metricCards.map((card) => (
-                  <div key={card.label} className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                    <div className={`w-10 h-10 rounded-lg ${card.color} flex items-center justify-center mb-3`}>
+                  <SurfaceCard key={card.label} padding="p-4" className="h-full">
+                    <div className={`w-10 h-10 rounded-xl ${card.color} flex items-center justify-center mb-3 shadow-inner`}>
                       <card.icon className="w-5 h-5" />
                     </div>
-                    <p className="text-xl font-bold text-gray-900 truncate">{card.value}</p>
+                    <p className="text-xl font-bold text-gray-900 truncate font-display">{card.value}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{card.label}</p>
-                  </div>
+                  </SurfaceCard>
                 ))}
               </div>
 

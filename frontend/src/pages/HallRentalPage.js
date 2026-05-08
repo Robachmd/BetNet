@@ -8,6 +8,7 @@ import PropertyCard from '../components/property/PropertyCard';
 import PropertyMap from '../components/property/PropertyMap';
 import Pagination from '../components/common/Pagination';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { SkeletonCardGrid } from '../components/common/SkeletonCard';
 import EmptyState from '../components/common/EmptyState';
 import BookingCalendar from '../components/booking/BookingCalendar';
 import Modal from '../components/common/Modal';
@@ -336,22 +337,7 @@ export default function HallRentalPage() {
 
         {/* Results */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {Array.from({ length: 6 }, (_, i) => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm animate-pulse">
-                <div className="aspect-[4/3] bg-gray-200" />
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
-                  <div className="flex gap-4">
-                    <div className="h-3 bg-gray-200 rounded w-20" />
-                    <div className="h-3 bg-gray-200 rounded w-20" />
-                  </div>
-                  <div className="h-5 bg-gray-200 rounded w-28" />
-                </div>
-              </div>
-            ))}
-          </div>
+          <SkeletonCardGrid count={6} />
         ) : halls.length === 0 ? (
           <EmptyState
             icon="search"

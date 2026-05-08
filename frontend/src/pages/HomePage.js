@@ -135,7 +135,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 overflow-hidden animate-fade-in">
         <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.12),_transparent_50%),radial-gradient(ellipse_at_bottom_left,_rgba(16,185,129,0.15),_transparent_45%)]" />
         <div className="absolute inset-0 bg-gradient-to-b from-green-900/50 to-green-900/90" />
         <div className="absolute top-20 right-10 w-72 h-72 bg-green-400/10 rounded-full blur-3xl" />

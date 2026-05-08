@@ -7,6 +7,10 @@ import {
 } from 'react-icons/fi';
 import useAuth from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
+import MobileNavDrawer from '../../components/layout/MobileNavDrawer';
+import DashboardMobileHeader from '../../components/layout/DashboardMobileHeader';
+import GetStartedBanner from '../../components/onboarding/GetStartedBanner';
+import SurfaceCard from '../../components/common/SurfaceCard';
 import BookingCard from '../../components/booking/BookingCard';
 import Badge from '../../components/common/Badge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -60,6 +64,7 @@ export default function PropertyOwnerDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [stats, setStats] = useState({
     totalProperties: 0,
@@ -209,6 +214,16 @@ export default function PropertyOwnerDashboard() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
+      <MobileNavDrawer
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        role="property_owner"
+        activeKey="dashboard"
+        user={user}
+        unreadMessages={unreadMessages}
+        onNavigate={handleNavigation}
+        onLogout={logout}
+      />
       <Sidebar
         role="property_owner"
         activeKey="dashboard"
@@ -218,12 +233,17 @@ export default function PropertyOwnerDashboard() {
         onLogout={logout}
       />
 
-      <main className="flex-1 min-w-0">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main className="flex-1 min-w-0 min-h-screen">
+        <DashboardMobileHeader
+          title="Dashboard"
+          onOpenMenu={() => setMobileMenuOpen(true)}
+        />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 animate-fade-in">
+          <GetStartedBanner variant="owner" userId={user?.id ?? user?.pk} />
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Property Owner Dashboard</h1>
+              <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Property Owner Dashboard</h1>
               <p className="text-gray-500 mt-1">Welcome back, {user?.name?.split(' ')[0] || 'Property Owner'}</p>
             </div>
             <div className="flex gap-3">
@@ -245,24 +265,24 @@ export default function PropertyOwnerDashboard() {
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
                 {primaryStatCards.map((card) => (
-                  <div key={card.label} className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                    <div className={`w-10 h-10 rounded-lg ${card.color} flex items-center justify-center mb-3`}>
+                  <SurfaceCard key={card.label} padding="p-4" className="h-full">
+                    <div className={`w-10 h-10 rounded-xl ${card.color} flex items-center justify-center mb-3 shadow-inner`}>
                       <card.icon className="w-5 h-5" />
                     </div>
-                    <p className="text-xl font-bold text-gray-900 truncate">{card.value}</p>
+                    <p className="text-xl font-bold text-gray-900 truncate font-display">{card.value}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{card.label}</p>
-                  </div>
+                  </SurfaceCard>
                 ))}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                 {secondaryStatCards.map((card) => (
-                  <div key={card.label} className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                    <div className={`w-10 h-10 rounded-lg ${card.color} flex items-center justify-center mb-3`}>
+                  <SurfaceCard key={card.label} padding="p-4" className="h-full">
+                    <div className={`w-10 h-10 rounded-xl ${card.color} flex items-center justify-center mb-3 shadow-inner`}>
                       <card.icon className="w-5 h-5" />
                     </div>
-                    <p className="text-xl font-bold text-gray-900 truncate">{card.value}</p>
+                    <p className="text-xl font-bold text-gray-900 truncate font-display">{card.value}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{card.label}</p>
-                  </div>
+                  </SurfaceCard>
                 ))}
               </div>
             </>

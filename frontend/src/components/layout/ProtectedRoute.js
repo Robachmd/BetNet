@@ -12,7 +12,7 @@ export default function ProtectedRoute({
   fallback = null,
 }) {
   if (isLoading) {
-    return <LoadingSpinner fullScreen text="Checking authentication..." />;
+    return <LoadingSpinner page text="Checking authentication..." />;
   }
 
   if (!isAuthenticated) {

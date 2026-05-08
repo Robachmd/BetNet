@@ -6,6 +6,10 @@ import {
 } from 'react-icons/fi';
 import useAuth from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
+import MobileNavDrawer from '../../components/layout/MobileNavDrawer';
+import DashboardMobileHeader from '../../components/layout/DashboardMobileHeader';
+import GetStartedBanner from '../../components/onboarding/GetStartedBanner';
+import { chatService } from '../../services/chat';
 import BookingCard from '../../components/booking/BookingCard';
 import PropertyCard from '../../components/property/PropertyCard';
 import ReviewCard from '../../components/review/ReviewCard';
@@ -50,6 +54,8 @@ export default function RenterDashboard() {
   const [reviews, setReviews] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   const [loading, setLoading] = useState({
     bookings: true, favorites: true, recommended: true,
@@ -148,6 +154,17 @@ export default function RenterDashboard() {
     } catch { /* ignore */ }
   }, [loadBookings, loadFavorites, loadRecommended, loadReviews, loadNotifications]);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const unread = await chatService.getUnreadCount();
+        setUnreadMessages(unread.count ?? unread ?? 0);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, []);
+
   const handleSearch = (query) => {
     const safeRecentSearches = ensureArray(recentSearches);
     const updated = [query, ...safeRecentSearches.filter((s) => s !== query)].slice(0, 5);
@@ -176,31 +193,35 @@ export default function RenterDashboard() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
+      <MobileNavDrawer
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        role="renter"
+        activeKey="dashboard"
+        user={user}
+        unreadMessages={unreadMessages}
+        onNavigate={handleNavigation}
+        onLogout={logout}
+      />
       <Sidebar
         role="renter"
         activeKey="dashboard"
         user={user}
+        unreadMessages={unreadMessages}
         onNavigate={handleNavigation}
         onLogout={logout}
       />
 
       <main className="flex-1 min-w-0 w-full min-h-screen">
-        {/* Mobile: sidebar is hidden until lg; show title bar so the page is never a blank column */}
-        <div className="lg:hidden sticky top-0 z-20 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between">
-          <span className="font-bold text-green-800">Dashboard</span>
-          <div className="flex gap-2 text-sm">
-            <button type="button" onClick={() => navigate('/search')} className="text-green-700 font-medium">
-              Search
-            </button>
-            <button type="button" onClick={() => navigate('/profile')} className="text-gray-600">
-              Profile
-            </button>
-          </div>
-        </div>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <DashboardMobileHeader
+          title="Dashboard"
+          onOpenMenu={() => setMobileMenuOpen(true)}
+        />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 animate-fade-in">
+          <GetStartedBanner variant="renter" userId={user?.id ?? user?.pk} />
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
+          <div>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-1">
               {greeting()}, {userDisplayName(user).split(' ')[0] || 'there'}!
             </h1>
             <p className="text-gray-500">Here&apos;s what&apos;s happening with your rentals.</p>

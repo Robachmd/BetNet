@@ -95,7 +95,7 @@ export default function LoginPage() {
 
       {/* Right Panel - Form */}
       <div className="flex-1 flex items-center justify-center p-6 md:p-12">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md animate-scale-in">
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-10">
             <Link to="/" className="text-2xl font-bold text-green-800">

@@ -26,5 +26,5 @@ export default function Dashboard() {
     navigate('/dashboard/renter', { replace: true });
   }, [user, isLoading, isAdmin, isPropertyOwner, navigate]);
 
-  return <LoadingSpinner fullScreen text="Redirecting to your dashboard..." />;
+  return <LoadingSpinner page text="Redirecting to your dashboard..." />;
 }

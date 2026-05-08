@@ -2,6 +2,8 @@ import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import PublicLayout from './components/layout/PublicLayout';
+import LoadingSpinner from './components/common/LoadingSpinner';
+import RouteFallback from './components/common/RouteFallback';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
@@ -43,22 +45,11 @@ const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
 const VerifyIdentityPage = lazy(() => import('./pages/VerifyIdentityPage'));
 const PriceInsightsPage = lazy(() => import('./pages/PriceInsightsPage'));
 
-function LoadingSpinner() {
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-800 rounded-full animate-spin mx-auto" />
-        <p className="mt-4 text-gray-600 font-medium">Loading...</p>
-      </div>
-    </div>
-  );
-}
-
 function ProtectedRoute({ children, allowedRoles }) {
   const { user, isAuthenticated, isLoading, canAccessPropertyOwner } = useAuth();
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return <LoadingSpinner page text="Checking authentication..." />;
   }
 
   if (!isAuthenticated) {
@@ -86,7 +77,7 @@ function GuestRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return <LoadingSpinner page text="Checking authentication..." />;
   }
 
   if (isAuthenticated) {
@@ -98,7 +89,7 @@ function GuestRoute({ children }) {
 
 export default function App() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<RouteFallback />}>
       <Routes>
         {/* Public shell: Navbar, Footer, language switcher */}
         <Route element={<PublicLayout />}>

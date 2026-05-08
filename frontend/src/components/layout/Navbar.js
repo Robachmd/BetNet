@@ -59,9 +59,9 @@ export default function Navbar({
 
   return (
     <header
-      className={`sticky top-0 z-40 w-full transition-all duration-300 ${
+      className={`sticky top-0 z-40 w-full transition-all duration-300 ease-smooth ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-sm'
+          ? 'bg-white/95 backdrop-blur-md shadow-sm ring-1 ring-gray-100/60'
           : 'bg-white'
       }`}
     >
@@ -71,13 +71,13 @@ export default function Navbar({
           <button
             type="button"
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 flex-shrink-0"
+            className="flex items-center gap-2.5 flex-shrink-0 rounded-xl py-1 pl-0.5 pr-2 -ml-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/35 focus-visible:ring-offset-2"
             aria-label={t('nav.home')}
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-green-700 to-green-500 rounded-lg flex items-center justify-center">
+            <div className="w-9 h-9 bg-gradient-to-br from-green-700 to-green-500 rounded-xl flex items-center justify-center shadow-md shadow-green-900/15">
               <span className="text-white font-bold text-sm">B</span>
             </div>
-            <span className="text-xl font-bold text-green-800">
+            <span className="font-display text-xl font-bold tracking-tight text-green-800">
               {t('app.name')}
             </span>
           </button>
@@ -88,12 +88,12 @@ export default function Navbar({
           </div>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-0.5">
             {navLinks.map((link) => (
               <button
                 key={link.key}
                 onClick={() => onNavigate(link.key)}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-green-50 hover:text-green-700 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 rounded-xl hover:bg-green-50/90 hover:text-green-800 transition-all duration-200 ease-smooth focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30 focus-visible:ring-offset-2"
               >
                 <link.icon className="w-4 h-4" />
                 {link.label}
@@ -117,8 +117,9 @@ export default function Navbar({
                 {/* Profile dropdown */}
                 <div ref={profileRef} className="relative ml-1">
                   <button
+                    type="button"
                     onClick={() => setProfileOpen(!profileOpen)}
-                    className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-gray-200 hover:shadow-md transition-all"
+                    className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-gray-200/90 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/35 focus-visible:ring-offset-2"
                   >
                     {user.avatar ? (
                       <img src={user.avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
@@ -131,7 +132,7 @@ export default function Navbar({
                   </button>
 
                   {profileOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50 py-1">
+                    <div className="absolute right-0 top-full mt-2 w-60 origin-top-right animate-scale-in rounded-xl bg-white py-1 shadow-xl ring-1 ring-gray-100/90 z-50 overflow-hidden">
                       <div className="px-4 py-3 border-b border-gray-100">
                         <p className="text-sm font-semibold text-gray-800 truncate">{user.name}</p>
                         <p className="text-xs text-gray-400 truncate">{user.email}</p>
@@ -177,14 +178,16 @@ export default function Navbar({
             ) : (
               <div className="flex items-center gap-2 ml-2">
                 <button
+                  type="button"
                   onClick={onLogin}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-green-700 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 rounded-xl hover:text-green-800 hover:bg-gray-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30 focus-visible:ring-offset-2"
                 >
                   {t('nav.login')}
                 </button>
                 <button
+                  type="button"
                   onClick={onRegister}
-                  className="px-4 py-2 text-sm font-medium text-white bg-green-700 rounded-lg hover:bg-green-800 transition-colors shadow-sm"
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-700 rounded-xl hover:bg-green-800 transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2"
                 >
                   {t('nav.register')}
                 </button>
@@ -194,8 +197,9 @@ export default function Navbar({
 
           {/* Mobile hamburger */}
           <button
+            type="button"
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+            className="md:hidden p-2.5 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/35 focus-visible:ring-offset-2"
             aria-label="Menu"
           >
             {mobileOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}

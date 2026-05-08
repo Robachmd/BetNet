@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { FiSend, FiImage, FiSmile, FiArrowLeft, FiMoreVertical } from 'react-icons/fi';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 function formatMsgTime(dateStr) {
   if (!dateStr) return '';
@@ -123,7 +124,7 @@ export default function ChatWindow({
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full animate-spin" />
+            <LoadingSpinner size="md" />
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
