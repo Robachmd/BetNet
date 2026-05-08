@@ -88,6 +88,7 @@ export default function AddPropertyPage() {
     defaultValues: {
       title: '', description: '', propertyType: '', bedrooms: '', bathrooms: '',
       area: '', city: '', subCity: '', specificLocation: '', amenities: [], hallAmenities: [], monthlyRent: '',
+      mapsUrl: '',
       floorNumber: '',
       hourlyRate: '', dailyRate: '', capacity: '', videoUrl: '',
       listingType: 'rent',
@@ -301,6 +302,7 @@ export default function AddPropertyPage() {
             ? addisSubCityApiLabelFromFormValue(data.subCity)
             : (data.subCity || ''),
           specific_location: data.specificLocation || '',
+          maps_url: data.mapsUrl || '',
         },
         amenities: data.amenities,
         price: isHall ? undefined : Number(data.monthlyRent),
@@ -442,10 +444,23 @@ export default function AddPropertyPage() {
             <div>
               <label className={labelClass}>Specific Location</label>
               <input
-                {...register('specificLocation')}
+                {...register('specificLocation', { required: 'Specific location is required' })}
                 className={inputClass}
                 placeholder="e.g., Near Edna Mall, Behind Friendship Hotel"
               />
+              {errors.specificLocation && <p className={errorClass}>{errors.specificLocation.message}</p>}
+            </div>
+
+            <div>
+              <label className={labelClass}>Google Maps link (optional)</label>
+              <input
+                {...register('mapsUrl')}
+                className={inputClass}
+                placeholder="Paste a Google Maps share link"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Tip: Open Google Maps, tap “Share”, copy link, paste here.
+              </p>
             </div>
           </div>
         );
@@ -481,7 +496,16 @@ export default function AddPropertyPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className={labelClass}>Bedrooms</label>
-                  <input {...register('bedrooms')} type="number" min="0" className={inputClass} placeholder="0" />
+                  <input
+                    {...register('bedrooms')}
+                    type="number"
+                    min="0"
+                    className={inputClass}
+                    placeholder="e.g., 4"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Any number is allowed. The catalog displays 3+ as “3+ bedrooms”.
+                  </p>
                 </div>
                 <div>
                   <label className={labelClass}>Bathrooms</label>

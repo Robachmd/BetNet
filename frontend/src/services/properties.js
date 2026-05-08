@@ -153,7 +153,141 @@ export const propertyService = {
   },
 
   async createProperty(propertyData) {
-    const { data } = await api.post(`${BASE}/properties/`, propertyData);
+    // Accept legacy UI payloads (camelCase, simplified fields) and normalize to DRF schema.
+    // Backend expects: property_type, price_monthly, area_sqm, location.{specific_location,maps_url}, amenities object.
+    const raw = propertyData && typeof propertyData === 'object' ? propertyData : {};
+
+    const alreadyDjangoShape = !!raw.property_type && !!raw.price_monthly && !!raw.location && !!raw.amenities;
+    if (alreadyDjangoShape) {
+      const { data } = await api.post(`${BASE}/properties/`, raw);
+      return data;
+    }
+
+    const asNum = (v) => {
+      if (v === null || v === undefined || v === '') return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+
+    const normalizeBedroomEnum = (v) => {
+      if (v === null || v === undefined || v === '') return '';
+      const s = String(v).trim().toUpperCase();
+      if (s === 'STUDIO') return 'STUDIO';
+      if (s === 'ONE') return 'ONE';
+      if (s === 'TWO') return 'TWO';
+      if (s === 'THREE_PLUS') return 'THREE_PLUS';
+      const n = asNum(v);
+      if (n === null) return '';
+      if (n <= 0) return 'STUDIO';
+      if (n === 1) return 'ONE';
+      if (n === 2) return 'TWO';
+      return 'THREE_PLUS';
+    };
+
+    const normalizePropertyTypeEnum = (v) => {
+      const s = String(v || '').trim().toLowerCase();
+      const map = {
+        apartment: 'APARTMENT',
+        villa: 'VILLA',
+        house: 'SERVICE_HOUSE',
+        condominium: 'CONDOMINIUM',
+        shop: 'BUSINESS_SHOP',
+        commercial: 'BUSINESS_SHOP',
+        office: 'REAL_ESTATE',
+        warehouse: 'REAL_ESTATE',
+        hall: 'HALL_RENTAL',
+        hall_rental: 'HALL_RENTAL',
+      };
+      if (s && map[s]) return map[s];
+      // If UI somehow passed an already-correct enum.
+      const up = String(v || '').trim().toUpperCase();
+      const ok = new Set([
+        'APARTMENT',
+        'VILLA',
+        'SERVICE_HOUSE',
+        'CONDOMINIUM',
+        'REAL_ESTATE',
+        'BUSINESS_SHOP',
+        'HALL_RENTAL',
+      ]);
+      return ok.has(up) ? up : '';
+    };
+
+    const normalizeAmenities = (amenitiesValue) => {
+      // UI uses string[] (wifi, parking...). Backend expects an object (AmenitiesSerializer).
+      const list = Array.isArray(amenitiesValue) ? amenitiesValue : [];
+      const has = (key) => list.includes(key);
+      return {
+        water_availability: 'SOMETIMES',
+        electricity_stability: 'MODERATE',
+        has_wifi: has('wifi'),
+        has_parking: has('parking'),
+        has_security: has('security'),
+        has_generator: has('generator'),
+        is_furnished: has('furnished'),
+        has_elevator: has('elevator'),
+        has_balcony: has('balcony'),
+        has_garden: has('garden'),
+        has_cctv: has('cctv'),
+        pets_allowed: has('pet_friendly'),
+      };
+    };
+
+    const normalizeHallDetail = (hallDetails, hallAmenities) => {
+      if (!hallDetails || typeof hallDetails !== 'object') return null;
+      const list = Array.isArray(hallAmenities) ? hallAmenities : [];
+      const has = (k) => list.includes(k);
+      const cap = asNum(hallDetails.capacity);
+      const ph = asNum(hallDetails.hourlyRate ?? hallDetails.pricePerHour ?? hallDetails.price_per_hour);
+      const pd = asNum(hallDetails.dailyRate ?? hallDetails.pricePerDay ?? hallDetails.price_per_day);
+      // Keep required `capacity` for hall rental; let backend validate if missing.
+      return {
+        capacity: cap == null ? 0 : Math.max(0, Math.trunc(cap)),
+        price_per_hour: ph == null ? null : ph,
+        price_per_day: pd == null ? null : pd,
+        has_sound_system: has('sound_system'),
+        has_stage: has('stage'),
+        decoration_allowed: has('decoration'),
+        catering_available: has('catering'),
+        is_indoor: has('indoor') ? true : true, // default indoor true (UI doesn't capture well)
+        hall_type: (hallDetails.hallType || hallDetails.hall_type || 'WEDDING').toString().toUpperCase(),
+      };
+    };
+
+    const uiLocation = raw.location && typeof raw.location === 'object' ? raw.location : {};
+    const specific = String(
+      uiLocation.specific_location ?? uiLocation.specificLocation ?? raw.specificLocation ?? ''
+    ).trim();
+
+    const payload = {
+      title: raw.title ?? '',
+      description: raw.description ?? '',
+      property_type: normalizePropertyTypeEnum(raw.propertyType ?? raw.property_type ?? ''),
+      listing_type: (raw.listing_type ?? raw.listingType ?? 'rent').toString().toLowerCase(),
+      bedrooms: normalizeBedroomEnum(raw.bedrooms ?? raw.bedroomsCount ?? ''),
+      bathrooms: raw.bathrooms !== undefined && raw.bathrooms !== '' ? Number(raw.bathrooms) : 1,
+      area_sqm: asNum(raw.area),
+      floor_number: raw.floor_number ?? (raw.floorNumber !== '' ? asNum(raw.floorNumber) : null),
+      shop_class_count: raw.shop_class_count ?? asNum(raw.shopClassCount),
+      price_monthly: asNum(raw.price ?? raw.monthlyRent ?? raw.price_monthly),
+      price_currency: 'ETB',
+      location: {
+        city: uiLocation.city ?? raw.city ?? '',
+        sub_city: uiLocation.sub_city ?? uiLocation.subCity ?? raw.subCity ?? '',
+        specific_location: specific,
+        maps_url: String(uiLocation.maps_url ?? uiLocation.mapsUrl ?? raw.mapsUrl ?? '').trim(),
+      },
+      amenities: normalizeAmenities(raw.amenities),
+      hall_detail:
+        normalizePropertyTypeEnum(raw.propertyType) === 'HALL_RENTAL'
+          ? normalizeHallDetail(raw.hallDetails ?? raw.hall_detail, raw.hallAmenities)
+          : null,
+      // URL-based videos handled via serializer alias; file uploads via /videos endpoint.
+      videoUrl: raw.videoUrl,
+      video_url: raw.video_url,
+    };
+
+    const { data } = await api.post(`${BASE}/properties/`, payload);
     return data;
   },
 
