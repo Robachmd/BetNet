@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FiMapPin, FiTrash2, FiPlus, FiBell, FiToggleLeft, FiToggleRight } from 'react-icons/fi';
-import { CITIES, ADDIS_ABABA_SUB_CITIES } from '../../utils/constants';
+import { CITIES, ADDIS_ABABA_SUB_CITIES, PROPERTY_TYPES } from '../../utils/constants';
 import { locationAlertsService } from '../../services/locationAlerts';
 import { getErrorMessage } from '../../utils/helpers';
 import { InlineListSkeleton } from '../common/Skeletons';
@@ -13,6 +13,7 @@ const emptyForm = {
   cityValue: 'addis_ababa',
   subCityValue: '',
   subCityFree: '',
+  propertyType: '',
   useRadius: false,
   latitude: '',
   longitude: '',
@@ -24,6 +25,34 @@ function cityLabelFromValue(value) {
 }
 
 function buildPayloadFromForm(f) {
+  const normalizePropertyTypeEnum = (v) => {
+    const s = String(v || '').trim().toLowerCase();
+    const map = {
+      apartment: 'APARTMENT',
+      villa: 'VILLA',
+      house: 'SERVICE_HOUSE',
+      condominium: 'CONDOMINIUM',
+      shop: 'BUSINESS_SHOP',
+      commercial: 'BUSINESS_SHOP',
+      office: 'REAL_ESTATE',
+      warehouse: 'REAL_ESTATE',
+      hall: 'HALL_RENTAL',
+      hall_rental: 'HALL_RENTAL',
+    };
+    if (s && map[s]) return map[s];
+    const up = String(v || '').trim().toUpperCase();
+    const ok = new Set([
+      'APARTMENT',
+      'VILLA',
+      'SERVICE_HOUSE',
+      'CONDOMINIUM',
+      'REAL_ESTATE',
+      'BUSINESS_SHOP',
+      'HALL_RENTAL',
+    ]);
+    return ok.has(up) ? up : '';
+  };
+
   const city = cityLabelFromValue(f.cityValue);
   const sub = f.cityValue === ADDIS
     ? (f.subCityValue
@@ -40,6 +69,7 @@ function buildPayloadFromForm(f) {
       label: f.label.trim() || '',
       city,
       sub_city: sub,
+      property_type: normalizePropertyTypeEnum(f.propertyType),
       latitude: f.useRadius && latStr ? Number(latStr) : null,
       longitude: f.useRadius && lonStr ? Number(lonStr) : null,
       radius_km: f.useRadius && latStr && lonStr
@@ -194,6 +224,23 @@ export default function LocationAlertsPanel({ className = '' }) {
               />
             </div>
           )}
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Property type (optional)</label>
+            <select
+              className="w-full sm:max-w-md px-3 py-2 rounded-lg border border-gray-200 text-sm"
+              value={form.propertyType || ''}
+              onChange={(e) => setForm((ff) => ({ ...ff, propertyType: e.target.value }))}
+            >
+              <option value="">Any type</option>
+              {PROPERTY_TYPES.map((pt) => (
+                <option key={pt.value} value={pt.value}>{pt.label}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              If set, you will only be notified for new listings of this type in the chosen area.
+            </p>
+          </div>
 
           <div className="border-t border-gray-200 pt-3">
             <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">

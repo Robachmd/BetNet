@@ -21,6 +21,7 @@ class LocationAlertsScreen extends ConsumerStatefulWidget {
 class _LocationAlertsScreenState extends ConsumerState<LocationAlertsScreen> {
   final _label = TextEditingController();
   String _city = kEthiopianCities.first;
+  String _propertyType = '';
   final _subCity = TextEditingController();
   bool _saving = false;
 
@@ -38,6 +39,7 @@ class _LocationAlertsScreenState extends ConsumerState<LocationAlertsScreen> {
             city: _city,
             subCity: _subCity.text.trim(),
             label: _label.text.trim(),
+            propertyType: _propertyType,
           );
       _label.clear();
       _subCity.clear();
@@ -105,6 +107,21 @@ class _LocationAlertsScreenState extends ConsumerState<LocationAlertsScreen> {
             decoration: const InputDecoration(labelText: 'Sub-city (optional)'),
           ),
           const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            initialValue: _propertyType.isEmpty ? null : _propertyType,
+            decoration: const InputDecoration(labelText: 'Property type (optional)'),
+            items: <DropdownMenuItem<String>>[
+              const DropdownMenuItem(value: '', child: Text('Any type')),
+              ...kPropertyTypeChoices.entries.map(
+                (e) => DropdownMenuItem(
+                  value: e.value,
+                  child: Text(e.key),
+                ),
+              ),
+            ],
+            onChanged: (v) => setState(() => _propertyType = v ?? ''),
+          ),
+          const SizedBox(height: 8),
           FilledButton(
             onPressed: _saving ? null : _create,
             child: _saving
@@ -129,7 +146,10 @@ class _LocationAlertsScreenState extends ConsumerState<LocationAlertsScreen> {
                     child: ListTile(
                       title: Text(row.label.isEmpty ? row.city : row.label),
                       subtitle: Text(
-                        row.subCity.isEmpty ? row.city : '${row.city} · ${row.subCity}',
+                        [
+                          row.subCity.isEmpty ? row.city : '${row.city} · ${row.subCity}',
+                          if (row.propertyType.isNotEmpty) row.propertyType,
+                        ].join(' · '),
                       ),
                       leading: Switch(
                         value: row.isActive,

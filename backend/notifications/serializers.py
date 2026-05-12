@@ -45,6 +45,7 @@ class LocationAlertSerializer(serializers.ModelSerializer):
             "label",
             "city",
             "sub_city",
+            "property_type",
             "latitude",
             "longitude",
             "radius_km",
@@ -61,4 +62,13 @@ class LocationAlertSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Set both latitude and longitude, or leave both empty for city-only matching."
             )
+        pt = attrs.get("property_type", getattr(self.instance, "property_type", ""))
+        if pt:
+            from properties.models import Property
+
+            allowed = {c[0] for c in Property.PropertyType.choices}
+            if str(pt).upper() not in allowed:
+                raise serializers.ValidationError(
+                    {"property_type": "Invalid property type."}
+                )
         return attrs

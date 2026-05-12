@@ -101,6 +101,12 @@ class LocationAlert(models.Model):
         default="",
         help_text="If empty, the whole city is watched (text match).",
     )
+    property_type = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        help_text="Optional filter, matches Property.property_type (e.g. APARTMENT). Leave blank for any.",
+    )
     latitude = models.DecimalField(
         max_digits=9,
         decimal_places=6,

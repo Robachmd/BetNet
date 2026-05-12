@@ -4,6 +4,7 @@ class LocationAlertItem {
     required this.city,
     required this.subCity,
     required this.label,
+    required this.propertyType,
     required this.radiusKm,
     required this.isActive,
     this.latitude,
@@ -14,6 +15,7 @@ class LocationAlertItem {
   final String city;
   final String subCity;
   final String label;
+  final String propertyType;
   final int radiusKm;
   final bool isActive;
   final double? latitude;
@@ -25,6 +27,7 @@ class LocationAlertItem {
       city: '${j['city'] ?? ''}',
       subCity: '${j['sub_city'] ?? ''}',
       label: '${j['label'] ?? ''}',
+      propertyType: '${j['property_type'] ?? ''}',
       radiusKm: (j['radius_km'] as num?)?.toInt() ?? 5,
       isActive: j['is_active'] as bool? ?? true,
       latitude: (j['latitude'] as num?)?.toDouble(),
