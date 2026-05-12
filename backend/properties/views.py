@@ -128,6 +128,28 @@ class PropertyViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         Property.objects.filter(pk=instance.pk).update(total_views=F("total_views") + 1)
+        # Lightweight view log for analytics. Best-effort only.
+        try:
+            from analytics.models import PropertyView
+
+            ip = (
+                (request.META.get("HTTP_X_FORWARDED_FOR") or "").split(",")[0].strip()
+                or request.META.get("REMOTE_ADDR")
+                or "0.0.0.0"
+            )
+            session_id = ""
+            try:
+                session_id = request.session.session_key or ""
+            except Exception:
+                session_id = ""
+            PropertyView.objects.create(
+                property=instance,
+                viewer=request.user if request.user and request.user.is_authenticated else None,
+                ip_address=ip,
+                session_id=session_id,
+            )
+        except Exception:
+            pass
         instance.refresh_from_db()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)

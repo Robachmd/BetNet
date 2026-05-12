@@ -32,23 +32,32 @@ export default function ChatPage() {
   const [mobileShowChat, setMobileShowChat] = useState(!!conversationId);
   const typingTimeoutRef = useRef(null);
 
-  const { isConnected, sendMessage: wsSend } = useWebSocket('/ws/chat', {
+  const wsPath = activeConversation?.id ? `/ws/chat/${activeConversation.id}/` : null;
+  const { isConnected, sendMessage: wsSend } = useWebSocket(wsPath || '/ws/chat/0/', {
+    autoConnect: !!wsPath,
     onMessage: useCallback((data) => {
-      if (data.type === 'new_message') {
-        const msg = data.message;
-        if (activeConversation && msg.conversationId === activeConversation.id) {
+      if (data?.type === 'message' && data.message) {
+        const msg = mapApiMessageToUi(data.message);
+        if (!msg) return;
+        if (activeConversation) {
           setMessages((prev) => [...prev, msg]);
           chatService.markAsRead(activeConversation.id).catch(() => {});
         }
-        setConversations((prev) =>
-          prev.map((c) =>
-            c.id === msg.conversationId
-              ? { ...c, lastMessage: msg.text || 'Image', lastMessageAt: msg.createdAt, unread: c.id === activeConversation?.id ? 0 : (c.unread || 0) + 1 }
-              : c
-          ).sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0))
-        );
-      } else if (data.type === 'typing') {
-        if (data.conversationId === activeConversation?.id && data.userId !== user?.id) {
+        setConversations((prev) => {
+          const next = prev
+            .map((c) =>
+              c.id === activeConversation?.id
+                ? { ...c, lastMessage: msg.text || 'Image', lastMessageAt: msg.createdAt, unread: 0 }
+                : c
+            )
+            .sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
+          return next;
+        });
+        return;
+      }
+      if (data?.type === 'typing') {
+        const typerId = data.user_id ?? data.userId;
+        if (typerId && typerId !== user?.id) {
           setIsTyping(true);
           clearTimeout(typingTimeoutRef.current);
           typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
@@ -157,7 +166,7 @@ export default function ChatPage() {
       setMessages((prev) =>
         prev.map((m) => (m.id === optimisticMsg.id ? created : m)),
       );
-      wsSend({ type: 'message', conversationId: activeConversation.id, text });
+      wsSend({ type: 'message', content: text });
     } catch {
       setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
       toast.error('Failed to send message');

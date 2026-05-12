@@ -11,4 +11,14 @@ urlpatterns = [
     path("users/", views.UserAnalyticsView.as_view(), name="users"),
     path("listings/", views.ListingAnalyticsView.as_view(), name="listings"),
     path("property-views/", views.PropertyViewAnalyticsView.as_view(), name="property-views"),
+  path(
+      "owner/listings/engagement/",
+      views.OwnerListingsEngagementView.as_view(),
+      name="owner-listings-engagement",
+  ),
+  path(
+      "owner/listings/<slug:slug>/engagement/",
+      views.OwnerListingEngagementDetailView.as_view(),
+      name="owner-listing-engagement-detail",
+  ),
 ]

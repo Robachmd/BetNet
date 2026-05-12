@@ -5,12 +5,12 @@ const CHAT_PREFIX = '/chat';
 
 export const chatService = {
   async getConversations(params = {}) {
-    const { data } = await api.get(`${CHAT_PREFIX}/conversations`, { params });
+    const { data } = await api.get(`${CHAT_PREFIX}/conversations/`, { params });
     return data;
   },
 
   async getConversationById(conversationId) {
-    const { data } = await api.get(`${CHAT_PREFIX}/conversations/${conversationId}`);
+    const { data } = await api.get(`${CHAT_PREFIX}/conversations/${conversationId}/`);
     return data;
   },
 
@@ -19,13 +19,13 @@ export const chatService = {
     if (propertyId != null && propertyId !== '') {
       body.property_id = propertyId;
     }
-    const { data } = await api.post(`${CHAT_PREFIX}/conversations`, body);
+    const { data } = await api.post(`${CHAT_PREFIX}/conversations/`, body);
     return data;
   },
 
   async getMessages(conversationId, params = {}) {
     const { data } = await api.get(
-      `${CHAT_PREFIX}/conversations/${conversationId}/messages`,
+      `${CHAT_PREFIX}/conversations/${conversationId}/messages/`,
       { params }
     );
     return data;
@@ -33,7 +33,7 @@ export const chatService = {
 
   async sendMessage(conversationId, messageData) {
     const { data } = await api.post(
-      `${CHAT_PREFIX}/conversations/${conversationId}/messages`,
+      `${CHAT_PREFIX}/conversations/${conversationId}/messages/`,
       messageData
     );
     return data;
@@ -42,8 +42,9 @@ export const chatService = {
   async sendImageMessage(conversationId, file) {
     const formData = new FormData();
     formData.append('image', file);
+    formData.append('message_type', 'IMAGE');
     const { data } = await api.post(
-      `${CHAT_PREFIX}/conversations/${conversationId}/messages/image`,
+      `${CHAT_PREFIX}/conversations/${conversationId}/messages/`,
       formData,
       { headers: { 'Content-Type': 'multipart/form-data' } }
     );
@@ -79,8 +80,8 @@ export const chatService = {
     return data;
   },
 
-  createWebSocketConnection(token) {
-    const ws = new WebSocket(`${WS_BASE_URL}/ws/chat?token=${token}`);
+  createWebSocketConnection(conversationId, token) {
+    const ws = new WebSocket(`${WS_BASE_URL}/ws/chat/${conversationId}/?token=${token}`);
     return ws;
   },
 };

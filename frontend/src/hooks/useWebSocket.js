@@ -40,7 +40,16 @@ export function useWebSocket(path, options = {}) {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
 
-    const url = `${WS_BASE_URL}${path}?token=${token}`;
+    const raw = `${WS_BASE_URL}${path}`;
+    let url = raw;
+    try {
+      const u = new URL(raw);
+      u.searchParams.set('token', token);
+      url = u.toString();
+    } catch {
+      // Fallback for non-standard WS_BASE_URL shapes.
+      url = raw.includes('?') ? `${raw}&token=${token}` : `${raw}?token=${token}`;
+    }
 
     try {
       const ws = new WebSocket(url);

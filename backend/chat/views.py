@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import generics, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -114,6 +115,7 @@ class MessageViewSet(
 ):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = MessageSerializer
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_conversation(self):
         conversation = Conversation.objects.filter(

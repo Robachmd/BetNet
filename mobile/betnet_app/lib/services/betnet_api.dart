@@ -1267,6 +1267,24 @@ class BetNetApi {
     );
     return Map<String, dynamic>.from(res.data as Map);
   }
+
+  Future<Map<String, dynamic>> fetchOwnerListingsEngagement({
+    String? startDate,
+    String? endDate,
+  }) async {
+    final q = <String, dynamic>{};
+    if (startDate != null && startDate.isNotEmpty) q['start_date'] = startDate;
+    if (endDate != null && endDate.isNotEmpty) q['end_date'] = endDate;
+    try {
+      final res = await _dio.get(
+        '/api/analytics/owner/listings/engagement/',
+        queryParameters: q,
+      );
+      return Map<String, dynamic>.from(res.data as Map);
+    } on DioException catch (e) {
+      throw ApiException(_msgFromDio(e), statusCode: e.response?.statusCode);
+    }
+  }
 }
 
 // ── Auth state (lives next to API to avoid circular imports) ─────────────────

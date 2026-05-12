@@ -7,7 +7,8 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { bookingService } from '../../services/bookings';
 import { paymentService } from '../../services/payments';
 import { propertyService } from '../../services/properties';
-import { formatPrice, getErrorMessage, listFromApi } from '../../utils/helpers';
+import ownerAnalyticsService from '../../services/ownerAnalytics';
+import { formatPrice, formatRelativeDate, getErrorMessage, listFromApi } from '../../utils/helpers';
 
 function StatCard({ icon: Icon, label, value, color }) {
   return (
@@ -33,15 +34,17 @@ export default function PropertyOwnerAnalyticsPage() {
     pendingBookings: 0,
     monthlyRevenue: 0,
   });
+  const [engagement, setEngagement] = useState({ start_date: '', end_date: '', listings: [] });
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const [propsData, bookData, earningsData] = await Promise.all([
+      const [propsData, bookData, earningsData, engagementData] = await Promise.all([
         propertyService.getMyProperties({ limit: 200 }),
         bookingService.getPropertyOwnerBookings({ page_size: 200 }),
         paymentService.getPropertyOwnerEarnings({ period: 'month' }),
+        ownerAnalyticsService.getListingsEngagement(),
       ]);
       const propsList = listFromApi(propsData);
       const booksList = listFromApi(bookData);
@@ -54,6 +57,7 @@ export default function PropertyOwnerAnalyticsPage() {
         pendingBookings: booksList.filter((b) => String(b.status || '').toLowerCase() === 'pending').length,
         monthlyRevenue,
       });
+      setEngagement(engagementData || { start_date: '', end_date: '', listings: [] });
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
@@ -134,11 +138,69 @@ export default function PropertyOwnerAnalyticsPage() {
           {loading ? (
             <LoadingSpinner text="Loading analytics..." />
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {cards.map((c) => (
-                <StatCard key={c.label} icon={c.icon} label={c.label} value={c.value} color={c.color} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {cards.map((c) => (
+                  <StatCard key={c.label} icon={c.icon} label={c.label} value={c.value} color={c.color} />
+                ))}
+              </div>
+
+              <div className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">Engagement by listing</h2>
+                    <p className="text-sm text-gray-500">
+                      Views and saves for the last 30 days. More engagement usually means your title, photos, and price are working.
+                    </p>
+                  </div>
+                  {(engagement?.start_date || engagement?.end_date) && (
+                    <div className="text-xs text-gray-500 whitespace-nowrap">
+                      Range: {engagement.start_date} → {engagement.end_date}
+                    </div>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50 text-gray-600">
+                      <tr>
+                        <th className="text-left font-semibold px-5 py-3">Listing</th>
+                        <th className="text-right font-semibold px-5 py-3">Views (range)</th>
+                        <th className="text-right font-semibold px-5 py-3">Favorites (range)</th>
+                        <th className="text-right font-semibold px-5 py-3">Total views</th>
+                        <th className="text-right font-semibold px-5 py-3">All-time favorites</th>
+                        <th className="text-right font-semibold px-5 py-3">Conversations</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {(engagement?.listings || []).length === 0 ? (
+                        <tr>
+                          <td className="px-5 py-6 text-gray-500" colSpan={6}>
+                            No listings yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        (engagement.listings || []).map((row) => (
+                          <tr key={row.slug} className="hover:bg-gray-50">
+                            <td className="px-5 py-3">
+                              <div className="font-semibold text-gray-900">{row.title}</div>
+                              <div className="text-xs text-gray-500">
+                                {row.is_published ? 'Published' : 'Draft'} • {row.is_available ? 'Available' : 'Unavailable'} • Posted {formatRelativeDate(row.created_at)}
+                              </div>
+                            </td>
+                            <td className="px-5 py-3 text-right tabular-nums">{row.views_range ?? 0}</td>
+                            <td className="px-5 py-3 text-right tabular-nums">{row.favorites_range ?? 0}</td>
+                            <td className="px-5 py-3 text-right tabular-nums">{row.total_views ?? 0}</td>
+                            <td className="px-5 py-3 text-right tabular-nums">{row.favorites_total ?? 0}</td>
+                            <td className="px-5 py-3 text-right tabular-nums">{row.conversations_total ?? 0}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </main>

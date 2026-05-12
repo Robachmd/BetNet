@@ -7,11 +7,15 @@ from django.utils import timezone
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import permissions
 
 from bookings.models import Booking, HallBooking
+from chat.models import Conversation, Message
 from properties.models import Location, Property
+from properties.models import FavoriteProperty
 
 from .models import PropertyView, SearchLog
+from accounts.permissions import can_access_owner_workspace
 
 User = get_user_model()
 
@@ -265,5 +269,139 @@ class PropertyViewAnalyticsView(APIView):
             {
                 "most_viewed": most_viewed,
                 "views_trend": views_trend,
+            }
+        )
+
+
+class OwnerListingsEngagementView(APIView):
+    """
+    Property owner analytics for their own listings.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if not can_access_owner_workspace(request.user):
+            return Response({"detail": "Only property owners can access this."}, status=403)
+        start, end = _parse_date_range(request)
+
+        props = Property.objects.filter(owner=request.user).values(
+            "id",
+            "slug",
+            "title",
+            "created_at",
+            "is_published",
+            "is_available",
+            "total_views",
+        )
+        prop_ids = [p["id"] for p in props]
+
+        favorites_by_property = {
+            row["property_id"]: row["count"]
+            for row in FavoriteProperty.objects.filter(property_id__in=prop_ids)
+            .values("property_id")
+            .annotate(count=Count("id"))
+        }
+        favorites_30d_by_property = {
+            row["property_id"]: row["count"]
+            for row in FavoriteProperty.objects.filter(
+                property_id__in=prop_ids,
+                created_at__range=(start, end),
+            )
+            .values("property_id")
+            .annotate(count=Count("id"))
+        }
+
+        views_30d_by_property = {
+            row["property_id"]: row["count"]
+            for row in PropertyView.objects.filter(
+                property_id__in=prop_ids,
+                viewed_at__range=(start, end),
+            )
+            .values("property_id")
+            .annotate(count=Count("id"))
+        }
+
+        conversations_by_property = {
+            row["property_id"]: row["count"]
+            for row in Conversation.objects.filter(property_id__in=prop_ids, is_active=True)
+            .values("property_id")
+            .annotate(count=Count("id"))
+        }
+
+        out = []
+        for p in props:
+            pid = p["id"]
+            out.append(
+                {
+                    **p,
+                    "favorites_total": favorites_by_property.get(pid, 0),
+                    "favorites_range": favorites_30d_by_property.get(pid, 0),
+                    "views_range": views_30d_by_property.get(pid, 0),
+                    "conversations_total": conversations_by_property.get(pid, 0),
+                }
+            )
+
+        # Sort by engagement in the chosen range.
+        out.sort(key=lambda r: (r.get("views_range", 0), r.get("favorites_range", 0)), reverse=True)
+
+        return Response(
+            {
+                "start_date": start.date().isoformat(),
+                "end_date": (end - timedelta(days=1)).date().isoformat(),
+                "listings": out,
+            }
+        )
+
+
+class OwnerListingEngagementDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, slug: str):
+        if not can_access_owner_workspace(request.user):
+            return Response({"detail": "Only property owners can access this."}, status=403)
+        start, end = _parse_date_range(request)
+        prop = Property.objects.filter(owner=request.user, slug=slug).first()
+        if not prop:
+            from rest_framework.exceptions import NotFound
+
+            raise NotFound("Property not found.")
+
+        views_trend = list(
+            PropertyView.objects.filter(property=prop, viewed_at__range=(start, end))
+            .annotate(date=TruncDate("viewed_at"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        favorites_trend = list(
+            FavoriteProperty.objects.filter(property=prop, created_at__range=(start, end))
+            .annotate(date=TruncDate("created_at"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        conversations = Conversation.objects.filter(property=prop, is_active=True)
+        message_count = Message.objects.filter(conversation__in=conversations).count()
+
+        return Response(
+            {
+                "property": {
+                    "id": prop.id,
+                    "slug": prop.slug,
+                    "title": prop.title,
+                    "total_views": prop.total_views,
+                },
+                "range": {
+                    "start_date": start.date().isoformat(),
+                    "end_date": (end - timedelta(days=1)).date().isoformat(),
+                },
+                "views_trend": views_trend,
+                "favorites_trend": favorites_trend,
+                "favorites_total": FavoriteProperty.objects.filter(property=prop).count(),
+                "conversations_total": conversations.count(),
+                "messages_total": message_count,
             }
         )

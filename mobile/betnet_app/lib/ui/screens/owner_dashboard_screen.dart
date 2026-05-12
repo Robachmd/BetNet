@@ -8,6 +8,7 @@ import 'add_listing_screen.dart';
 import 'bookings_screen.dart';
 import 'listing_packages_screen.dart';
 import 'my_listings_screen.dart';
+import 'owner_engagement_screen.dart';
 
 class OwnerDashboardScreen extends ConsumerStatefulWidget {
   const OwnerDashboardScreen({super.key});
@@ -194,6 +195,19 @@ class _OwnerDashboardScreenState extends ConsumerState<OwnerDashboardScreen> {
             title: 'More tools',
             child: Column(
               children: [
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push<void>(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const OwnerEngagementScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.insights_outlined),
+                  label: const Text('Engagement insights'),
+                ),
+                const SizedBox(height: 8),
                 OutlinedButton.icon(
                   onPressed: () {
                     Navigator.push<void>(
