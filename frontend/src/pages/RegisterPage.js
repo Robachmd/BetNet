@@ -4,6 +4,7 @@ import {
   FiPhone, FiLock, FiEye, FiEyeOff, FiUser, FiArrowRight,
   FiArrowLeft, FiCheck, FiHome, FiKey,
 } from 'react-icons/fi';
+import { FiMail } from 'react-icons/fi';
 import useAuth from '../hooks/useAuth';
 import { validateEthiopianPhone, normalizePhoneNumber, getErrorMessage } from '../utils/helpers';
 import { APP_NAME } from '../utils/constants';

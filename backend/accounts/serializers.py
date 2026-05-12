@@ -18,6 +18,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     )
     password_confirm = serializers.CharField(write_only=True)
     phone_number = PhoneNumberField(region="ET")
+    email = serializers.EmailField(required=True, allow_blank=False)
     requested_roles = serializers.ListField(
         child=serializers.ChoiceField(choices=[User.Role.RENTER, User.Role.LANDLORD]),
         required=False,
