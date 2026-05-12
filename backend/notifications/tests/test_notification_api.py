@@ -75,6 +75,23 @@ class LocationAlertApiTests(TestCase):
         )
         self.assertEqual(create_res.status_code, 201)
         self.assertEqual(create_res.data["city"], "Addis Ababa")
+        self.assertEqual(create_res.data.get("property_types"), [])
+        self.assertTrue(create_res.data.get("only_available_listings", True))
+
+        multi_res = self.client.post(
+            "/api/notifications/location-alerts/",
+            {
+                "label": "Apt + condo",
+                "city": "Addis Ababa",
+                "sub_city": "",
+                "property_types": ["APARTMENT", "CONDOMINIUM"],
+                "only_available_listings": True,
+                "is_active": True,
+            },
+            format="json",
+        )
+        self.assertEqual(multi_res.status_code, 201)
+        self.assertEqual(multi_res.data["property_types"], ["APARTMENT", "CONDOMINIUM"])
 
         self.other.location_alerts.create(
             label="Other area",
@@ -86,5 +103,7 @@ class LocationAlertApiTests(TestCase):
         list_res = self.client.get("/api/notifications/location-alerts/")
         self.assertEqual(list_res.status_code, 200)
         rows = list_res.data if isinstance(list_res.data, list) else list_res.data.get("results", [])
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]["label"], "Near office")
+        self.assertEqual(len(rows), 2)
+        labels = {r["label"] for r in rows}
+        self.assertIn("Near office", labels)
+        self.assertIn("Apt + condo", labels)

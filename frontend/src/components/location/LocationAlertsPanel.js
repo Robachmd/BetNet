@@ -13,7 +13,8 @@ const emptyForm = {
   cityValue: 'addis_ababa',
   subCityValue: '',
   subCityFree: '',
-  propertyType: '',
+  propertyTypeSlugs: [],
+  onlyAvailableListings: true,
   useRadius: false,
   latitude: '',
   longitude: '',
@@ -64,12 +65,18 @@ function buildPayloadFromForm(f) {
   if (f.useRadius && (latStr === '' || lonStr === '')) {
     return { error: 'Enter both latitude and longitude for a radius alert, or turn off “Precise radius”.' };
   }
+  const typesFromSlugs = (f.propertyTypeSlugs || [])
+    .map((slug) => normalizePropertyTypeEnum(slug))
+    .filter(Boolean);
+  const property_types = [...new Set(typesFromSlugs)];
+
   return {
     payload: {
       label: f.label.trim() || '',
       city,
       sub_city: sub,
-      property_type: normalizePropertyTypeEnum(f.propertyType),
+      property_types,
+      only_available_listings: !!f.onlyAvailableListings,
       latitude: f.useRadius && latStr ? Number(latStr) : null,
       longitude: f.useRadius && lonStr ? Number(lonStr) : null,
       radius_km: f.useRadius && latStr && lonStr
@@ -78,6 +85,34 @@ function buildPayloadFromForm(f) {
       is_active: true,
     },
   };
+}
+
+function formatApiTypesForDisplay(apiEnums) {
+  if (!apiEnums || !Array.isArray(apiEnums) || apiEnums.length === 0) return [];
+  const norm = (v) => {
+    const s = String(v || '').trim().toLowerCase();
+    const map = {
+      apartment: 'APARTMENT',
+      villa: 'VILLA',
+      house: 'SERVICE_HOUSE',
+      condominium: 'CONDOMINIUM',
+      shop: 'BUSINESS_SHOP',
+      commercial: 'BUSINESS_SHOP',
+      office: 'REAL_ESTATE',
+      warehouse: 'REAL_ESTATE',
+      hall: 'HALL_RENTAL',
+      hall_rental: 'HALL_RENTAL',
+    };
+    if (s && map[s]) return map[s];
+    const up = String(v || '').trim().toUpperCase();
+    return up;
+  };
+  const labelByApi = {};
+  PROPERTY_TYPES.forEach((pt) => {
+    const api = norm(pt.value);
+    if (api) labelByApi[api] = pt.label;
+  });
+  return apiEnums.map((e) => labelByApi[norm(e)] || String(e));
 }
 
 export default function LocationAlertsPanel({ className = '' }) {
@@ -226,19 +261,48 @@ export default function LocationAlertsPanel({ className = '' }) {
           )}
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Property type (optional)</label>
-            <select
-              className="w-full sm:max-w-md px-3 py-2 rounded-lg border border-gray-200 text-sm"
-              value={form.propertyType || ''}
-              onChange={(e) => setForm((ff) => ({ ...ff, propertyType: e.target.value }))}
-            >
-              <option value="">Any type</option>
+            <span className="block text-xs font-medium text-gray-600 mb-2">Property types (optional)</span>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 sm:max-w-2xl">
               {PROPERTY_TYPES.map((pt) => (
-                <option key={pt.value} value={pt.value}>{pt.label}</option>
+                <label
+                  key={pt.value}
+                  className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    className="rounded border-gray-300 text-green-700 focus:ring-green-600"
+                    checked={(form.propertyTypeSlugs || []).includes(pt.value)}
+                    onChange={() => {
+                      setForm((f) => {
+                        const cur = new Set(f.propertyTypeSlugs || []);
+                        if (cur.has(pt.value)) cur.delete(pt.value);
+                        else cur.add(pt.value);
+                        return { ...f, propertyTypeSlugs: [...cur] };
+                      });
+                    }}
+                  />
+                  {pt.label}
+                </label>
               ))}
-            </select>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Leave all unchecked to get alerts for any property type in the area. Pick several to combine
+              (for example Apartment and Condominium).
+            </p>
+          </div>
+
+          <div>
+            <label className="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                className="rounded border-gray-300"
+                checked={!!form.onlyAvailableListings}
+                onChange={(e) => setForm((f) => ({ ...f, onlyAvailableListings: e.target.checked }))}
+              />
+              Only available listings (skip booked or unavailable)
+            </label>
             <p className="text-xs text-gray-500 mt-1">
-              If set, you will only be notified for new listings of this type in the chosen area.
+              When off, you may still get notified if a matching listing is not available for rent yet.
             </p>
           </div>
 
@@ -320,7 +384,9 @@ export default function LocationAlertsPanel({ className = '' }) {
         </p>
       ) : (
         <ul className="space-y-2">
-          {items.map((row) => (
+          {items.map((row) => {
+            const typeLabels = formatApiTypesForDisplay(row.property_types);
+            return (
             <li
               key={row.id}
               className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/50"
@@ -337,6 +403,8 @@ export default function LocationAlertsPanel({ className = '' }) {
                     {row.latitude != null && row.longitude != null
                       ? ` · ~${row.radius_km} km from pin`
                       : ''}
+                    {typeLabels.length > 0 ? ` · ${typeLabels.join(', ')}` : ''}
+                    {row.only_available_listings === false ? ' · incl. unavailable' : ''}
                   </p>
                 </div>
               </div>
@@ -362,7 +430,8 @@ export default function LocationAlertsPanel({ className = '' }) {
                 </button>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </div>

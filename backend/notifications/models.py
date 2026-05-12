@@ -101,11 +101,14 @@ class LocationAlert(models.Model):
         default="",
         help_text="If empty, the whole city is watched (text match).",
     )
-    property_type = models.CharField(
-        max_length=20,
+    property_types = models.JSONField(
+        default=list,
         blank=True,
-        default="",
-        help_text="Optional filter, matches Property.property_type (e.g. APARTMENT). Leave blank for any.",
+        help_text='Optional filters: list of Property.property_type values, e.g. ["APARTMENT","CONDOMINIUM"]. Empty means any type.',
+    )
+    only_available_listings = models.BooleanField(
+        default=True,
+        help_text="If True, do not notify when the listing is unavailable or booked out (is_available=False).",
     )
     latitude = models.DecimalField(
         max_digits=9,

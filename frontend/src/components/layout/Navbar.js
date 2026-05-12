@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   FiMenu, FiX, FiHome, FiSearch, FiUser, FiLogOut, FiSettings, FiCalendar,
-  FiChevronDown, FiLayout,
+  FiChevronDown, FiLayout, FiGrid,
 } from 'react-icons/fi';
 import SearchBar from '../common/SearchBar';
 import LanguageSwitcher from '../common/LanguageSwitcher';
@@ -137,6 +137,16 @@ export default function Navbar({
                         <p className="text-sm font-semibold text-gray-800 truncate">{user.name}</p>
                         <p className="text-xs text-gray-400 truncate">{user.email}</p>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigate('/dashboard');
+                          setProfileOpen(false);
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 border-b border-gray-100"
+                      >
+                        <FiGrid className="w-4 h-4 text-green-700" /> {t('nav.dashboard')}
+                      </button>
                       {showPropertyOwnerDashboard && (
                         <button
                           type="button"
@@ -250,6 +260,16 @@ export default function Navbar({
                       <p className="text-xs text-gray-400">{user.email}</p>
                     </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate('/dashboard');
+                      setMobileOpen(false);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 mb-2 text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <FiGrid className="w-4 h-4 text-green-700" /> {t('nav.dashboard')}
+                  </button>
                   {showPropertyOwnerDashboard && (
                     <button
                       type="button"

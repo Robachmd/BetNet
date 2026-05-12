@@ -11,6 +11,13 @@ final _locationAlertsProvider =
   return ref.watch(betNetApiProvider).fetchLocationAlerts();
 });
 
+String _labelForApiEnum(String api) {
+  for (final e in kPropertyTypeChoices.entries) {
+    if (e.value == api) return e.key;
+  }
+  return api;
+}
+
 class LocationAlertsScreen extends ConsumerStatefulWidget {
   const LocationAlertsScreen({super.key});
 
@@ -21,7 +28,8 @@ class LocationAlertsScreen extends ConsumerStatefulWidget {
 class _LocationAlertsScreenState extends ConsumerState<LocationAlertsScreen> {
   final _label = TextEditingController();
   String _city = kEthiopianCities.first;
-  String _propertyType = '';
+  final Set<String> _propertyTypeApis = {};
+  bool _onlyAvailableListings = true;
   final _subCity = TextEditingController();
   bool _saving = false;
 
@@ -39,7 +47,8 @@ class _LocationAlertsScreenState extends ConsumerState<LocationAlertsScreen> {
             city: _city,
             subCity: _subCity.text.trim(),
             label: _label.text.trim(),
-            propertyType: _propertyType,
+            propertyTypes: _propertyTypeApis.toList(),
+            onlyAvailableListings: _onlyAvailableListings,
           );
       _label.clear();
       _subCity.clear();
@@ -107,19 +116,41 @@ class _LocationAlertsScreenState extends ConsumerState<LocationAlertsScreen> {
             decoration: const InputDecoration(labelText: 'Sub-city (optional)'),
           ),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: _propertyType.isEmpty ? null : _propertyType,
-            decoration: const InputDecoration(labelText: 'Property type (optional)'),
-            items: <DropdownMenuItem<String>>[
-              const DropdownMenuItem(value: '', child: Text('Any type')),
+          Text('Property types (optional)', style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              ChoiceChip(
+                label: const Text('Any type'),
+                selected: _propertyTypeApis.isEmpty,
+                onSelected: (_) => setState(() => _propertyTypeApis.clear()),
+              ),
               ...kPropertyTypeChoices.entries.map(
-                (e) => DropdownMenuItem(
-                  value: e.value,
-                  child: Text(e.key),
+                (e) => FilterChip(
+                  label: Text(e.key),
+                  selected: _propertyTypeApis.contains(e.value),
+                  onSelected: (on) {
+                    setState(() {
+                      if (on) {
+                        _propertyTypeApis.add(e.value);
+                      } else {
+                        _propertyTypeApis.remove(e.value);
+                      }
+                    });
+                  },
                 ),
               ),
             ],
-            onChanged: (v) => setState(() => _propertyType = v ?? ''),
+          ),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Only available listings'),
+            subtitle: const Text('Turn off to include unavailable or booked-out matches'),
+            value: _onlyAvailableListings,
+            onChanged: (v) => setState(() => _onlyAvailableListings = v),
           ),
           const SizedBox(height: 8),
           FilledButton(
@@ -148,8 +179,10 @@ class _LocationAlertsScreenState extends ConsumerState<LocationAlertsScreen> {
                       subtitle: Text(
                         [
                           row.subCity.isEmpty ? row.city : '${row.city} · ${row.subCity}',
-                          if (row.propertyType.isNotEmpty) row.propertyType,
-                        ].join(' · '),
+                          if (row.propertyTypes.isNotEmpty)
+                            row.propertyTypes.map(_labelForApiEnum).join(', '),
+                          if (!row.onlyAvailableListings) 'incl. unavailable',
+                        ].where((s) => s.isNotEmpty).join(' · '),
                       ),
                       leading: Switch(
                         value: row.isActive,

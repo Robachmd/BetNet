@@ -110,11 +110,19 @@ def _haversine_km(
 def _location_alert_matches(alert: LocationAlert, property_obj) -> bool:
     """True if the published property falls inside this watch definition."""
     loc = property_obj.location
+    if getattr(alert, "only_available_listings", True) and not getattr(
+        property_obj, "is_available", True
+    ):
+        return False
     if loc.city.strip().lower() != alert.city.strip().lower():
         return False
-    if alert.property_type and alert.property_type.strip():
-        if str(property_obj.property_type).strip().upper() != str(alert.property_type).strip().upper():
-            return False
+    types_filter = getattr(alert, "property_types", None) or []
+    if types_filter:
+        allowed = {str(x).strip().upper() for x in types_filter if str(x).strip()}
+        if allowed:
+            pt = str(property_obj.property_type).strip().upper()
+            if pt not in allowed:
+                return False
     alat, alon = alert.latitude, alert.longitude
     plat, plon = loc.latitude, loc.longitude
     if (
