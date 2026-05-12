@@ -137,13 +137,13 @@ class BetNetApi {
   }
 
   Future<({BetNetUser user, String access, String refresh})> login({
-    required String phoneE164,
+    required String identifier,
     required String password,
   }) async {
     try {
       final res = await _dio.post(
         '/api/accounts/login/',
-        data: {'phone_number': phoneE164, 'password': password},
+        data: {'identifier': identifier, 'password': password},
       );
       final data = res.data as Map<String, dynamic>;
       final tokens = data['tokens'] as Map<String, dynamic>;
@@ -1328,8 +1328,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> login(String phoneE164, String password) async {
-    final r = await _api.login(phoneE164: phoneE164, password: password);
+  Future<void> login(String identifier, String password) async {
+    final r = await _api.login(identifier: identifier, password: password);
     state = AuthState.authenticated(r.user);
     goRouterRefresh.refresh();
   }
@@ -1382,6 +1382,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String firstName,
     required String lastName,
     required String role,
+    required String email,
   }) async {
     final r = await _api.register(
       phoneE164: phoneE164,
@@ -1390,6 +1391,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       firstName: firstName,
       lastName: lastName,
       role: role,
+      email: email,
     );
     state = AuthState.authenticated(r.user);
     goRouterRefresh.refresh();

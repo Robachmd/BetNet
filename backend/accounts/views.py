@@ -19,7 +19,7 @@ from .serializers import (
     OTPRequestSerializer,
     OTPVerifySerializer,
     PasswordResetConfirmSerializer,
-    UserLoginSerializer,
+    UserIdentifierLoginSerializer,
     UserProfileSerializer,
     UserRegistrationSerializer,
     UserUpdateSerializer,
@@ -74,7 +74,7 @@ class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        serializer = UserLoginSerializer(
+        serializer = UserIdentifierLoginSerializer(
             data=request.data, context={"request": request}
         )
         serializer.is_valid(raise_exception=True)

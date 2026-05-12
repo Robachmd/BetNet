@@ -14,6 +14,7 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _phone = TextEditingController();
+  final _email = TextEditingController();
   final _pass = TextEditingController();
   final _pass2 = TextEditingController();
   final _first = TextEditingController();
@@ -42,6 +43,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final phoneError = validateEthiopianMobile(_phone.text);
     if (phoneError != null) return phoneError;
 
+    final email = _email.text.trim();
+    if (email.isEmpty) return 'Email is required.';
+    if (!RegExp(r'^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$').hasMatch(email)) {
+      return 'Enter a valid email address.';
+    }
+
     final passwordError = _validatePasswordStrength(_pass.text);
     if (passwordError != null) return passwordError;
     if (_pass2.text.isEmpty) return 'Please confirm your password.';
@@ -53,6 +60,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   void dispose() {
     _phone.dispose();
+    _email.dispose();
     _pass.dispose();
     _pass2.dispose();
     _first.dispose();
@@ -80,6 +88,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             firstName: _first.text.trim(),
             lastName: _last.text.trim(),
             role: _role,
+            email: _email.text.trim().toLowerCase(),
           );
       if (!mounted) return;
       final from = GoRouterState.of(context).uri.queryParameters['from'];
@@ -111,6 +120,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   labelText: 'Mobile',
                   hintText: '09..., 07..., or +251...',
                   helperText: 'Ethio Telecom and Safaricom numbers are supported.',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  hintText: 'name@email.com',
                 ),
               ),
               const SizedBox(height: 12),

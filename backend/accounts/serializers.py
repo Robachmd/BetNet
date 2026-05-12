@@ -2,6 +2,8 @@ import re
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
+from django.db.models import Q
+from phonenumber_field.phonenumber import PhoneNumber
 from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework import serializers
 
@@ -37,6 +39,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             "requested_roles",
             "preferred_language",
         ]
+
+    def validate_email(self, value):
+        v = (value or "").strip().lower()
+        if not v:
+            raise serializers.ValidationError("Email is required.")
+        if User.objects.filter(email__iexact=v).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return v
 
     def validate_phone_number(self, value):
         if User.objects.filter(phone_number=value).exists():
@@ -91,6 +101,71 @@ class UserLoginSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 "Invalid phone number or password."
             )
+        if not user.is_active:
+            raise serializers.ValidationError("This account is deactivated.")
+        attrs["user"] = user
+        return attrs
+
+
+class UserIdentifierLoginSerializer(serializers.Serializer):
+    """
+    Login with either phone number or email, using a single `identifier` field.
+    Backward-compatible with clients that still send `phone_number`.
+    """
+
+    identifier = serializers.CharField(required=False, allow_blank=True)
+    phone_number = PhoneNumberField(region="ET", required=False)
+    password = serializers.CharField(write_only=True)
+
+    def _as_phone_e164(self, raw: str) -> str:
+        s = (raw or "").strip()
+        if not s:
+            raise serializers.ValidationError("Phone number is required.")
+        try:
+            pn = PhoneNumber.from_string(s, region="ET")
+        except Exception:
+            raise serializers.ValidationError("Invalid phone number.")
+        if not pn or not pn.is_valid():
+            raise serializers.ValidationError("Invalid phone number.")
+        return pn.as_e164
+
+    def validate(self, attrs):
+        password = attrs.get("password") or ""
+        ident = (attrs.get("identifier") or "").strip()
+
+        # Backward compatibility: prefer explicit phone_number if provided.
+        if not ident and attrs.get("phone_number"):
+            ident = str(attrs["phone_number"])
+
+        if not ident:
+            raise serializers.ValidationError({"identifier": "Email or phone number is required."})
+
+        request = self.context.get("request")
+
+        # Email path.
+        if "@" in ident:
+            email = ident.lower()
+            user = (
+                User.objects.filter(email__iexact=email)
+                .order_by("-id")
+                .first()
+            )
+            if user is None or not user.check_password(password):
+                raise serializers.ValidationError("Invalid email/phone or password.")
+            if not user.is_active:
+                raise serializers.ValidationError("This account is deactivated.")
+            attrs["user"] = user
+            return attrs
+
+        # Phone path.
+        phone_e164 = self._as_phone_e164(ident)
+        user = authenticate(
+            request=request,
+            phone_number=phone_e164,
+            password=password,
+        )
+        if user is None:
+            raise serializers.ValidationError("Invalid email/phone or password.")
         if not user.is_active:
             raise serializers.ValidationError("This account is deactivated.")
         attrs["user"] = user

@@ -13,9 +13,9 @@ function persistSession(data) {
 }
 
 export const authService = {
-  async login(phone, password) {
+  async login(identifier, password) {
     const { data } = await api.post(`${AUTH}/login/`, {
-      phone_number: phone,
+      identifier,
       password,
     });
     return persistSession(data);

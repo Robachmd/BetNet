@@ -324,7 +324,7 @@ export function normalizePhoneNumber(phone) {
   if (cleaned.startsWith('251') && cleaned.length === 12) {
     return `+${cleaned}`;
   }
-  if (cleaned.startsWith('9') && cleaned.length === 9) {
+  if ((cleaned.startsWith('9') || cleaned.startsWith('7')) && cleaned.length === 9) {
     return `+251${cleaned}`;
   }
   return phone;
@@ -332,7 +332,7 @@ export function normalizePhoneNumber(phone) {
 
 export function validateEthiopianPhone(phone) {
   const cleaned = phone.replace(/\D/g, '');
-  const pattern = /^(?:251|0)?9\d{8}$/;
+  const pattern = /^(?:251|0)?[79]\d{8}$/;
   return pattern.test(cleaned);
 }
 

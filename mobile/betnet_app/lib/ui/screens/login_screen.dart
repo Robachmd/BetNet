@@ -13,14 +13,14 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _phone = TextEditingController();
+  final _identifier = TextEditingController();
   final _pass = TextEditingController();
   bool _busy = false;
   String? _error;
 
   @override
   void dispose() {
-    _phone.dispose();
+    _identifier.dispose();
     _pass.dispose();
     super.dispose();
   }
@@ -31,8 +31,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
     });
     try {
-      final phone = normalizeEthiopianPhone(_phone.text);
-      await ref.read(authControllerProvider.notifier).login(phone, _pass.text);
+      final raw = _identifier.text.trim();
+      final identifier = raw.contains('@') ? raw.toLowerCase() : normalizeEthiopianPhone(raw);
+      await ref.read(authControllerProvider.notifier).login(identifier, _pass.text);
       if (!mounted) return;
       final from = GoRouterState.of(context).uri.queryParameters['from'];
       if (from != null && from.isNotEmpty) {
@@ -71,11 +72,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 40),
               TextField(
-                controller: _phone,
-                keyboardType: TextInputType.phone,
+                controller: _identifier,
+                keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
-                  labelText: 'Mobile number',
-                  hintText: '+251911234567 or 0911234567',
+                  labelText: 'Phone or email',
+                  hintText: '09..., 07..., or name@email.com',
                 ),
               ),
               const SizedBox(height: 16),

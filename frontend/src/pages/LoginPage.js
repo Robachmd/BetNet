@@ -14,7 +14,7 @@ export default function LoginPage() {
   const from = location.state?.from || '/';
 
   const [mode, setMode] = useState('password');
-  const [phone, setPhone] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -25,7 +25,13 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
 
-    if (!validateEthiopianPhone(phone)) {
+    const raw = identifier.trim();
+    if (!raw) {
+      setError('Please enter your phone number or email');
+      return;
+    }
+    const isEmail = raw.includes('@');
+    if (!isEmail && !validateEthiopianPhone(raw)) {
       setError('Please enter a valid Ethiopian phone number');
       return;
     }
@@ -36,8 +42,8 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const normalizedPhone = normalizePhoneNumber(phone);
-      await login(normalizedPhone, password);
+      const normalized = isEmail ? raw.toLowerCase() : normalizePhoneNumber(raw);
+      await login(normalized, password);
       navigate(from, { replace: true });
     } catch (err) {
       setError(getErrorMessage(err));
@@ -50,14 +56,15 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
 
-    if (!validateEthiopianPhone(phone)) {
+    const raw = identifier.trim();
+    if (!validateEthiopianPhone(raw)) {
       setError('Please enter a valid Ethiopian phone number');
       return;
     }
 
     setLoading(true);
     try {
-      const normalizedPhone = normalizePhoneNumber(phone);
+      const normalizedPhone = normalizePhoneNumber(raw);
       await authService.requestOTP(normalizedPhone);
       navigate('/verify-otp', { state: { phone: normalizedPhone, from } });
     } catch (err) {
@@ -135,23 +142,20 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={mode === 'password' ? handlePasswordLogin : handleOTPRequest}>
-            {/* Phone Input */}
+            {/* Identifier Input */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone Number</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                {mode === 'otp' ? 'Phone Number' : 'Phone or Email'}
+              </label>
               <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-gray-500 pointer-events-none">
-                  <FiPhone className="w-4 h-4" />
-                  <span className="text-sm font-medium">+251</span>
-                  <div className="w-px h-5 bg-gray-300" />
-                </div>
                 <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ''))}
-                  placeholder="9X XXX XXXX"
-                  maxLength={10}
-                  className="w-full pl-[100px] pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-all"
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder={mode === 'otp' ? '09XXXXXXXX or 07XXXXXXXX' : '09XXXXXXXX, 07XXXXXXXX, or name@email.com'}
+                  className="w-full pl-10 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-all"
                 />
+                <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               </div>
             </div>
 

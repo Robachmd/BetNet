@@ -27,6 +27,7 @@ export default function RegisterPage() {
 
   const [form, setForm] = useState({
     phone: '',
+    email: '',
     password: '',
     confirmPassword: '',
     firstName: '',
@@ -56,6 +57,11 @@ export default function RegisterPage() {
     if (stepIndex === 0) {
       if (!validateEthiopianPhone(form.phone)) {
         errors.phone = 'Enter a valid Ethiopian phone number (e.g. 09XXXXXXXX)';
+      }
+      if (!form.email.trim()) {
+        errors.email = 'Email is required';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+        errors.email = 'Enter a valid email address';
       }
       if (form.password.length < 8) {
         errors.password = 'Password must be at least 8 characters';
@@ -98,6 +104,7 @@ export default function RegisterPage() {
     try {
       const userData = {
         phone: normalizePhoneNumber(form.phone),
+        email: form.email.trim(),
         password: form.password,
         confirmPassword: form.confirmPassword,
         firstName: form.firstName.trim(),
@@ -205,7 +212,7 @@ export default function RegisterPage() {
                     type="tel"
                     value={form.phone}
                     onChange={(e) => updateField('phone', e.target.value.replace(/[^\d]/g, ''))}
-                    placeholder="9X XXX XXXX"
+                    placeholder="9X XXX XXXX or 7X XXX XXXX"
                     maxLength={10}
                     className={`w-full pl-[100px] pr-4 py-3.5 bg-gray-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-all ${
                       fieldErrors.phone ? 'border-red-300 bg-red-50' : 'border-gray-200'
@@ -213,6 +220,23 @@ export default function RegisterPage() {
                   />
                 </div>
                 <FieldError field="phone" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+                <div className="relative">
+                  <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => updateField('email', e.target.value)}
+                    placeholder="name@email.com"
+                    className={`w-full pl-10 pr-4 py-3.5 bg-gray-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400 transition-all ${
+                      fieldErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                    }`}
+                  />
+                </div>
+                <FieldError field="email" />
               </div>
 
               <div>
