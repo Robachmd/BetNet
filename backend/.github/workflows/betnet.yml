@@ -1,0 +1,190 @@
+name: trademax-dev
+
+on:
+  schedule:
+    - cron: '0 7 * * 1-5'   # Weekdays at 7AM UTC (10AM Addis Ababa time)
+    - cron: '0 10 * * 6'    # Saturday lighter session
+    - cron: '10 13 * * *'   # TEST: Every day at 13:10 UTC (1:10 PM UTC)
+  workflow_dispatch:
+
+jobs:
+  commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Configure git identity
+        run: |
+          git config user.email "nattyleyo@users.noreply.github.com"
+          git config user.name "nattyleyo"
+
+      - name: Generate realistic commits
+        run: |
+          # ── Commit message pools ──────────────────────────────────────────────
+          FEAT=(
+            "add real-time price feed handler for forex pairs"
+            "implement order book depth aggregation logic"
+            "add slippage estimation on market orders"
+            "integrate broker API session management"
+            "add trailing stop-loss calculation module"
+            "implement risk/reward ratio calculator"
+            "add multi-timeframe trend detection"
+            "implement candlestick pattern recognition (hammer, engulfing)"
+            "add portfolio margin requirement tracker"
+            "implement trade journal entry schema"
+            "add drawdown percentage alert threshold"
+            "implement partial position close logic"
+            "add currency pair spread monitor"
+            "implement daily P&L snapshot service"
+            "add backtesting engine data loader"
+          )
+
+          FIX=(
+            "fix race condition in order placement flow"
+            "fix incorrect pip value for JPY pairs"
+            "fix timezone handling in trade history export"
+            "fix stale price display on reconnect"
+            "fix negative balance protection edge case"
+            "fix duplicate signal trigger on fast markets"
+            "fix margin call calculation rounding error"
+            "fix chart rendering lag on large datasets"
+            "fix session token expiry not refreshing"
+            "fix incorrect lot size validation"
+            "fix position size rounding on fractional lots"
+            "fix missing null check in order status handler"
+          )
+
+          REFACTOR=(
+            "refactor order lifecycle state machine"
+            "refactor price feed subscription manager"
+            "extract trade validation into separate service"
+            "simplify risk engine configuration interface"
+            "consolidate broker API error handling"
+            "clean up unused indicator calculation methods"
+            "reorganize trading strategy base classes"
+            "move market hours logic to utility module"
+            "rename ambiguous variables in execution engine"
+            "break up monolithic order processor into handlers"
+          )
+
+          DOCS=(
+            "document broker API integration steps"
+            "add inline comments to risk management module"
+            "update README with local setup instructions"
+            "document trade signal lifecycle flow"
+            "add JSDoc to price feed utilities"
+            "update changelog for v0.4 release"
+            "document configuration environment variables"
+          )
+
+          TEST=(
+            "add unit tests for stop-loss trigger logic"
+            "add integration test for order placement flow"
+            "add tests for pip value calculations"
+            "mock broker API responses in test suite"
+            "add edge case tests for margin calculations"
+            "add snapshot tests for trade history parser"
+          )
+
+          CHORE=(
+            "update dependencies to latest stable versions"
+            "bump axios to 1.7.2"
+            "add eslint rule for unused imports"
+            "configure husky pre-commit hooks"
+            "add .env.example with required variables"
+            "clean up dev logs left in production code"
+            "update .gitignore for build artifacts"
+          )
+
+          PERF=(
+            "optimize order book update frequency"
+            "reduce redundant API calls in price polling"
+            "cache currency conversion rates with TTL"
+            "lazy load historical chart data on scroll"
+            "debounce rapid order form input events"
+          )
+
+          STYLE=(
+            "format trading dashboard layout"
+            "fix inconsistent spacing in order panel"
+            "align position table columns properly"
+            "standardize error message formatting"
+          )
+
+          # ── Combine all pools ─────────────────────────────────────────────────
+          ALL_MSGS=(
+            "${FEAT[@]}"
+            "${FIX[@]}"
+            "${REFACTOR[@]}"
+            "${DOCS[@]}"
+            "${TEST[@]}"
+            "${CHORE[@]}"
+            "${PERF[@]}"
+            "${STYLE[@]}"
+          )
+
+          # ── Prefix pool matching conventional commits ─────────────────────────
+          PREFIXES=("feat" "fix" "refactor" "docs" "test" "chore" "perf" "style")
+
+          # ── Random commit count 8–20 ──────────────────────────────────────────
+          COUNT=$(shuf -i 8-20 -n 1)
+          echo "📦 Scheduling $COUNT commits for today"
+
+          # ── Randomly pick files to touch (realistic project structure) ────────
+          FILES=(
+            "src/engine/order_processor.py"
+            "src/feeds/price_feed.py"
+            "src/risk/margin_calculator.py"
+            "src/strategies/base_strategy.py"
+            "src/utils/pip_calculator.py"
+            "src/broker/api_client.py"
+            "src/journal/trade_log.py"
+            "src/backtest/data_loader.py"
+            "tests/test_order_flow.py"
+            "tests/test_risk_engine.py"
+            "README.md"
+            "docs/api_integration.md"
+            "config/settings.py"
+            ".env.example"
+          )
+
+          for i in $(seq 1 $COUNT); do
+            # Pick a random message from the combined pool
+            MSG="${ALL_MSGS[$RANDOM % ${#ALL_MSGS[@]}]}"
+
+            # Pick a random file to touch
+            FILE="${FILES[$RANDOM % ${#FILES[@]}]}"
+
+            # Create directory and file if they don't exist
+            mkdir -p "$(dirname "$FILE")"
+            touch "$FILE"
+
+            # Append a realistic-looking code comment or log line
+            COMMENTS=(
+              "# updated: $(date '+%Y-%m-%d')"
+              "# TODO: review this after next broker API update"
+              "# optimized for low-latency markets"
+              "# reviewed by risk team"
+              "# pending QA sign-off"
+              "# perf improvement applied"
+            )
+            COMMENT="${COMMENTS[$RANDOM % ${#COMMENTS[@]}]}"
+            echo "$COMMENT" >> "$FILE"
+
+            git add "$FILE"
+
+            # Stagger commits with a short sleep (looks more natural in logs)
+            SLEEP=$(shuf -i 5-30 -n 1)
+            sleep $SLEEP
+
+            git commit -m "$MSG"
+            echo "  ✅ [$i/$COUNT] $MSG"
+          done
+
+          git push
+          echo "🚀 Done. Pushed $COUNT commits."
