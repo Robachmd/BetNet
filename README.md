@@ -537,3 +537,4 @@ Built with care for the Ethiopian rental market
 # updated: 2026-07-23
 # TODO: review this after next broker API update
 # pending QA sign-off
+# updated: 2026-07-25
