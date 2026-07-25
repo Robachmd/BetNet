@@ -3,3 +3,4 @@
 # optimized for low-latency markets
 # updated: 2026-07-24
 # optimized for low-latency markets
+# reviewed by risk team
