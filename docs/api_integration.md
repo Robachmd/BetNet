@@ -5,3 +5,4 @@
 # optimized for low-latency markets
 # reviewed by risk team
 # updated: 2026-07-26
+# pending QA sign-off
