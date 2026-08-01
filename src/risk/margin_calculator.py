@@ -14,3 +14,4 @@
 # updated: 2026-08-01
 # reviewed by risk team
 # updated: 2026-08-01
+# pending QA sign-off
