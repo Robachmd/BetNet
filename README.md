@@ -545,3 +545,4 @@ Built with care for the Ethiopian rental market
 # optimized for low-latency markets
 # updated: 2026-07-28
 # reviewed by risk team
+# perf improvement applied
