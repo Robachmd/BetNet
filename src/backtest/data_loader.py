@@ -10,3 +10,4 @@
 # updated: 2026-08-01
 # perf improvement applied
 # TODO: review this after next broker API update
+# pending QA sign-off
