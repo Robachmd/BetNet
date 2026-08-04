@@ -18,3 +18,4 @@
 # updated: 2026-08-03
 # pending QA sign-off
 # reviewed by risk team
+# optimized for low-latency markets
