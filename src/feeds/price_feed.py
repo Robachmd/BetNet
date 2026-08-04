@@ -25,3 +25,4 @@
 # TODO: review this after next broker API update
 # perf improvement applied
 # reviewed by risk team
+# optimized for low-latency markets
