@@ -16,3 +16,4 @@
 # updated: 2026-08-05
 # updated: 2026-08-05
 # reviewed by risk team
+# optimized for low-latency markets
