@@ -23,3 +23,4 @@
 # perf improvement applied
 # perf improvement applied
 # updated: 2026-08-05
+# pending QA sign-off
