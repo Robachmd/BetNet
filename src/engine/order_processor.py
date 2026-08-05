@@ -14,3 +14,4 @@
 # perf improvement applied
 # updated: 2026-08-04
 # updated: 2026-08-04
+# optimized for low-latency markets
