@@ -553,3 +553,4 @@ Built with care for the Ethiopian rental market
 # TODO: review this after next broker API update
 # pending QA sign-off
 # optimized for low-latency markets
+# updated: 2026-08-06
