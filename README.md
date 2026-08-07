@@ -554,3 +554,4 @@ Built with care for the Ethiopian rental market
 # pending QA sign-off
 # optimized for low-latency markets
 # updated: 2026-08-06
+# perf improvement applied
