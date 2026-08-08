@@ -556,3 +556,4 @@ Built with care for the Ethiopian rental market
 # updated: 2026-08-06
 # perf improvement applied
 # reviewed by risk team
+# pending QA sign-off
