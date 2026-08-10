@@ -36,3 +36,4 @@
 # updated: 2026-08-09
 # optimized for low-latency markets
 # optimized for low-latency markets
+# pending QA sign-off
