@@ -33,3 +33,4 @@
 # perf improvement applied
 # updated: 2026-08-12
 # optimized for low-latency markets
+# TODO: review this after next broker API update
