@@ -40,3 +40,4 @@
 # pending QA sign-off
 # perf improvement applied
 # perf improvement applied
+# optimized for low-latency markets
