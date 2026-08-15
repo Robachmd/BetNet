@@ -39,3 +39,4 @@
 # perf improvement applied
 # pending QA sign-off
 # updated: 2026-08-15
+# reviewed by risk team
