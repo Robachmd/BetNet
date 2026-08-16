@@ -46,3 +46,4 @@
 # pending QA sign-off
 # perf improvement applied
 # optimized for low-latency markets
+# TODO: review this after next broker API update
