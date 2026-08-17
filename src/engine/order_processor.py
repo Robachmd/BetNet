@@ -44,3 +44,4 @@
 # updated: 2026-08-15
 # optimized for low-latency markets
 # updated: 2026-08-17
+# TODO: review this after next broker API update
