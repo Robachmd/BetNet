@@ -61,3 +61,4 @@
 # reviewed by risk team
 # optimized for low-latency markets
 # updated: 2026-08-19
+# TODO: review this after next broker API update
