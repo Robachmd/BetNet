@@ -46,3 +46,4 @@
 # TODO: review this after next broker API update
 # updated: 2026-08-19
 # reviewed by risk team
+# pending QA sign-off
