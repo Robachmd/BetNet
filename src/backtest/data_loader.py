@@ -58,3 +58,4 @@
 # updated: 2026-08-19
 # TODO: review this after next broker API update
 # reviewed by risk team
+# perf improvement applied
